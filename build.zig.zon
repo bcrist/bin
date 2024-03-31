@@ -1,0 +1,40 @@
+.{
+    .name = "zin",
+    .version = "0.0.0",
+    .minimum_zig_version = "0.12.0-dev.2063+804cee3b9",
+    .paths = .{""},
+    .dependencies = .{
+        .@"Zig-TempAllocator" = .{
+            .url = "git+https://github.com/bcrist/Zig-TempAllocator#4ba898503abbc1de0abef28810f3e14ebfd6a660",
+            .hash = "12205fe84f1c2e80b275a5c18c0b5b8e740c86463dc71458d0030e863d5e0fcb5f58",
+        },
+        .@"Zig-ConsoleHelper" = .{
+            .url = "git+https://github.com/bcrist/Zig-ConsoleHelper#2702274b44c29722b346d8e429dd80dbc7d3e2ce",
+            .hash = "1220972706eaeaf0a4a8d96f6c4a946d983dbe9d1211c059044b72aa41a2bc50b0a9",
+        },
+        .@"Zig-DeepHashMap" = .{
+            .url = "git+https://github.com/bcrist/Zig-DeepHashMap#7f5cc0cc3d36545a6f9bcf34c1b5cc4f06a3cd56",
+            .hash = "122081984f52f7ca15d7ced6e11266e79e7db5f162048c3e272e838585393d63cdb9",
+        },
+        .@"Zig-SX" = .{
+            .url = "git+https://github.com/bcrist/Zig-SX#88da3a163864328250234ef1a8d87bd899f283d9",
+            .hash = "12202c2771876ef6ed077f7df29e05be522a80d37df247b52ef053804b745059b0ae",
+        },
+        .zbox = .{
+            .url = "git+https://github.com/bcrist/zbox#21c409b46ada7070647e8a563d417e12de668d93",
+            .hash = "1220fc89a4ec93bfe47b18fcfbdb92ceb0ea0e44729547f6ac89745f035eed480a9f",
+        },
+        .tempora = .{
+            .url = "git+https://github.com/bcrist/tempora#ee0719f2acdc013c5f9b22df9324fb8a7af93674",
+            .hash = "122051900b4aa8c07567f549615aa7504d7d6a5f8f4cf3dbbf8bd3af5585aa2e94cb",
+        },
+        .dizzy = .{
+            .url = "git+https://github.com/bcrist/dizzy#d908cbcda09254352b15ed8c13b5695498bcb06f",
+            .hash = "12207015d059dbcd2bdf6dd0b5b0e5ab877d8e592b143531bbbaf9401794a1fabefe",
+        },
+        .shittip = .{
+            .url = "git+https://github.com/bcrist/shittip#85847bb72d5f5dc051f16b1c37d5fd0fec0c8d22",
+            .hash = "122016d3862bb398163a64de7f7af8eb64065a21a79baf4a530abb3c6b852b51dcae",
+        },
+    },
+}
