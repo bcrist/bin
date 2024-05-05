@@ -41,7 +41,7 @@ pub fn main() !void {
     try server.router("", .{
         .{ "/", r.generic("index.htm") },
         .{ "/login", r.generic("login.htm") },
-        .{ "/shutdown", r.method(.POST), r.shutdown, r.generic("shutdown.htm") },
+        .{ "/shutdown", r.method(.GET), r.shutdown, r.generic("shutdown.htm") },
 
         .{ "/o:*",     r.module(Injector, @import("http/order.zig")) },
         .{ "/prj:*",   r.module(Injector, @import("http/project.zig")) },

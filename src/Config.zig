@@ -57,7 +57,7 @@ pub fn load(arena: std.mem.Allocator) !Config {
         error.SExpressionSyntaxError => {
             const ctx = try reader.token_context();
             try ctx.print_for_file(&file, std.io.getStdErr().writer(), 160);
-            std.os.exit(1);
+            std.process.exit(1);
         },
         else => return err,
     };
