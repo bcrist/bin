@@ -1,0 +1,9 @@
+(version 1)
+(mfr Kemet "KEMET Corporation"
+   (url https://www.kemet.com/en/us.html)
+   (wiki https://en.wikipedia.org/wiki/KEMET_Corporation)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel subsidiary-of Yageo 2020)
+)

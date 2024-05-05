@@ -1,0 +1,10 @@
+(version 1)
+(mfr Infineon "Infineon Technologies"
+   (url https://www.infineon.com/)
+   (wiki https://en.wikipedia.org/wiki/Infineon_Technologies)
+   (country Germany)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel absorbed IR 2014)
+   (rel absorbed Cypress 2020)
+)

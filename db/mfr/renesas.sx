@@ -1,0 +1,8 @@
+(version 1)
+(mfr Renesas "Renesas Electronics" "Renesas Technology"
+   (url http://www.renesas.com/)
+   (wiki https://en.wikipedia.org/wiki/Renesas_Electronics)
+   (country Japan)
+   (created "2024-05-05 21:16:45 +00:00")
+   (modified "2024-05-05 21:25:24 +00:00")
+)

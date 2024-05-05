@@ -19,15 +19,15 @@ fn write_manufacturers(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir,
     defer filenames.clearRetainingCapacity();
 
     const dirty_timestamp_ms = db.dirty_timestamp_ms orelse std.time.milliTimestamp();
+    const ids = db.mfrs.items(.id);
 
     var dir = try root.makeOpenPath("mfr", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.mfrs.len) |i| {
-        const data = db.mfrs.get(i);
-        const dest_path = try paths.unique_path(allocator, data.id, filenames);
-
-        if (data.modified_timestamp_ms < dirty_timestamp_ms) continue;
+    for (0..db.mfrs.len, db.mfrs.items(.modified_timestamp_ms)) |i, modified_ts| {
+        const dest_path = try paths.unique_path(allocator, ids[i], filenames);
+        
+        if (modified_ts < dirty_timestamp_ms) continue;
 
         log.info("Writing mfr{s}{s}", .{ std.fs.path.sep_str, dest_path });
 
@@ -42,15 +42,14 @@ fn write_manufacturers(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir,
         try sxw.close();
 
         try sxw.expression_expanded("mfr");
-        try sxw.object(SX_Manufacturer.init(db, @enumFromInt(i)), SX_Manufacturer.context);
+        try sxw.object(try SX_Manufacturer.init(allocator, db, @enumFromInt(i)), SX_Manufacturer.context);
         try sxw.close();
 
         try af.finish();
     }
 
-    try paths.delete_all_except(&dir, filenames.*);
+    try paths.delete_all_except(&dir, filenames.*, "mfr" ++ std.fs.path.sep_str);
 }
-
 
 
 const SX_Data = struct {
@@ -61,100 +60,12 @@ const SX_Data = struct {
     };
 };
 
-pub const SX_Manufacturer = struct {
-    id: []const u8 = "",
-    full_name: ?[]const u8 = null,
-    additional_names: []const []const u8 = &.{},
-    url: ?[]const u8 = null,
-    wiki: ?[]const u8 = null,
-    country: ?[]const u8 = null,
-    notes: ?[]const u8 = null,
-    created: ?Date_Time.With_Offset = null,
-    modified: ?Date_Time.With_Offset = null,
-    rel: []const Relation = &.{},
 
-    pub const Relation = struct {
-        kind: []const u8 = "",
-        other: []const u8 = "",
-        year: ?i32 = null,
-    };
-
-    pub const context = struct {
-        pub const inline_fields = &.{ "id", "full_name", "additional_names" };
-        pub const created = Date_Time.With_Offset.fmt_sql;
-        pub const modified = Date_Time.With_Offset.fmt_sql;
-
-        pub const rel = struct {
-            pub const inline_fields = &.{ "kind", "other", "year" };
-        };
-    };
-
-    pub fn init(db: *const DB, index: Manufacturer.Index) SX_Manufacturer {
-        const data = db.mfrs.get(@intFromEnum(index));
-        return .{
-            .id = data.id,
-            .full_name = if (std.mem.eql(u8, data.full_name, data.id)) null else data.full_name,
-            .additional_names = data.additional_names.items,
-            .url = data.website,
-            .wiki = data.wiki,
-            .country = data.country,
-            .notes = data.notes,
-            .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
-            .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
-            .rel = &.{}, // TODO
-        };
-    }
-
-    pub fn read(self: SX_Manufacturer, db: *DB) !void {
-        const now = std.time.milliTimestamp();
-        const new_full_name = if (self.full_name) |s| s else self.id;
-
-        const gop = try db.mfr_lookup.getOrPut(db.container_alloc, self.id);
-        if (gop.found_existing) {
-            const idx = gop.value_ptr.*;
-            try Manufacturer.set_full_name(db, idx, new_full_name);
-            try Manufacturer.add_additional_names(db, idx, self.additional_names, .{ .set_modified_on_added = true });
-            if (self.country) |country| try Manufacturer.set_country(db, idx, country);
-            if (self.url) |url| try Manufacturer.set_website(db, idx, url);
-            if (self.wiki) |wiki| try Manufacturer.set_wiki(db, idx, wiki);
-            if (self.notes) |notes| try Manufacturer.set_notes(db, idx, notes);
-            if (self.created) |dto| try Manufacturer.set_created_time(db, idx, dto.timestamp_ms());
-            if (self.modified) |dto| try Manufacturer.set_modified_time(db, idx, dto.timestamp_ms());
-        } else {
-            const id = try db.intern(self.id);
-            const idx: Manufacturer.Index = @enumFromInt(db.mfrs.len);
-            const mfr: Manufacturer = .{
-                .id = id,
-                .full_name = try db.intern(new_full_name),
-                .country = try db.maybe_intern(self.country),
-                .website = try db.maybe_intern(self.url),
-                .wiki = try db.maybe_intern(self.wiki),
-                .notes = try db.maybe_intern(self.notes),
-                .created_timestamp_ms = if (self.created) |dto| dto.timestamp_ms() else now,
-                .modified_timestamp_ms = if (self.modified) |dto| dto.timestamp_ms() else now,
-                .additional_names = .{},
-            };
-            try db.mfrs.append(db.container_alloc, mfr);
-            gop.key_ptr.* = id;
-            gop.value_ptr.* = idx;
-
-            if (self.created == null or self.modified == null) {
-                db.mark_dirty(now);
-            }
-
-            try Manufacturer.add_additional_names(db, idx, self.additional_names, .{ .set_modified_on_ignore = true });
-        }
-    }
-};
-
-const Manufacturer = @import("Manufacturer.zig");
+const SX_Manufacturer = @import("v1/SX_Manufacturer.zig");
 
 const log = std.log.scoped(.db);
 
-const paths = @import("paths.zig");
 const DB = @import("../DB.zig");
-const Date_Time = tempora.Date_Time;
-const tempora = @import("tempora");
-const Temp_Allocator = @import("Temp_Allocator");
+const paths = @import("paths.zig");
 const sx = @import("sx");
 const std = @import("std");

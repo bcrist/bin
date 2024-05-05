@@ -17,8 +17,8 @@
             .hash = "1220c7558fb180196aa9b69fa8fcf0e65545728c0ddd7d26e60aa6b068ad4686d4aa",
         },
         .@"Zig-SX" = .{
-            .url = "git+https://github.com/bcrist/Zig-SX#9c1b77d59a5347e0add1985fc6f0f86f24bc910d",
-            .hash = "12205397e7aa63fc68fde226686ee465571c21696e1d960472bbcfa9772e70de419e",
+            .url = "git+https://github.com/bcrist/Zig-SX#4dd123754ba43958b6d3a6ac45cca718eba3e4c1",
+            .hash = "122028af3c539ccac7bb2d1dadb71a51e73a4a9c1f162c5842ca5a7a9c05eaaea578",
         },
         .tempora = .{
             .url = "git+https://github.com/bcrist/tempora#a0eb5f4b88954d0d0ff6abe2900e4010d9cd44e1",

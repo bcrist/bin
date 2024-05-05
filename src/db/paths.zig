@@ -45,15 +45,18 @@ pub fn safe_path(allocator: std.mem.Allocator, id: []const u8, differentiator: ?
     return dest.toOwnedSlice(allocator);
 }
 
-pub fn delete_all_except(dir: *std.fs.Dir, files_to_keep: StringHashSet) !void {
+pub fn delete_all_except(dir: *std.fs.Dir, files_to_keep: StringHashSet, prefix: []const u8) !void {
     var iter = dir.iterate();
     while (try iter.next()) |entry| {
         if (entry.kind == .file and !files_to_keep.contains(entry.name)) {
+            log.info("Deleting {s}{s}", .{ prefix, entry.name });
             try dir.deleteFile(entry.name);
         }
     }
 }
 
 pub const StringHashSet = std.StringHashMap(void);
+
+const log = std.log.scoped(.db);
 
 const std = @import("std");

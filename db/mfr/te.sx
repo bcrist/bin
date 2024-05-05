@@ -1,0 +1,9 @@
+(version 1)
+(mfr TE "TE Connectivity"
+   (url https://www.te.com/usa-en/home.html)
+   (wiki https://en.wikipedia.org/wiki/TE_Connectivity)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel formerly Tyco 2011)
+)

@@ -1,0 +1,10 @@
+(version 1)
+(mfr National "National Semiconductor" Natsemi
+   (wiki https://en.wikipedia.org/wiki/National_Semiconductor)
+   (country USA)
+   (created "2024-05-05 21:16:45 +00:00")
+   (modified "2024-05-05 21:25:24 +00:00")
+   (rel absorbed-by TI 2011)
+   (rel absorbed Fairchild 1987)
+   (rel spun-off Fairchild 1997)
+)

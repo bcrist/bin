@@ -1,0 +1,8 @@
+(version 1)
+(mfr "United Chemi-Con"
+   (url https://chemi-con.com/)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel subsidiary-of "Nippon Chemi-Con")
+)

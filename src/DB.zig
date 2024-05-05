@@ -1,13 +1,15 @@
 arena: std.heap.ArenaAllocator,
 container_alloc: std.mem.Allocator,
 
+loading: bool = false,
 dirty_timestamp_ms: ?i64 = null,
 last_modification_timestamp_ms: ?i64 = null,
 
 strings: std.StringHashMapUnmanaged(void) = .{},
 
-mfr_lookup: std.StringArrayHashMapUnmanaged(Manufacturer.Index) = .{},
+mfr_lookup: std.StringHashMapUnmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
+mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
 
 
@@ -20,31 +22,46 @@ pub fn deinit(self: *DB) void {
         list.deinit(gpa);
     }
 
+    self.mfr_relations.deinit(gpa);
     self.mfrs.deinit(gpa);
     self.mfr_lookup.deinit(gpa);
     self.strings.deinit(gpa);
     self.arena.deinit();
     self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
+    self.loading = false;
 }
 
 pub fn reset(self: *DB) void {
+    const gpa = self.container_alloc;
 
     for (self.mfrs.items(.additional_names)) |*list| {
-        list.deinit(self.container_alloc);
+        list.deinit(gpa);
     }
 
     self.mfrs.len = 0;
+    self.mfr_relations.len = 0;
     self.mfr_lookup.clearRetainingCapacity();
     self.strings.clearRetainingCapacity();
     self.arena.reset(.retain_capacity);
     self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
+    self.loading = false;
+}
+
+/// This should only be necessary after importing with .loading = true;
+/// otherwise mark_dirty() will keep it up-to-date.
+pub fn recompute_last_modification_time(self: *DB) void {
+    var last_mod: i64 = 0;
+    for (self.mfrs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    log.debug("Updated last modification time to {}", .{ last_mod });
+    self.last_modification_timestamp_ms = last_mod;
 }
 
 pub const Import_Options = struct {
-    skip_underscores: bool = false,
-    action: []const u8 = "Loading",
+    loading: bool = false,
     prefix: []const u8 = "",
 };
 
@@ -55,21 +72,31 @@ pub fn import_data(self: *DB, dir: *std.fs.Dir, options: Import_Options) !void {
     var walker = try dir.walk(temp_arena.allocator());
     defer walker.deinit();
 
+    self.loading = options.loading;
+
     while (try walker.next()) |entry| {
         if (entry.kind != .file) continue;
-        if (options.skip_underscores and std.mem.startsWith(u8, entry.basename, "_")) continue;
+        if (!options.loading and std.mem.startsWith(u8, entry.basename, "_")) continue;
         if (!std.mem.endsWith(u8, entry.basename, ".sx")) continue;
 
         const temp_snapshot = temp_arena.snapshot();
         defer temp_arena.release_to_snapshot(temp_snapshot);
 
-        log.info("{s} {s}", .{
-            options.action,
-            try std.fs.path.resolve(temp_arena.allocator(), &.{
-                options.prefix,
-                entry.path,
-            }),
-        });
+        if (options.loading) {
+            log.debug("Loading {s}", .{
+                try std.fs.path.resolve(temp_arena.allocator(), &.{
+                    options.prefix,
+                    entry.path,
+                }),
+            });
+        } else {
+            log.info("Importing {s}", .{
+                try std.fs.path.resolve(temp_arena.allocator(), &.{
+                    options.prefix,
+                    entry.path,
+                }),
+            });
+        }
 
         var file = try dir.openFile(entry.path, .{});
         defer file.close();
@@ -108,25 +135,28 @@ pub fn export_data(self: *DB, dir: *std.fs.Dir) !void {
 }
 
 pub fn mark_dirty(self: *DB, timestamp_ms: i64) void {
+    if (self.loading) return;
+
     if (self.dirty_timestamp_ms) |dirty| {
         if (timestamp_ms < dirty) {
+            log.debug("Updated dirty time to {}", .{ timestamp_ms });
             self.dirty_timestamp_ms = timestamp_ms;
         }
     } else {
+        log.debug("Updated dirty time to {}", .{ timestamp_ms });
         self.dirty_timestamp_ms = timestamp_ms;
     }
 
     if (self.last_modification_timestamp_ms) |last| {
-        if (timestamp_ms > last) {
-            self.last_modification_timestamp_ms = timestamp_ms;
-        }
-    } else {
-        self.last_modification_timestamp_ms = timestamp_ms;
+        if (timestamp_ms <= last) return;
     }
+    log.debug("Updated last modification time to {}", .{ timestamp_ms });
+    self.last_modification_timestamp_ms = timestamp_ms;
 }
 
 pub fn intern(self: *DB, str: []const u8) ![]const u8 {
     if (self.strings.getKey(str)) |interned| return interned;
+    intern_log.debug("Interning string \"{}\"", .{ std.zig.fmtEscapes(str) });
     const duped = try self.arena.allocator().dupe(u8, str);
     try self.strings.put(self.container_alloc, duped, {});
     return duped;
@@ -135,9 +165,8 @@ pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
     return if (maybe_str) |str| try self.intern(str) else null;
 }
 
-
-
 const log = std.log.scoped(.db);
+const intern_log = std.log.scoped(.db_intern);
     
 const Manufacturer = @import("db/Manufacturer.zig");
 const Distributor = @import("db/Distributor.zig");

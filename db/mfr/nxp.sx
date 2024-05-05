@@ -1,0 +1,9 @@
+(version 1)
+(mfr NXP Nexperia "NXP Semiconductors"
+   (url https://www.nexperia.com/)
+   (wiki https://en.wikipedia.org/wiki/Nexperia)
+   (country Netherlands)
+   (created "2024-05-05 21:16:45 +00:00")
+   (modified "2024-05-05 21:25:24 +00:00")
+   (rel absorbed Freescale 2015)
+)

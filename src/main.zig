@@ -15,19 +15,17 @@ pub fn main() !void {
         .container_alloc = global.gpa(),
     };
     defer db.deinit();
+
     {
         var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{ .iterate = true });
         defer db_dir.close();
-        try db.import_data(&db_dir, .{});
+        try db.import_data(&db_dir, .{ .loading = true, });
     }
+
     if (config.import) |import_path| {
         var import_dir = try std.fs.cwd().makeOpenPath(import_path, .{ .iterate = true });
         defer import_dir.close();
-        try db.import_data(&import_dir, .{
-            .skip_underscores = true,
-            .action = "Importing",
-            .prefix = import_path,
-        });
+        try db.import_data(&import_dir, .{ .prefix = import_path });
     }
 
     {
@@ -35,6 +33,9 @@ pub fn main() !void {
         defer db_dir.close();
         try db.export_data(&db_dir);
     }
+
+    db.recompute_last_modification_time();
+
     // TODO start thread to periodically write any changes back to db dir
 
     const Injector = http.Default_Injector;
@@ -83,6 +84,12 @@ pub fn main() !void {
 
     try server.run();
 }
+
+pub const std_options: std.Options = .{
+    .log_scope_levels = &.{
+        .{ .scope = .db_intern, .level = .info },
+    },
+};
 
 pub const resources = @import("http_resources");
 

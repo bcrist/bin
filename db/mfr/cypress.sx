@@ -1,0 +1,9 @@
+(version 1)
+(mfr Cypress "Cypress Semiconductor"
+   (wiki https://en.wikipedia.org/wiki/Cypress_Semiconductor)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel absorbed Spansion 2014)
+   (rel absorbed-by Infineon 2020)
+)

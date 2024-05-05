@@ -1,0 +1,10 @@
+(version 1)
+(mfr "Nippon Chemi-Con"
+   (url https://www.chemi-con.co.jp/en/)
+   (wiki https://en.wikipedia.org/wiki/Nippon_Chemi-Con)
+   (country Japan)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel subsidiary "United Chemi-Con")
+   (rel subsidiary "Europe Chemi-Con")
+)

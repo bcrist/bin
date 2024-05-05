@@ -1,0 +1,10 @@
+(version 1)
+(mfr Microchip "Microchip Technology"
+   (url https://www.microchip.com/)
+   (wiki https://en.wikipedia.org/wiki/Microchip_Technology)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel absorbed Micrel 2015)
+   (rel absorbed Atmel 2016)
+)

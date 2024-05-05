@@ -1,0 +1,10 @@
+(version 1)
+(mfr Fairchild "Fairchild Semiconductor"
+   (wiki https://en.wikipedia.org/wiki/Fairchild_Semiconductor)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel absorbed-by National 1987)
+   (rel spun-off-from National 1997)
+   (rel absorbed-by Onsemi 2016)
+)

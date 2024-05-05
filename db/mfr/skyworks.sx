@@ -1,0 +1,10 @@
+(version 1)
+(mfr Skyworks "Skyworks Solutions"
+   (url https://www.skyworksinc.com/)
+   (wiki https://en.wikipedia.org/wiki/Skyworks_Solutions)
+   (country USA)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
+   (rel partially-absorbed "Silicon Labs" 2021)
+   (rel spun-off-from Conexant 2002)
+)
