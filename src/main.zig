@@ -18,12 +18,16 @@ pub fn main() !void {
     {
         var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{ .iterate = true });
         defer db_dir.close();
-        try db.import_data(&db_dir);
+        try db.import_data(&db_dir, .{});
     }
     if (config.import) |import_path| {
         var import_dir = try std.fs.cwd().makeOpenPath(import_path, .{ .iterate = true });
         defer import_dir.close();
-        try db.import_data(&import_dir);
+        try db.import_data(&import_dir, .{
+            .skip_underscores = true,
+            .action = "Importing",
+            .prefix = import_path,
+        });
     }
 
     {

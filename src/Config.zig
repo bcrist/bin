@@ -10,7 +10,7 @@ const Config = @This();
 pub const context = struct {};
 
 fn get_config_filename(buf: []u8) ![]const u8 {
-    const filename = "zin.conf";
+    const filename = "bin.conf";
     const base_path = try std.fs.selfExeDirPath(buf);
     var remaining = buf[base_path.len..];
 

@@ -15,6 +15,11 @@ const DB = @This();
 
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
+
+    for (self.mfrs.items(.additional_names)) |*list| {
+        list.deinit(gpa);
+    }
+
     self.mfrs.deinit(gpa);
     self.mfr_lookup.deinit(gpa);
     self.strings.deinit(gpa);
@@ -24,6 +29,11 @@ pub fn deinit(self: *DB) void {
 }
 
 pub fn reset(self: *DB) void {
+
+    for (self.mfrs.items(.additional_names)) |*list| {
+        list.deinit(self.container_alloc);
+    }
+
     self.mfrs.len = 0;
     self.mfr_lookup.clearRetainingCapacity();
     self.strings.clearRetainingCapacity();
@@ -32,7 +42,13 @@ pub fn reset(self: *DB) void {
     self.last_modification_timestamp_ms = null;
 }
 
-pub fn import_data(self: *DB, dir: *std.fs.Dir) !void {
+pub const Import_Options = struct {
+    skip_underscores: bool = false,
+    action: []const u8 = "Loading",
+    prefix: []const u8 = "",
+};
+
+pub fn import_data(self: *DB, dir: *std.fs.Dir, options: Import_Options) !void {
     var temp_arena = try Temp_Allocator.init(500 * 1024 * 1024);
     defer temp_arena.deinit();
     
@@ -41,13 +57,19 @@ pub fn import_data(self: *DB, dir: *std.fs.Dir) !void {
 
     while (try walker.next()) |entry| {
         if (entry.kind != .file) continue;
-        if (std.mem.startsWith(u8, entry.basename, "_")) continue;
+        if (options.skip_underscores and std.mem.startsWith(u8, entry.basename, "_")) continue;
         if (!std.mem.endsWith(u8, entry.basename, ".sx")) continue;
 
         const temp_snapshot = temp_arena.snapshot();
         defer temp_arena.release_to_snapshot(temp_snapshot);
 
-        log.info("Importing {s}", .{ entry.path });
+        log.info("{s} {s}", .{
+            options.action,
+            try std.fs.path.resolve(temp_arena.allocator(), &.{
+                options.prefix,
+                entry.path,
+            }),
+        });
 
         var file = try dir.openFile(entry.path, .{});
         defer file.close();
