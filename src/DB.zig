@@ -11,9 +11,14 @@ mfr_lookup: std.StringHashMapUnmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
 mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
-
-
 const DB = @This();
+pub const Manufacturer = @import("db/Manufacturer.zig");
+pub const Distributor = @import("db/Distributor.zig");
+pub const Part = @import("db/Part.zig");
+pub const Order = @import("db/Order.zig");
+pub const Project = @import("db/Project.zig");
+pub const Package = @import("db/Package.zig");
+pub const Location = @import("db/Location.zig");
 
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
@@ -168,14 +173,6 @@ pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
 const log = std.log.scoped(.db);
 const intern_log = std.log.scoped(.db_intern);
     
-const Manufacturer = @import("db/Manufacturer.zig");
-const Distributor = @import("db/Distributor.zig");
-const Part = @import("db/Part.zig");
-const Order = @import("db/Order.zig");
-const Project = @import("db/Project.zig");
-const Package = @import("db/Package.zig");
-const Location = @import("db/Location.zig");
-
 const v1 = @import("db/v1.zig");
 
 const Temp_Allocator = @import("Temp_Allocator");

@@ -160,6 +160,16 @@ header nav a {
     border-radius: 1em;
 }
 
+footer {
+    background: #2a3a44;
+    text-align: center;
+    padding: 0.7em;
+}
+
+footer a {
+    color: #fff;
+}
+
 main {
     min-width: 20em;
     max-width: 50em;
@@ -180,4 +190,9 @@ aside {
     width: 10em;
     background: #222;
     padding: 1em;
+}
+
+.separator {
+    display: inline-block;
+    width: 2em;
 }

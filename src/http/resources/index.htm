@@ -1,24 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <title>Inventory</title>
-    <link rel="stylesheet" type="text/css" href="{{@resource style.css}}">
-    <script src="{{@resource htmx.1.9.10.min.js}}"></script>
-</head>
-<body hx-boost="true" hx-target="#content" hx-select="#content" hx-swap="outerHTML show:none">
-    <header>
-        <nav>
-            <a href="/po">Purchases</a>
-            <a href="/prj">Projects</a>
-            <a href="/i">Inventory</a>
-            <a href="/loc">Locations</a>
-            <a href="/p">Parts</a>
-            <a href="/mfr">Manufacturers</a>
-            <a href="/shutdown" hx-boost="false">Shutdown</a>
-        </nav>
-    </header>
-
-    <main><section id="content">
+{{@include _top.htm}}
         <aside>
 <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras fringilla lacus eu viverra consectetur. Praesent malesuada molestie dolor, ultricies luctus nisi varius tempus. Nullam at venenatis est. Ut ex nunc, sagittis non tempor a, eleifend ac velit. Duis feugiat blandit volutpat. Phasellus aliquam tincidunt ex, et tincidunt urna sollicitudin convallis. Sed quis ultricies tortor. Praesent non auctor nibh, maximus tincidunt leo. Mauris at dapibus urna. Nullam interdum rhoncus leo, sed pulvinar purus consectetur quis.
 <p>Pellentesque ligula nisi, bibendum vitae magna eget, vestibulum suscipit lectus. Mauris sit amet turpis mollis, egestas risus eget, finibus ante. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Ut pulvinar, massa at viverra sagittis, lectus ante auctor felis, nec venenatis purus quam quis justo. Maecenas non mi a felis aliquam hendrerit non ac nisl. Proin porttitor justo urna, sed tristique risus aliquam eu. Duis sollicitudin dignissim vehicula. Ut ultricies vehicula lorem non cursus. Morbi consequat vel arcu quis facilisis.
@@ -70,7 +50,4 @@
 <p>Duis ac nisl at odio tempor varius. Nunc a metus ultrices mauris consequat maximus. Pellentesque vehicula elit id leo condimentum finibus. Aenean vitae egestas eros. Nunc sed ante lacinia, lobortis mauris id, imperdiet ante. Cras vel tortor suscipit urna eleifend varius vel ac elit. Vestibulum gravida lorem sed ornare tempus. Maecenas suscipit erat quis lectus sollicitudin cursus. Pellentesque tortor tellus, tincidunt vel eleifend nec, tincidunt vitae justo. Morbi non pharetra sapien, eu euismod enim.
 <p>Nulla vestibulum maximus pellentesque. Nunc fringilla vestibulum lectus. Fusce condimentum leo leo, quis convallis tellus bibendum hendrerit. Donec tristique enim et nulla semper, non feugiat magna lobortis. Fusce tempus dui magna, non consequat dolor maximus eu. Sed sit amet dolor non arcu suscipit tincidunt. Nullam et dui in est malesuada tristique.
 <p>Cras pulvinar, justo a dignissim tincidunt, velit risus convallis nulla, nec rutrum velit massa quis nulla. Cras tempor, turpis ut maximus aliquam, mi purus dictum risus, at rutrum risus turpis eu nisl. Aliquam congue nisi sed nulla porttitor pretium. Mauris dapibus dui purus, at suscipit ex cursus et. Nam cursus dui a est ultricies sagittis. Duis aliquet libero et justo egestas, at faucibus ipsum facilisis. Quisque interdum commodo orci, quis dictum ligula ultrices in. Nunc sed ultricies nunc. Proin sed sollicitudin erat. Ut commodo tempor mi. Pellentesque turpis sapien, mollis eget tincidunt at, malesuada in magna.
-    </section></main>
-
-</body>
-</html>
+{{@include _bottom.htm}}

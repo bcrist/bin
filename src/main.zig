@@ -1,6 +1,3 @@
-pub var config: Config = .{};
-pub var db: DB = undefined;
-
 pub fn main() !void {
     defer global.deinit();
 
@@ -38,7 +35,7 @@ pub fn main() !void {
 
     // TODO start thread to periodically write any changes back to db dir
 
-    const Injector = http.Default_Injector;
+    const Injector = http.Default_Injector.extend(inject);
     var server = http.Server(Injector).init(global.gpa());
     defer server.deinit();
 
@@ -84,6 +81,42 @@ pub fn main() !void {
 
     try server.run();
 }
+
+var config: Config = .{};
+var config_mutex: std.Thread.Mutex = .{};
+
+var db: DB = undefined;
+var db_lock: std.Thread.RwLock = .{};
+
+const inject = struct {
+    pub fn inject_config() Config {
+        return config;
+    }
+
+    pub fn inject_mutable_config() *Config {
+        config_mutex.lock();
+        return &config;
+    }
+    pub fn inject_mutable_config_cleanup(_: *Config) void {
+        config_mutex.unlock();
+    }
+
+    pub fn inject_db_readonly() *const DB {
+        db_lock.lockShared();
+        return &db;
+    }
+    pub fn inject_db_readonly_cleanup(_: *const DB) void {
+        db_lock.unlockShared();
+    }
+
+    pub fn inject_db() *DB {
+        db_lock.lock();
+        return &db;
+    }
+    pub fn inject_db_cleanup(_: *DB) void {
+        db_lock.unlock();
+    }
+};
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{
