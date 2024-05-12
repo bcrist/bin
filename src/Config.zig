@@ -1,13 +1,16 @@
 db: []const u8 = "./db",
 import: ?[]const u8 = null,
-host: []const u8 = "0.0.0.0",
+host: []const u8 = "127.0.0.1",
 port: u16 = 16777,
 http_threads: ?u32 = 10,
 timezone: ?[]const u8 = null,
+user: []const Session = &.{ .{} },
 
 const Config = @This();
 
-pub const context = struct {};
+pub const context = struct {
+    pub const user = Session.context;
+};
 
 fn get_config_filename(buf: []u8) ![]const u8 {
     const filename = "bin.conf";
@@ -85,6 +88,7 @@ pub fn save(self: Config) !void {
     try af.finish();
 }
 
+const Session = @import("Session.zig");
 const tempora = @import("tempora");
 const sx = @import("sx");
 const std = @import("std");

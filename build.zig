@@ -30,7 +30,11 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("dizzy", ext.dizzy);
     exe.root_module.addImport("http", ext.http);
     exe.root_module.addImport("http_resources", shittip.resources(b, .{
-        .root_path = .{ .path = "src/http/resources" },
+        .paths = &.{
+            .{ .path = "src/http/resources" },
+            .{ .path = "src/http/templates" },
+        },
+        .debug = true,
     }));
 }
 

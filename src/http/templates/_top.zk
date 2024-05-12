@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <title>Inventory</title>
-    <link rel="stylesheet" type="text/css" href="{{@resource style.css}}">
-    <script src="{{@resource htmx.1.9.10.min.js}}"></script>
+    <link rel="stylesheet" type="text/css" href="\\@resource "style.css"//">
+    <script src="\\@resource "htmx.1.9.10.min.js"//"></script>
 </head>
 <!-- <body hx-boost="true" hx-target="#content" hx-select="#content" hx-swap="outerHTML show:none"> -->
 <body>

@@ -1,0 +1,19 @@
+\\@include "_top.zk"
+\\session?
+<aside>
+    <a href="/mfr/add">Add</a>
+</aside>
+\\~
+\\missing_mfr?
+<div class="error">
+    No manufacturer named <b>\\missing_mfr//</b> was found!
+    Would you like to <a href="/mfr/add?id=\\missing_mfr//">add it</a>?
+</div>
+\\~
+<h1>All Manufacturers</h1>
+<div class="columns">
+\\mfr_list:
+<a href="/mfr:\\*//">\\*//</a><br>
+\\~
+</div>
+\\@include "_bottom.zk"

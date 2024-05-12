@@ -17,8 +17,8 @@
             .hash = "1220c7558fb180196aa9b69fa8fcf0e65545728c0ddd7d26e60aa6b068ad4686d4aa",
         },
         .@"Zig-SX" = .{
-            .url = "git+https://github.com/bcrist/Zig-SX#4dd123754ba43958b6d3a6ac45cca718eba3e4c1",
-            .hash = "122028af3c539ccac7bb2d1dadb71a51e73a4a9c1f162c5842ca5a7a9c05eaaea578",
+            .url = "git+https://github.com/bcrist/Zig-SX#403516b091c13a8ec11920687bf68732923a3106",
+            .hash = "12208b28fe251de2814224ef17c4dae7524bb355872a0097e4303c3d9ce65f68f58d",
         },
         .tempora = .{
             .url = "git+https://github.com/bcrist/tempora#a0eb5f4b88954d0d0ff6abe2900e4010d9cd44e1",
@@ -29,8 +29,12 @@
             .hash = "12205e1788edac39731a095a16ab12c52403e59a87b7b246810dbe12f00c6891b825",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#e327f033ddd2c58ef378e454f82a410d3c4dc31b",
-            .hash = "1220afc18bc690ffb91c5ad3a4b91afab996832dc9812fe66c6b96ce45ecbd702233",
+            .url = "git+https://github.com/bcrist/shittip#b7405a07e46749bc7c54fb8a4263a07620af9f5c",
+            .hash = "1220e2c154ef8c75ed066bad1105e42532298dc25e87bb829abbee3100297a3dfc65",
+        },
+        .zkittle = .{
+            .url = "git+https://github.com/bcrist/zkittle#daff2ce7f7c4ea7bf43e3c31daf838d961d7db7c",
+            .hash = "122056a0b20724d228a5bf86410586b212281d9281336f44be57b60ece2336e008b7",
         },
     },
 }

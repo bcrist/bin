@@ -3,7 +3,7 @@
     font-style: italic;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource montserrat_italic_latin_ext.woff2}}) format('woff2');
+    src: url(\\@resource "montserrat_italic_latin_ext.woff2"//) format('woff2');
     unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -12,7 +12,7 @@
     font-style: italic;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource montserrat_italic_latin.woff2}}) format('woff2');
+    src: url(\\@resource "montserrat_italic_latin.woff2"//) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -21,7 +21,7 @@
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource montserrat_normal_latin_ext.woff2}}) format('woff2');
+    src: url(\\@resource "montserrat_normal_latin_ext.woff2"//) format('woff2');
     unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -30,7 +30,7 @@
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource montserrat_normal_latin.woff2}}) format('woff2');
+    src: url(\\@resource "montserrat_normal_latin.woff2"//) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -40,7 +40,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_italic_greek.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_italic_greek.woff2"//) format('woff2');
     unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
 }
 
@@ -50,7 +50,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_italic_latin_ext.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_italic_latin_ext.woff2"//) format('woff2');
     unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -60,7 +60,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_italic_latin.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_italic_latin.woff2"//) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -70,7 +70,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_normal_greek.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_normal_greek.woff2"//) format('woff2');
     unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
 }
 
@@ -80,7 +80,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_normal_latin_ext.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_normal_latin_ext.woff2"//) format('woff2');
     unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -90,7 +90,7 @@
     font-weight: 100 900;
     font-stretch: 62.5% 100%;
     font-display: swap;
-    src: url({{@resource noto_sans_normal_latin.woff2}}) format('woff2');
+    src: url(\\@resource "noto_sans_normal_latin.woff2"//) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -99,7 +99,7 @@
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource roboto_slab_greek.woff2}}) format('woff2');
+    src: url(\\@resource "roboto_slab_greek.woff2"//) format('woff2');
     unicode-range: U+0370-0377, U+037A-037F, U+0384-038A, U+038C, U+038E-03A1, U+03A3-03FF;
 }
 
@@ -108,7 +108,7 @@
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource roboto_slab_latin_ext.woff2}}) format('woff2');
+    src: url(\\@resource "roboto_slab_latin_ext.woff2"//) format('woff2');
     unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
@@ -117,7 +117,7 @@
     font-style: normal;
     font-weight: 100 900;
     font-display: swap;
-    src: url({{@resource roboto_slab_latin.woff2}}) format('woff2');
+    src: url(\\@resource "roboto_slab_latin.woff2"//) format('woff2');
     unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
@@ -125,11 +125,26 @@ html,
 body {
     margin: 0;
     padding: 0;
+    height: 100%;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
     background: black;
     color: #eee;
     font-family: "Noto Sans", "Montserrat", sans-serif;
     font-optical-sizing: auto;
     font-weight: 300;
+}
+
+a {
+    color: #fff;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
 }
 
 header {
@@ -150,34 +165,37 @@ header nav {
     justify-content: center;
 }
 
-header nav a {
+header nav a, aside a {
     display: block;
     background: #324653;
     padding: 0.2em 0.7em;
     margin: 0.2em;
     color: #fff;
     text-decoration: none;
+    text-align: center;
     border-radius: 1em;
 }
-
-footer {
-    background: #2a3a44;
-    text-align: center;
-    padding: 0.7em;
-}
-
-footer a {
-    color: #fff;
+header nav a:hover, aside a:hover {
+    text-decoration: none;
+    background: #38505f;
 }
 
 main {
+    flex: 1 0 auto;
     min-width: 20em;
     max-width: 50em;
     margin: auto;
     padding-top: 12em;
     padding-left: 13em;
     padding-right: 1em;
-    height: 100%;
+}
+
+footer {
+    flex-shrink: 0;
+    background: #2a3a44;
+    text-align: center;
+    padding: 0.7em;
+    margin-top: 1em;
 }
 
 section {
@@ -188,11 +206,13 @@ aside {
     position: absolute;
     left: -13em;
     width: 10em;
-    background: #222;
-    padding: 1em;
 }
 
 .separator {
     display: inline-block;
     width: 2em;
+}
+
+.columns {
+    columns: 4;
 }

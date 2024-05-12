@@ -5,6 +5,10 @@ pub fn main() !void {
     defer tempora.tzdb.deinit_cache();
 
     config = try Config.load(global.arena());
+    // config.user is used for session tracking, and we might need to reallocate it later.
+    // So we want to ensure that after this point, it is always managed by global.gpa():
+    config.user = try global.gpa().dupe(Session, config.user);
+    defer global.gpa().free(config.user);
     defer config.save() catch {};
 
     db = .{
@@ -35,26 +39,39 @@ pub fn main() !void {
 
     // TODO start thread to periodically write any changes back to db dir
 
-    const Injector = http.Default_Injector.extend(inject);
+    const Injector = http.Default_Injector
+        .extend(Session.inject)
+        .extend(inject)
+        ;
+
     var server = http.Server(Injector).init(global.gpa());
     defer server.deinit();
 
-    const r = http.routing;
-    try server.router("", .{
-        .{ "/", r.generic("index.htm") },
-        .{ "/login", r.generic("login.htm") },
-        .{ "/shutdown", r.method(.GET), r.shutdown, r.generic("shutdown.htm") },
+    const misc = @import("http/misc.zig");
+    const mfr = @import("http/mfr.zig");
 
-        .{ "/o:*",     r.module(Injector, @import("http/order.zig")) },
-        .{ "/prj:*",   r.module(Injector, @import("http/project.zig")) },
-        .{ "/s:*",     r.module(Injector, @import("http/stock.zig")) },
-        .{ "/loc:*",   r.module(Injector, @import("http/location.zig")) },
-        .{ "/p:*",     r.module(Injector, @import("http/part.zig")) },
-        .{ "/mfr:*",   r.module(Injector, @import("http/manufacturer.zig")) },
-        .{ "/dist:*",  r.module(Injector, @import("http/distributor.zig")) },
-        .{ "/pkg:*",   r.module(Injector, @import("http/package.zig")) },
-        .{ "/param:*", r.module(Injector, @import("http/parameter.zig")) },
-        .{ "/f:*",     r.module(Injector, @import("http/file.zig")) },
+    const r = http.routing;
+    try server.register("", Session.setup);
+    try server.router("", .{
+        .{ "/",         r.module(Injector, misc.entry) },
+        .{ "/login",    r.module(Injector, misc.login) },
+        .{ "/logout",   r.module(Injector, misc.logout) },
+        .{ "/shutdown", r.module(Injector, misc.shutdown) },
+
+        .{ "/mfr",      r.module(Injector, mfr.list) },
+        .{ "/mfr:*",    r.module(Injector, mfr) },
+
+
+
+        .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
+        .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
+        .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
+        .{ "/loc:*",    r.module(Injector, @import("http/location.zig")) },
+        .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
+        .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
+        .{ "/pkg:*",    r.module(Injector, @import("http/package.zig")) },
+        .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
+        .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 
         r.resource("style.css"),
         r.resource("htmx.1.9.10.min.js"),
@@ -94,39 +111,53 @@ const inject = struct {
     }
 
     pub fn inject_mutable_config() *Config {
+        mutex_log.debug("acquiring Config lock", .{});
         config_mutex.lock();
         return &config;
     }
     pub fn inject_mutable_config_cleanup(_: *Config) void {
+        mutex_log.debug("releasing Config lock", .{});
         config_mutex.unlock();
     }
 
     pub fn inject_db_readonly() *const DB {
+        mutex_log.debug("locking DB for reading", .{});
         db_lock.lockShared();
         return &db;
     }
     pub fn inject_db_readonly_cleanup(_: *const DB) void {
+        mutex_log.debug("releasing DB read lock", .{});
         db_lock.unlockShared();
     }
 
-    pub fn inject_db() *DB {
+    pub fn inject_db(session: ?Session) !*DB {
+        if (session == null) return error.Unauthorized;
+        mutex_log.debug("locking DB for writing", .{});
         db_lock.lock();
         return &db;
     }
     pub fn inject_db_cleanup(_: *DB) void {
+        mutex_log.debug("releasing DB write lock", .{});
         db_lock.unlock();
     }
 };
 
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{
+        .{ .scope = .sx, .level = .info },
+        .{ .scope = .db, .level = .info },
         .{ .scope = .db_intern, .level = .info },
+        .{ .scope = .zkittle, .level = .info },
+        .{ .scope = .http, .level = .info },
     },
 };
 
 pub const resources = @import("http_resources");
 
+const mutex_log = std.log.scoped(.mutex);
+
 const DB = @import("DB.zig");
+const Session = @import("Session.zig");
 const Config = @import("Config.zig");
 const global = @import("global.zig");
 const tempora = @import("tempora");
