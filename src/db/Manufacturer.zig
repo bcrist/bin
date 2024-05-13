@@ -247,6 +247,21 @@ pub const Relation = struct {
         pub fn inverse(self: Kind) Kind {
             return @enumFromInt(@intFromEnum(self) ^ 1);
         }
+
+        pub fn display(self: Kind) []const u8 {
+            return switch (self) {
+                .formerly => "Formerly:",
+                .latterly => "Latterly:",
+                .subsidiary => "Subsidiary:",
+                .subsidiary_of => "Subsidiary of",
+                .spun_off => "Spun off:",
+                .spun_off_from => "Spun off from",
+                .absorbed => "Absorbed:",
+                .absorbed_by => "Absorbed by",
+                .partially_absorbed => "Partially absorbed:",
+                .partially_absorbed_by => "Partially absorbed by",
+            };
+        }
     };
 
     pub fn lookup_or_create(db: *DB, source: Manufacturer.Index, target: Manufacturer.Index, kind: Kind, year: ?u16) !Relation.Index {

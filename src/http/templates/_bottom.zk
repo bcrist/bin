@@ -1,6 +1,6 @@
     </section></main>
     <footer>
-        Bin: Inventory Tracking System &copy; 2024
+        <a href="/">Bin: Inventory Tracking System</a> &copy; 2024
         <span class="separator"></span>
 \\session?
         <a href="/logout" title="logged in as \\username//">Logout</a>

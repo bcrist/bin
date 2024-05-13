@@ -1,6 +1,7 @@
 username: []const u8 = "admin",
 password: []const u8 = "admin",
 token: ?Token = null,
+timezone: []const u8 = "GMT",
 
 const Session = @This();
 

@@ -5,8 +5,8 @@
     .paths = .{""},
     .dependencies = .{
         .@"Zig-TempAllocator" = .{
-            .url = "git+https://github.com/bcrist/Zig-TempAllocator#2401120308ba920ca95fdcf9a311c63341a7e04d",
-            .hash = "12207e7d78892ee60eeb80dc6c8f798a9e6cdc396c8fcc668ed4bffbd2863330ea18",
+            .url = "git+https://github.com/bcrist/Zig-TempAllocator#caf8a4941aeca4d670c7cf9cb68023b9731c24b3",
+            .hash = "1220387f9f8e7bd3d2914c6e55edf661c061d8333287d25c814ff7f29925e4441d11",
         },
         .@"Zig-ConsoleHelper" = .{
             .url = "git+https://github.com/bcrist/Zig-ConsoleHelper#41e35796153f056679d3df3d1aaee34f56541e51",
@@ -29,8 +29,8 @@
             .hash = "12205e1788edac39731a095a16ab12c52403e59a87b7b246810dbe12f00c6891b825",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#b7405a07e46749bc7c54fb8a4263a07620af9f5c",
-            .hash = "1220e2c154ef8c75ed066bad1105e42532298dc25e87bb829abbee3100297a3dfc65",
+            .url = "git+https://github.com/bcrist/shittip#4940756270e60c7e0c6d848ee4dad5c3e1a689d3",
+            .hash = "122009cb36577e9c5e8b9c22de92abbc98e5b753db7e6d7779be48fa54385961972f",
         },
         .zkittle = .{
             .url = "git+https://github.com/bcrist/zkittle#daff2ce7f7c4ea7bf43e3c31daf838d961d7db7c",

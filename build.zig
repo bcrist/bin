@@ -34,7 +34,6 @@ pub fn build(b: *std.Build) void {
             .{ .path = "src/http/resources" },
             .{ .path = "src/http/templates" },
         },
-        .debug = true,
     }));
 }
 

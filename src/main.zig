@@ -59,6 +59,7 @@ pub fn main() !void {
         .{ "/shutdown", r.module(Injector, misc.shutdown) },
 
         .{ "/mfr",      r.module(Injector, mfr.list) },
+        .{ "/mfr/add",  r.module(Injector, mfr.add) },
         .{ "/mfr:*",    r.module(Injector, mfr) },
 
 

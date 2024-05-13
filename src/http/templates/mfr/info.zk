@@ -4,11 +4,33 @@
     <a href="/mfr:\\mfr.id//?edit">Edit</a>
 </aside>
 \\~
+<div>mfr:\\mfr.id//</div>
 <h1>\\full_name//</h1>
 \\mfr://
 \\  country//
-\\  founded_year: * ; //?\\ ~ // &mdash; \\suspended_year: * ; //?\\~//
-\\  website: //<a href="\\*//">Website</a>\\~//
-\\  wiki:    //<a href="\\*//">Wikipedia</a>\\~//
+\\  ^^show_years?
+<span class="separator"></span>
+\\      founded_year: * ; //?\\ ~ // &mdash; \\suspended_year: * ; //?\\~//
+\\  ~
+\\  additional_names.items:
+    <div>a.k.a. \\*//</div>
+\\  ~
+\\  website: //<div>Website: <a href="\\*//">\\*//</a></div>\\~//
+\\  wiki:    //<div>Wikipedia: <a href="\\*//">\\*//</a></div>\\~//
+\\  notes?
+    <h2>Notes</h2>
+    <div>\\notes//</div>
+\\  ~
 \\~
-\\@include "_bottom.zk"
+\\  relations?
+    <h2>Relations</h2>
+\\      relations:
+    <div>
+        \\kind// <a href="/mfr:\\other//">\\other//</a>
+        \\year?//(\\year//)\\~//
+    </div>
+\\  ~~
+<hr>
+<div>Created: \\created//</div>
+<div>Modified: \\modified//</div>
+\\@include "_bottom.zk" 

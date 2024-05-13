@@ -1,5 +1,3 @@
-// TODO add temp allocator stats logging after every request
-
 pub const entry = struct {
     pub fn get(session: ?Session, req: *http.Request) !void {
         try req.render("index.zk", .{
@@ -21,8 +19,7 @@ pub const login = struct {
         var header_iter = req.header_iterator();
         while (header_iter.next()) |header| {
             if (std.ascii.eqlIgnoreCase(header.name, "Content-type")) {
-                // TODO http.content_type.form_urlencoded
-                if (!std.mem.startsWith(u8, header.value, "application/x-www-form-urlencoded")) {
+                if (!std.mem.startsWith(u8, header.value, http.content_type.without_encoding.form_urlencoded)) {
                     try req.respond_err(.{ .status = .unsupported_media_type });
                 }
             }
