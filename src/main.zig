@@ -131,8 +131,8 @@ const inject = struct {
         db_lock.unlockShared();
     }
 
-    pub fn inject_db(session: ?Session) !*DB {
-        if (session == null) return error.Unauthorized;
+    pub fn inject_db(req: *http.Request, session: ?Session) !*DB {
+        try Session.redirect_if_missing(req, session);
         mutex_log.debug("locking DB for writing", .{});
         db_lock.lock();
         return &db;
@@ -150,6 +150,8 @@ pub const std_options: std.Options = .{
         .{ .scope = .db_intern, .level = .info },
         .{ .scope = .zkittle, .level = .info },
         .{ .scope = .http, .level = .info },
+        .{ .scope = .mutex, .level = .info },
+        .{ .scope = .session, .level = .info },
     },
 };
 

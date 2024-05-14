@@ -9,8 +9,9 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const mfr = db.mfrs.get(@intFromEnum(idx));
 
     if (!std.mem.eql(u8, requested.?, mfr.id)) {
+        req.response_status = .moved_permanently;
         try req.add_response_header("Location", try std.fmt.allocPrint(http.temp(), "/mfr:{s}", .{ mfr.id }));
-        try req.respond_err(.{ .status = .moved_permanently, .empty_content = true });
+        try req.respond("");
         return;
     }
 
@@ -60,6 +61,8 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     };
 
     if (try req.has_query_param("edit")) {
+        try Session.redirect_if_missing(req, session);
+
         try req.render("mfr/edit.zk", .{
             .mfr = mfr,
             .session = session,
@@ -98,6 +101,8 @@ pub const list = struct {
 pub const add = struct {
     pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
         _ = db;
+        try Session.redirect_if_missing(req, session);
+
         try req.render("mfr/edit.zk", .{
             .session = session,
         }, .{});

@@ -20,7 +20,7 @@ pub const login = struct {
         while (header_iter.next()) |header| {
             if (std.ascii.eqlIgnoreCase(header.name, "Content-type")) {
                 if (!std.mem.startsWith(u8, header.value, http.content_type.without_encoding.form_urlencoded)) {
-                    try req.respond_err(.{ .status = .unsupported_media_type });
+                    return error.UnsupportedMediaType;
                 }
             }
         }
@@ -44,6 +44,7 @@ pub const login = struct {
             }
         }
 
+        var failed = false;
         for (0.., config.user) |index, user| {
             if (std.mem.eql(u8, username, user.username)) {
                 if (std.mem.eql(u8, password, user.password)) {
@@ -52,16 +53,24 @@ pub const login = struct {
 
                     try Session.update(req, config, index, new_session);
                 } else {
-                    redirect = "/login?failed";
+                    failed = true;
                 }
                 break;
             }
         } else {
-            redirect = "/login?failed";
+            failed = true;
+        }
+
+        if (failed) {
+            var redirect_temp = try std.ArrayList(u8).initCapacity(http.temp(), 64 + redirect.len);
+            redirect_temp.appendSliceAssumeCapacity("/login?failed&redirect=");
+            _ = try http.percent_encoding.encode_append(&redirect_temp, redirect, .encode_other_and_reserved);
+            redirect = redirect_temp.items;
         }
         
+        req.response_status = .see_other;
         try req.add_response_header("Location", redirect);
-        try req.respond_err(.{ .status = .see_other, .empty_content = true });
+        try req.respond("");
     }
 };
 
@@ -83,16 +92,16 @@ pub const logout = struct {
             }
         }
 
+        req.response_status = .see_other;
         try req.add_response_header("Location", redirect);
-        try req.respond_err(.{ .status = .see_other, .empty_content = true });
+        try req.respond("");
     }
 };
 
 pub const shutdown = struct {
     pub fn get(session: ?Session, req: *http.Request, pool: *http.Thread_Pool) !void {
         if (session == null) {
-            try req.respond_err(.{ .status = std.http.Status.unauthorized });
-            return;
+            return error.Unauthorized;
         }
         try http.routing.shutdown(req, pool);
         try req.render("shutdown.htm", {}, .{});

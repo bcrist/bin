@@ -108,6 +108,38 @@ pub fn generate_token() Token {
     return result;
 }
 
+pub fn redirect_if_missing(req: *http.Request, session: ?Session) !void {
+    if (session == null) {
+        var redirect_temp = try std.ArrayList(u8).initCapacity(http.temp(), req.req.head.target.len + 64);
+        redirect_temp.appendSliceAssumeCapacity("/login?redirect=");
+        _ = try http.percent_encoding.encode_append(&redirect_temp, req.req.head.target, .{ .encode_other_and = .{
+                .@"!" = true,
+                .@"#" = true,
+                .@"$" = true,
+                .@"&" = true,
+                .@"'" = true,
+                .@"(" = true,
+                .@")" = true,
+                .@"*" = true,
+                .@"+" = true,
+                .@"," = true,
+                .@";" = true,
+                .@"=" = true,
+                .@"?" = true,
+                .@"@" = true,
+                .@"[" = true,
+                .@"]" = true,
+            },
+        });
+
+        req.response_status = .temporary_redirect;
+        try req.add_response_header("Location", redirect_temp.items);
+        try req.respond("");
+
+        return error.SkipRemainingHandlers;
+    }
+}
+
 pub const inject = struct {
     pub fn inject_session() ?Session {
         return maybe_session;

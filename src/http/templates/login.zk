@@ -1,7 +1,7 @@
 \\@include "_top.zk"
 <form action="/login" method="post">
 \\redirect?
-    <input type="hidden" name="redirect" value="{{*}}">
+    <input type="hidden" name="redirect" value="\\redirect//">
 \\~
     <table>
         <tr><td><label for="username">Username</label></td><td><input id="username" name="username" type="text" autofocus></td></tr>
