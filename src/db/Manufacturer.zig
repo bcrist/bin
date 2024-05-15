@@ -16,6 +16,22 @@ additional_names: std.ArrayListUnmanaged([]const u8),
 const Manufacturer = @This();
 pub const Index = enum (u32) { _ };
 
+pub fn init_empty(id: []const u8, timestamp_ms: i64) Manufacturer {
+    return .{
+        .id = id,
+        .full_name = null,
+        .country = null,
+        .website = null,
+        .wiki = null,
+        .notes = null,
+        .founded_year = null,
+        .suspended_year = null,
+        .created_timestamp_ms = timestamp_ms,
+        .modified_timestamp_ms = timestamp_ms,
+        .additional_names = .{},
+    };
+}
+
 pub fn maybe_lookup(db: *DB, possible_name: ?[]const u8) ?Index {
     if (possible_name) |name| {
         if (db.mfr_lookup.get(name)) |idx| return idx;
@@ -35,19 +51,7 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     
     const idx: Manufacturer.Index = @enumFromInt(db.mfrs.len);
     const now = std.time.milliTimestamp();
-    const mfr: Manufacturer = .{
-        .id = try db.intern(id),
-        .full_name = null,
-        .country = null,
-        .website = null,
-        .wiki = null,
-        .notes = null,
-        .founded_year = null,
-        .suspended_year = null,
-        .created_timestamp_ms = now,
-        .modified_timestamp_ms = now,
-        .additional_names = .{},
-    };
+    const mfr = Manufacturer.init_empty(try db.intern(id), now);
     try db.mfrs.append(db.container_alloc, mfr);
     try db.mfr_lookup.putNoClobber(db.container_alloc, mfr.id, idx);
     db.mark_dirty(now);

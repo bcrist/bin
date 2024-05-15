@@ -1,10 +1,10 @@
 
 id: []const u8,
-full_name: []const u8,
-notes: []const u8,
-created: Date_Time,
-modified: Date_Time,
-completed: ?Date_Time,
+full_name: ?[]const u8,
+notes: ?[]const u8,
+created_timestamp_ms: i64,
+modified_timestamp_ms: i64,
+completed_timestamp_ms: ?i64,
 
 // Attachments/Images
 // Tags

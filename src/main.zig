@@ -49,6 +49,7 @@ pub fn main() !void {
 
     const misc = @import("http/misc.zig");
     const mfr = @import("http/mfr.zig");
+    const debug = @import("http/debug.zig");
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -57,10 +58,34 @@ pub fn main() !void {
         .{ "/login",    r.module(Injector, misc.login) },
         .{ "/logout",   r.module(Injector, misc.logout) },
         .{ "/shutdown", r.module(Injector, misc.shutdown) },
+        .{ "/nil",      r.static_internal(.{
+            .content = "",
+            .cache_control = "max-age=31536000, immutable, public",
+            .last_modified_utc = tempora.Date_Time.epoch,
+            .etag = "nil",
+        })},
 
-        .{ "/mfr",      r.module(Injector, mfr.list) },
-        .{ "/mfr/add",  r.module(Injector, mfr.add) },
-        .{ "/mfr:*",    r.module(Injector, mfr) },
+        .{ "/mfr",                  r.module(Injector, mfr.list) },
+        .{ "/mfr/add",              r.module(Injector, mfr.add) },
+        .{ "/mfr/add/validate",     r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/id",               r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/full_name",        r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/country",          r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/founded_year",     r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/suspended_year",   r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/website",          r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/wiki",             r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/notes",            r.module(Injector, mfr.add.validate) },
+
+        .{ "/mfr:*",                r.module(Injector, mfr) },
+        .{ "/mfr:*/id",             r.module(Injector, debug) },
+        .{ "/mfr:*/full_name",      r.module(Injector, debug) },
+        .{ "/mfr:*/country",        r.module(Injector, debug) },
+        .{ "/mfr:*/founded_year",   r.module(Injector, debug) },
+        .{ "/mfr:*/suspended_year", r.module(Injector, debug) },
+        .{ "/mfr:*/website",        r.module(Injector, debug) },
+        .{ "/mfr:*/wiki",           r.module(Injector, debug) },
+        .{ "/mfr:*/notes",          r.module(Injector, debug) },
 
 
 
@@ -76,6 +101,7 @@ pub fn main() !void {
 
         r.resource("style.css"),
         r.resource("htmx.1.9.10.min.js"),
+        r.resource("Sortable.1.15.2.min.js"),
         r.resource("montserrat_normal_latin.woff2"),
         r.resource("montserrat_normal_latin_ext.woff2"),
         r.resource("montserrat_italic_latin.woff2"),

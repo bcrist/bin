@@ -1,6 +1,6 @@
 \\@include "_top.zk"
 \\session?
-<aside>
+<aside class="flex">
     <a href="/mfr:\\mfr.id//?edit">Edit</a>
 </aside>
 \\~

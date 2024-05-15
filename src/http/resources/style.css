@@ -131,15 +131,21 @@ body {
 body {
     display: flex;
     flex-direction: column;
-    background: black;
-    color: #eee;
+    background: #191919;
+    color: #ccc;
     font-family: "Noto Sans", "Montserrat", sans-serif;
     font-optical-sizing: auto;
     font-weight: 300;
 }
 
+h1,h2,h3,h4,h5,h6 {
+    font-family: "Roboto Slab", sans-serif;
+    margin: 0;
+}
+
 a {
-    color: #fff;
+    color: #aaa;
+    font-weight: bold;
     text-decoration: none;
 }
 
@@ -157,33 +163,47 @@ header {
     background: #4f7186;
     border-bottom: 2px solid #999;
     box-shadow: #000 0 0.5em 1em;
-    color: #fff;
+    color: #eee;
 }
 
 header nav {
     display: flex;
+    gap: 0.5em;
+    margin: 0.25em;
     justify-content: center;
 }
 
-header nav a, aside a {
-    display: block;
+header nav a, aside a, button {
+    appearance: none;
+    display: inline-block;
     background: #324653;
-    padding: 0.2em 0.7em;
-    margin: 0.2em;
-    color: #fff;
+    padding: 0.2em 0;
+    color: #eee;
     text-decoration: none;
     text-align: center;
+    border: none;
+    font-size: 1em;
     border-radius: 1em;
+    font-family: "Noto Sans", "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 300;
+    min-width: 140px;
+    cursor: pointer;
 }
-header nav a:hover, aside a:hover {
+header nav a:hover, aside a:hover, button:hover {
     text-decoration: none;
     background: #38505f;
 }
 
+button:disabled {
+    text-decoration: none;
+    background: #424242;
+    cursor: default;
+}
+
 main {
     flex: 1 0 auto;
-    min-width: 20em;
-    max-width: 50em;
+    width: 50em;
     margin: auto;
     padding-top: 12em;
     padding-left: 13em;
@@ -208,11 +228,67 @@ aside {
     width: 10em;
 }
 
+aside.flex {
+    display: flex;
+    flex-direction: column;
+}
+aside.flex button, aside.flex a {
+    width: 100%;
+}
+
 .separator {
     display: inline-block;
     width: 2em;
 }
 
+.hidden {
+    display: none;
+}
+
 .columns {
     columns: 4;
+}
+
+.changes_saved {
+    color: #555;
+}
+.changes_saved.htmx-swapping {
+    opacity: 0;
+    transition: opacity 1s ease-out;
+}
+
+textarea, input[type=text] {
+    background: #111;
+    color: #eee;
+    border-radius: 0.5em;
+    border: solid 2px #444;
+    padding: 0.2em;
+    font-family: "Montserrat", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    min-width: 25em;
+}
+textarea {
+    min-height: 8em;
+}
+
+textarea.invalid, input[type=text].invalid {
+    background: #100;
+    border-color: #722;
+    color: #ccc;
+}
+
+.validation_error {
+    color: #f77;
+}
+
+table.properties {
+    border-spacing: 0.5em 0.1em;
+}
+table.properties th {
+    text-align: right;
+}
+
+.va_top {
+    vertical-align: top;
 }

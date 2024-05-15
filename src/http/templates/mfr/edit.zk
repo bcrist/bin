@@ -1,3 +1,47 @@
 \\@include "_top.zk"
-
-\\@include "_bottom.zk"
+\\mode.edit?
+<h1>Edit \\full_name//</h1>
+\\~
+<table>
+    <tr>
+        <th><label for="id">ID</label></th>
+        <td><input type="text" id="id" name="id" value="\\mfr.id//"></td>
+    </tr>
+    <tr>
+        <th><label for="full_name">Full Name</label></th>
+        <td><input type="text" id="full_name" name="full_name" value="\\mfr.full_name//"></td>
+    </tr>
+    <tr>
+        <th><label for="country">Country</label></th>
+        <td><input type="text" id="country" name="country" value="\\mfr.country//"></td>
+    </tr>
+    <tr>
+        <th><label for="founded_year">Founded Year</label></th>
+        <td><input type="number" id="founded_year" name="founded_year" value="\\mfr.founded_year//"></td>
+    </tr>
+    <tr>
+        <th><label for="suspended_year">Suspended Year</label></th>
+        <td><input type="number" id="suspended_year" name="suspended_year" value="\\mfr.suspended_year//"></td>
+    </tr>
+</table>
+\\mfr:
+\\  additional_names.items:
+    <div>a.k.a. \\*//</div>
+\\  ~
+\\  website: //<div>Website: <a href="\\*//">\\*//</a></div>\\~//
+\\  wiki:    //<div>Wikipedia: <a href="\\*//">\\*//</a></div>\\~//
+\\  notes?
+    <h2>Notes</h2>
+    <div>\\notes//</div>
+\\  ~
+\\~
+\\  relations?
+    <h2>Relations</h2>
+\\      relations:
+    <div>
+        \\kind// <a href="/mfr:\\other//">\\other//</a>
+        \\year?//(\\year//)\\~//
+    </div>
+\\  ~~
+</form>
+\\@include "_bottom.zk" 
