@@ -64,7 +64,7 @@ pub fn remove_cookie(req: *http.Request) !void {
 }
 
 pub fn add_cookie(req: *http.Request, token: *const Token) !void {
-    const cookie = try std.fmt.allocPrint(http.temp(), "st={s}; Path=/; Secure; HttpOnly; SameSite=Strict", .{ token });
+    const cookie = try http.tprint("st={s}; Path=/; Secure; HttpOnly; SameSite=Strict", .{ token });
     try req.add_response_header("Set-Cookie", cookie);
 }
 

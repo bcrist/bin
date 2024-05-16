@@ -89,7 +89,9 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
         orelse Manufacturer.lookup(db, self.additional_names)
         orelse try Manufacturer.lookup_or_create(db, self.id);
 
-    try Manufacturer.set_id(db, idx, self.id);
+    // TODO scrub restricted characters in ID
+
+    _ = try Manufacturer.set_id(db, idx, self.id);
     if (full_name) |name| try Manufacturer.set_full_name(db, idx, name);
     if (self.country) |country| try Manufacturer.set_country(db, idx, country);
     if (self.url) |url| try Manufacturer.set_website(db, idx, url);

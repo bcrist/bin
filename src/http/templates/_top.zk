@@ -3,8 +3,12 @@
 <head>
     <title>\\title? title ; //Inventory\\~//</title>
     <link rel="stylesheet" type="text/css" href="\\@resource "style.css"//">
+    <link rel="stylesheet" type="text/css" href="\\@resource "fonts.css"//">
+    <link rel="stylesheet" type="text/css" href="\\@resource "slimselect.2.7.0.min.css"//">
     <script src="\\@resource "htmx.1.9.10.min.js"//"></script>
     <script src="\\@resource "Sortable.1.15.2.min.js"//"></script>
+    <script src="\\@resource "slimselect.2.7.0.min.js"//"></script>
+    <script src="\\@resource "common.js"//"></script>
 </head>
 <!-- <body hx-boost="true" hx-target="#content" hx-select="#content" hx-swap="outerHTML show:none"> -->
 <body>

@@ -58,17 +58,18 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     return idx;
 }
 
-pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
+pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
     const i = @intFromEnum(idx);
     const ids = db.mfrs.items(.id);
     const old_id = ids[i];
-    if (std.mem.eql(u8, id, old_id)) return;
+    if (std.mem.eql(u8, id, old_id)) return false;
 
     const new_id = try db.intern(id);
     std.debug.assert(db.mfr_lookup.remove(old_id));
     try db.mfr_lookup.putNoClobber(db.container_alloc, new_id, idx);
     ids[i] = new_id;
     set_modified(db, idx);
+    return true;
 }
 
 pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
@@ -168,10 +169,32 @@ pub fn remove_additional_name(db: *DB, idx: Index, additional_name: []const u8) 
     for (0.., list.items) |list_index, name| {
         if (std.mem.eql(u8, name, additional_name)) {
             std.debug.assert(db.mfr_lookup.remove(name));
-            list.orderedRemove(list_index);
+            _ = list.orderedRemove(list_index);
             break;
         }
     } else return;
+
+    set_modified(db, idx);
+}
+
+pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_name: []const u8) !void {
+    if (std.mem.eql(u8, old_name, new_name)) return;
+
+    const interned = try db.intern(new_name);
+    try db.mfr_lookup.putNoClobber(db.container_alloc, interned, idx);
+
+    const i = @intFromEnum(idx);
+    const list: *std.ArrayListUnmanaged([]const u8) = &db.mfrs.items(.additional_names)[i];
+    
+    for (0.., list.items) |list_index, name| {
+        if (std.mem.eql(u8, name, old_name)) {
+            std.debug.assert(db.mfr_lookup.remove(old_name));
+            list.items[list_index] = interned;
+            break;
+        }
+    } else {
+        try list.append(db.container_alloc, interned);
+    }
 
     set_modified(db, idx);
 }

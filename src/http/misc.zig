@@ -25,15 +25,11 @@ pub const login = struct {
             }
         }
 
-        var buf: [4096]u8 = undefined;
-        const reader = try req.req.reader();
-        const bytes = try reader.readAll(&buf);
-
         var redirect: []const u8 = "/";
         var username: []const u8 = "";
         var password: []const u8 = "";
 
-        var iter = http.query_iterator(http.temp(), buf[0..bytes]);
+        var iter = try req.form_iterator();
         while (try iter.next()) |param| {
             if (std.mem.eql(u8, param.name, "username")) {
                 username = try http.temp().dupe(u8, param.value orelse "");

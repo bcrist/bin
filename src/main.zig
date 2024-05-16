@@ -50,6 +50,7 @@ pub fn main() !void {
     const misc = @import("http/misc.zig");
     const mfr = @import("http/mfr.zig");
     const debug = @import("http/debug.zig");
+    _ = debug;
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -65,27 +66,30 @@ pub fn main() !void {
             .etag = "nil",
         })},
 
-        .{ "/mfr",                  r.module(Injector, mfr.list) },
-        .{ "/mfr/add",              r.module(Injector, mfr.add) },
-        .{ "/mfr/add/validate",     r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/id",               r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/full_name",        r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/country",          r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/founded_year",     r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/suspended_year",   r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/website",          r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/wiki",             r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/notes",            r.module(Injector, mfr.add.validate) },
-
-        .{ "/mfr:*",                r.module(Injector, mfr) },
-        .{ "/mfr:*/id",             r.module(Injector, debug) },
-        .{ "/mfr:*/full_name",      r.module(Injector, debug) },
-        .{ "/mfr:*/country",        r.module(Injector, debug) },
-        .{ "/mfr:*/founded_year",   r.module(Injector, debug) },
-        .{ "/mfr:*/suspended_year", r.module(Injector, debug) },
-        .{ "/mfr:*/website",        r.module(Injector, debug) },
-        .{ "/mfr:*/wiki",           r.module(Injector, debug) },
-        .{ "/mfr:*/notes",          r.module(Injector, debug) },
+        .{ "/mfr",                      r.module(Injector, mfr.list) },
+        .{ "/mfr/add",                  r.module(Injector, mfr.add) },
+        .{ "/mfr/add/validate",         r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/id",                   r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/full_name",            r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/country",              r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/founded_year",         r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/suspended_year",       r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/website",              r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/wiki",                 r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/notes",                r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/additional_names",     r.module(Injector, mfr.add.validate) },
+        .{ "/mfr:*",                    r.module(Injector, mfr) },
+        .{ "/mfr:*/id",                 r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/full_name",          r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/country",            r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/founded_year",       r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/suspended_year",     r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/website",            r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/wiki",               r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/notes",              r.module(Injector, mfr.edit) },
+        .{ "/mfr:*/additional_name",    r.module(Injector, mfr.edit.additional_name) },
+        .{ "/mfr:*/additional_names",   r.module(Injector, mfr.edit.additional_names) },
 
 
 
@@ -99,9 +103,17 @@ pub fn main() !void {
         .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
         .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 
+        .{ "/favicon.ico", r.resource("favicon.png")[1] },
+
         r.resource("style.css"),
+        r.resource("fonts.css"),
+        r.resource("common.js"),
         r.resource("htmx.1.9.10.min.js"),
         r.resource("Sortable.1.15.2.min.js"),
+        r.resource("slimselect.2.7.0.min.js"),
+        r.resource("slimselect.2.7.0.min.css"),
+        r.resource("slimselect.2.7.0.min.css.map"),
+        r.resource("icons.woff2"),
         r.resource("montserrat_normal_latin.woff2"),
         r.resource("montserrat_normal_latin_ext.woff2"),
         r.resource("montserrat_italic_latin.woff2"),
