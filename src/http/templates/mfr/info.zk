@@ -26,7 +26,7 @@
     <h2>Relations</h2>
 \\      relations:
     <div>
-        \\kind// <a href="/mfr:\\other//">\\other//</a>
+        \\kind_str|kind// <a href="/mfr:\\other//">\\other//</a>
         \\year?//(\\year//)\\~//
     </div>
 \\  ~~

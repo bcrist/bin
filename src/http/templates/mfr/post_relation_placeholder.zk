@@ -1,0 +1,58 @@
+<div class="sortable_row unsortable">
+    <span class="icon"></span>
+    <input type="hidden" name="relation_new" class="relation_ordering">
+    <div class="mfr_relation_kind">
+        <select id="relation_kind_new" name="relation_kind_new"
+\\err_kind?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind_new,relation_other_new,relation_year_new"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-options="/mfr/relation/kinds">
+            <option selected data-placeholder="true" value="">Select...</option>
+        </select>
+    </div>
+    <div class="mfr_relation_other">
+        <select id="relation_other_new" name="relation_other_new"
+\\err_other?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind_new,relation_other_new,relation_year_new"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-search-url="/mfr?name=">
+            <option selected data-placeholder="true" value="">Select...</option>
+        </select>
+    </div>
+    <div class="mfr_relation_year">
+        <select id="relation_year_new" name="relation_year_new"
+\\err_other?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind_new,relation_other_new,relation_year_new"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-options="2024-1900?">
+            <option selected></option>
+        </select>
+    </div>
+    <div class="mfr_relation_validation">
+\\@include "_validation.zk"
+    </div>
+</div>

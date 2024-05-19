@@ -16,11 +16,15 @@
 <h2>Additional Names</h2>
 <form class="sortable" hx-post="/mfr:\\mfr.id///additional_names" hx-trigger="end">
 \\mfr.additional_names.items:
-\\@include "mfr/post_additional_name.zk"
+\\  @include "mfr/post_additional_name.zk"
 \\~
 \\@include "mfr/post_additional_name_placeholder.zk"
 </form>
-
 <h2>Relations</h2>
-
+<form class="sortable">
+\\relations:
+\\  @include "mfr/post_relation.zk"
+\\~
+\\@include "mfr/post_relation_placeholder.zk"
+</form>
 \\@include "_bottom.zk" 

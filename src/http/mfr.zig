@@ -23,7 +23,8 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
         if (src == idx) {
             const rel = db.mfr_relations.get(i);
             try relations.append(.{
-                .kind = rel.kind.display(),
+                .kind = rel.kind,
+                .kind_str = rel.kind.display(),
                 .other = db.mfrs.items(.id)[@intFromEnum(rel.target)],
                 .year = rel.year,
                 .order_index = rel.source_order_index,
@@ -31,7 +32,8 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
         } else if (target == idx) {
             const rel = db.mfr_relations.get(i);
             try relations.append(.{
-                .kind = rel.kind.inverse().display(),
+                .kind = rel.kind.inverse(),
+                .kind_str = rel.kind.inverse().display(),
                 .other = db.mfrs.items(.id)[@intFromEnum(rel.source)],
                 .year = rel.year,
                 .order_index = rel.target_order_index,
@@ -432,8 +434,19 @@ fn validate_year(str_value: []const u8, valid: *bool, message: *[]const u8) !?u1
     };
 }
 
+pub const relation_kinds = struct {
+    pub fn get(req: *http.Request) !void {
+        const Kind = Manufacturer.Relation.Kind;
+        try slimselect.respond_with_enum_options(req, Kind, .{
+            .placeholder = "Select...",
+            .display_fn = Kind.display,
+        });
+    }
+};
+
 const Relation = struct {
-    kind: []const u8,
+    kind: Manufacturer.Relation.Kind,
+    kind_str: []const u8,
     other: []const u8,
     year: ?u16,
     order_index: u16,
@@ -494,6 +507,7 @@ const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");
+const slimselect = @import("slimselect.zig");
 const http = @import("http");
 const tempora = @import("tempora");
 const std = @import("std");

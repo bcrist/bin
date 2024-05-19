@@ -32,6 +32,7 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("http_resources", shittip.resources(b, .{
         .paths = &.{
             .{ .path = "src/http/resources" },
+            .{ .path = "src/http/stylesheets" },
             .{ .path = "src/http/templates" },
         },
     }));

@@ -2,16 +2,19 @@
     <label for="founded_year">Founded Year</label>
 </th>
 <td>
-    <input type="number" id="founded_year" name="founded_year"
-\\err?
-        class="submitted_field invalid"
+    <select id="founded_year" name="founded_year"
+\\err_kind?
+        class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
 \\;
-        class="submitted_field"
+        class="slimselect submitted_field"
 \\~
-        value="\\mfr.founded_year//"
         hx-post="\\post_prefix///founded_year"
-        hx-include="this"
-        hx-target="closest tr">
+        hx-params="founded_year"
+        hx-target="closest tr"
+        hx-trigger="ss:afterChange"
+        data-options="2024-1900?">
+        <option selected value="\\mfr.founded_year//">\\mfr.founded_year//</option>
+    </select>
 </td>
 <td>\\@include "_validation.zk"//</td>

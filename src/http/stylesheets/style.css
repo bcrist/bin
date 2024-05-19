@@ -140,10 +140,11 @@ textarea, input[type=text], input[type=number] {
     color: #eee;
     border-radius: 0.5em;
     border: solid 2px #444;
-    padding: 0.2em;
+    padding: 0.1em 0.2em;
     font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
     font-weight: 400;
+    font-size: 1em;
     min-width: 25em;
 }
 textarea {
@@ -171,31 +172,25 @@ table.properties th {
     vertical-align: top;
 }
 
-.sortable-dragging input {
+.sortable_dragging input {
     opacity: 0.1;
 }
-.sortable-ghost input {
+.sortable_ghost input {
     opacity: 0.7;
 }
 
-.sortable-row {
+.sortable_row {
     padding: 0.1em;
     display: flex;
+    gap: 0.5em;
 }
-.sortable-row input {
+.sortable_row input {
     margin-top: auto;
     margin-bottom: auto;
 }
-
-.sort-handle {
+.sort_handle {
     cursor: grab;
-    width: 2em;
-    height: 2em;
-    line-height: 2em;
-    vertical-align: middle;
-    text-align: center;
 }
-
 .icon {
     font-family: 'Material Symbols Outlined';
     font-weight: normal;
@@ -207,4 +202,28 @@ table.properties th {
     direction: ltr;
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
+    width: 2em;
+    height: 2em;
+    line-height: 2em;
+    vertical-align: middle;
+    text-align: center;
+}
+.sortable_row div {
+    flex: 1 1 100%;
+}
+.sortable_row .icon {
+    flex: 0 0 2em;
+}
+
+.sortable_row div.mfr_relation_kind {
+    flex: 0 0 10em;
+}
+.sortable_row div.mfr_relation_other {
+    flex: 1 1 100%;
+}
+.sortable_row div.mfr_relation_year {
+    flex: 0 0 6em;
+}
+.sortable_row div.mfr_relation_validation {
+    flex: 1 1 100%;
 }

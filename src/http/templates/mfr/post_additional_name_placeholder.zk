@@ -1,5 +1,5 @@
-<div class="sortable-row unsortable">
-    <span class="sort-handle icon">&#xE945;</span>
+<div class="sortable_row unsortable">
+    <span class="sort_handle icon"></span>
     <input type="text" id="additional_name_new" name="additional_name_new"
 \\err?
         class="submitted_field invalid"

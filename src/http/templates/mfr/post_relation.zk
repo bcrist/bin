@@ -1,0 +1,58 @@
+<div class="sortable_row">
+    <span class="sort_handle icon">&#xE945;</span>
+    <input type="hidden" name="relation\\@index|index//" class="relation_ordering">
+    <div class="mfr_relation_kind">
+        <select id="relation_kind\\@index|index//" name="relation_kind\\@index|index//"
+\\err_kind?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect submitted_field"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind\\@index|index//,relation_other\\@index|index//,relation_year\\@index|index//"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-options="/mfr/relation/kinds">
+            <option selected value="\\kind//">\\kind_str|kind//</option>
+        </select>
+    </div>
+    <div class="mfr_relation_other">
+        <select id="relation_other\\@index|index//" name="relation_other\\@index|index//"
+\\err_other?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind\\@index|index//,relation_other\\@index|index//,relation_year\\@index|index//"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-search-url="/mfr?name=">
+            <option selected value="\\other//">\\other_str|other//</option>
+        </select>
+    </div>
+    <div class="mfr_relation_year">
+        <select id="relation_year\\@index|index//" name="relation_year\\@index|index//"
+\\err_other?
+            class="slimselect submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="slimselect"
+\\~
+            hx-post="\\post_prefix///relation"
+            hx-params="relation_kind\\@index|index//,relation_other\\@index|index//,relation_year\\@index|index//"
+            hx-target="closest div.sortable_row"
+            hx-trigger="ss:afterChange"
+            hx-swap="outerHTML"
+            data-options="2024-1900?">
+            <option selected value="\\year//">\\year//</option>
+        </select>
+    </div>
+    <div class="mfr_relation_validation">
+\\@include "_validation.zk"
+    </div>
+</div>
