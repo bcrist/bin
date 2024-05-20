@@ -1,0 +1,23 @@
+<div class="mfr_relation_year">
+    <select id="relation_year\\@index|index//" name="relation_year\\@index|index//"
+\\err_year?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///relation"
+        hx-params="relation_kind\\@index|index//,relation_other\\@index|index//,relation_year\\@index|index//"
+        hx-target="closest div.sortable_row"
+        hx-trigger="ss:afterChange"
+        hx-swap="outerHTML"
+        data-options="2024-1900?">
+        <option selected
+\\year?
+        value="\\year//">\\year//
+\\;
+        >
+\\~
+        </option>
+    </select>
+</div>

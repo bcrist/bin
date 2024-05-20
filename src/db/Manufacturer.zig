@@ -331,7 +331,60 @@ pub const Relation = struct {
         return if (self.kind.is_canonical()) self else self.inverse();
     }
 
-    pub fn set_year(db: *DB, idx: Relation.Index, year: ?u16) !void {
+    pub fn create(self: Relation, db: *DB) !void {
+        try db.mfr_relations.append(db.container_alloc, self.canonical());
+        set_modified(db, self.source);
+        set_modified(db, self.target);
+    }
+
+    pub fn remove(db: *DB, idx: Relation.Index) !void {
+        const i = @intFromEnum(idx);
+        set_modified_relation(db, idx);
+        db.mfr_relations.swapRemove(i);
+    }
+
+    pub fn set_kind(db: *DB, idx: Relation.Index, kind: Kind) !bool {
+        const i = @intFromEnum(idx);
+        const kinds = db.mfr_relations.items(.kind);
+        const current = kinds[i];
+        if (current != kind) {
+            kinds[i] = kind;
+            log.debug("Changed kind for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @tagName(current), @tagName(kind) });
+            set_modified_relation(db, idx);
+            return true;
+        }
+        return false;
+    }
+
+    pub fn set_source(db: *DB, idx: Relation.Index, source: Manufacturer.Index) !bool {
+        const i = @intFromEnum(idx);
+        const sources = db.mfr_relations.items(.source);
+        const current = sources[i];
+        if (current != source) {
+            sources[i] = source;
+            log.debug("Changed source for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(source) });
+            set_modified_relation(db, idx);
+            set_modified(db, current);
+            return true;
+        }
+        return false;
+    }
+
+    pub fn set_target(db: *DB, idx: Relation.Index, target: Manufacturer.Index) !bool {
+        const i = @intFromEnum(idx);
+        const targets = db.mfr_relations.items(.target);
+        const current = targets[i];
+        if (current != target) {
+            targets[i] = target;
+            log.debug("Changed target for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(target) });
+            set_modified_relation(db, idx);
+            set_modified(db, current);
+            return true;
+        }
+        return false;
+    }
+
+    pub fn set_year(db: *DB, idx: Relation.Index, year: ?u16) !bool {
         const i = @intFromEnum(idx);
         const years = db.mfr_relations.items(.year);
         if (years[i]) |current| {
@@ -339,20 +392,24 @@ pub const Relation = struct {
                 if (current != new) {
                     years[i] = new;
                     log.debug("Changed year for mfr relation {} from {} to {}", .{ @intFromEnum(idx), current, new });
-                    set_modified(db, idx);
+                    set_modified_relation(db, idx);
+                    return true;
                 }
             } else {
                 years[i] = null;
                 log.debug("Removed year from mfr relation {}", .{ @intFromEnum(idx) });
-                set_modified(db, idx);
+                set_modified_relation(db, idx);
+                return true;
             }
         } else {
             if (year) |new| {
                 years[i] = new;
                 log.debug("Assigned year for mfr relation {} to {}", .{ @intFromEnum(idx), new });
-                set_modified(db, idx);
+                set_modified_relation(db, idx);
+                return true;
             }
         }
+        return false;
     }
 
     pub fn set_order_index(db: *DB, mfr_idx: Manufacturer.Index, idx: Relation.Index, order_index: u16) !void {
@@ -374,6 +431,12 @@ pub const Relation = struct {
 
     pub fn source_less_than(_: void, a: Relation, b: Relation) bool {
         return a.source_order_index < b.source_order_index;
+    }
+
+    fn set_modified_relation(db: *DB, idx: Relation.Index) void {
+        const i = @intFromEnum(idx);
+        set_modified(db, db.mfr_relations.items(.source)[i]);
+        set_modified(db, db.mfr_relations.items(.target)[i]);
     }
 };
 

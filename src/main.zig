@@ -77,8 +77,10 @@ pub fn main() !void {
         .{ "/mfr/website",              r.module(Injector, mfr.add.validate) },
         .{ "/mfr/wiki",                 r.module(Injector, mfr.add.validate) },
         .{ "/mfr/notes",                r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate) },
-        .{ "/mfr/additional_names",     r.module(Injector, mfr.add.validate) },
+        // .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate_additional_name) },
+        // .{ "/mfr/additional_names",     r.module(Injector, mfr.add.validate_additional_names) },
+        // .{ "/mfr/relation",             r.module(Injector, mfr.add.validate_relation) },
+        // .{ "/mfr/relations",            r.module(Injector, mfr.add.validate_relations) },
         .{ "/mfr/relation/kinds",       r.module(Injector, mfr.relation_kinds) },
         .{ "/mfr:*",                    r.module(Injector, mfr) },
         .{ "/mfr:*/id",                 r.module(Injector, mfr.edit) },
@@ -91,6 +93,8 @@ pub fn main() !void {
         .{ "/mfr:*/notes",              r.module(Injector, mfr.edit) },
         .{ "/mfr:*/additional_name",    r.module(Injector, mfr.edit.additional_name) },
         .{ "/mfr:*/additional_names",   r.module(Injector, mfr.edit.additional_names) },
+        .{ "/mfr:*/relation",           r.module(Injector, mfr.edit.relation) },
+        // .{ "/mfr:*/relations",          r.module(Injector, mfr.edit.relations) },
 
 
 
@@ -188,6 +192,7 @@ pub const std_options: std.Options = .{
         .{ .scope = .db_intern, .level = .info },
         .{ .scope = .zkittle, .level = .info },
         .{ .scope = .http, .level = .info },
+        .{ .scope = .@"http.temp", .level = .info },
         .{ .scope = .mutex, .level = .info },
         .{ .scope = .session, .level = .info },
     },

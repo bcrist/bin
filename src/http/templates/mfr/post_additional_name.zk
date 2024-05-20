@@ -1,16 +1,20 @@
 <div class="sortable_row">
     <span class="sort_handle icon">&#xE945;</span>
-    <input type="text" id="additional_name\\@index|index//" name="additional_name\\@index|index//"
+    <div class="mfr_additional_name">
+        <input type="text" id="additional_name\\@index|index//" name="additional_name\\@index|index//"
 \\err?
-        class="submitted_field invalid"
-        hx-vals='{"invalid":true}'
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
 \\;
-        class="submitted_field"
+            class="submitted_field"
 \\~
-        value="\\*.name|*//"
-        hx-post="\\post_prefix///additional_name"
-        hx-params="additional_name\\@index|index//"
-        hx-target="closest div"
-        hx-swap="outerHTML">
+            value="\\*.name|*//"
+            hx-post="\\post_prefix///additional_name"
+            hx-params="additional_name\\@index|index//"
+            hx-target="closest div.sortable_row"
+            hx-swap="outerHTML">
+    </div>
+    <div class="mfr_additional_name_validation">
 \\@include "_validation.zk"
+    </div>
 </div>

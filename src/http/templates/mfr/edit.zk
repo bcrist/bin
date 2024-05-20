@@ -1,6 +1,7 @@
 \\@include "_top.zk"
 <aside class="flex">
     <a href="/mfr:\\mfr.id//">Done</a>
+    <button hx-delete="/mfr:\\mfr.id//" hx-confirm="Are you sure you want to delete \\mfr.id//?">Delete</button>
 </aside>
 <h1>Edit \\full_name//</h1>
 <table class="properties">

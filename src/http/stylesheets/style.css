@@ -109,6 +109,7 @@ aside {
 aside.flex {
     display: flex;
     flex-direction: column;
+    gap: 1em;
 }
 aside.flex button, aside.flex a {
     width: 100%;
@@ -140,12 +141,15 @@ textarea, input[type=text], input[type=number] {
     color: #eee;
     border-radius: 0.5em;
     border: solid 2px #444;
-    padding: 0.1em 0.2em;
     font-family: "Montserrat", sans-serif;
     font-optical-sizing: auto;
     font-weight: 400;
     font-size: 1em;
+    padding: 0;
+    padding-block: 0.1em;
+    padding-inline: 0.2em;
     min-width: 25em;
+    width: calc(100% - 0.6em);
 }
 textarea {
     min-height: 8em;
@@ -155,6 +159,11 @@ textarea.invalid, input[type=text].invalid, input[type=number].invalid {
     background: #100;
     border-color: #722;
     color: #ccc;
+}
+div.ss-main.invalid {
+    --ss-bg-color: #100;
+    --ss-border-color: #722;
+    --ss-font-color: #ccc;
 }
 
 .validation_error {
@@ -183,6 +192,7 @@ table.properties th {
     padding: 0.1em;
     display: flex;
     gap: 0.5em;
+    align-items: center;
 }
 .sortable_row input {
     margin-top: auto;
@@ -213,6 +223,13 @@ table.properties th {
 }
 .sortable_row .icon {
     flex: 0 0 2em;
+}
+
+.sortable_row div.mfr_additional_name {
+    flex: 2 1 100%;
+}
+.sortable_row div.mfr_additional_name_validation {
+    flex: 1 2 100%;
 }
 
 .sortable_row div.mfr_relation_kind {
