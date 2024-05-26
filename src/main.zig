@@ -37,8 +37,6 @@ pub fn main() !void {
 
     db.recompute_last_modification_time();
 
-    // TODO start thread to periodically write any changes back to db dir
-
     const Injector = http.Default_Injector
         .extend(Session.inject)
         .extend(inject)
@@ -189,7 +187,7 @@ pub const std_options: std.Options = .{
     .log_scope_levels = &.{
         .{ .scope = .sx, .level = .info },
         .{ .scope = .db, .level = .info },
-        .{ .scope = .db_intern, .level = .info },
+        .{ .scope = .@"db.intern", .level = .info },
         .{ .scope = .zkittle, .level = .info },
         .{ .scope = .http, .level = .info },
         .{ .scope = .@"http.temp", .level = .info },

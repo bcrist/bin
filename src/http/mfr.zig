@@ -16,7 +16,7 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
 
     if (!std.mem.eql(u8, requested_mfr_name.?, mfr.id)) {
         req.response_status = .moved_permanently;
-        try req.add_response_header("Location", try http.tprint("/mfr:{s}", .{mfr.id}));
+        try req.add_response_header("Location", try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
         try req.respond("");
         return;
     }
@@ -51,17 +51,10 @@ const Name_Field = union (enum) {
 };
 pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) ![]const u8 {
     const trimmed = std.mem.trim(u8, name, &std.ascii.whitespace);
-    if (for_field == .id) {
-        if (trimmed.len == 0) {
-            valid.* = false;
-            message.* = "Required";
-            return trimmed;
-        }
-        if (std.mem.indexOfAny(u8, trimmed, &std.ascii.whitespace) != null) {
-            valid.* = false;
-            message.* = "Cannot contain whitespace";
-            return trimmed;
-        }
+    if (for_field == .id and !DB.is_valid_id(trimmed)) {
+        valid.* = false;
+        message.* = "ID may not be empty or '_', or contain '/'";
+        return trimmed;
     }
 
     if (db.mfr_lookup.get(trimmed)) |idx| {
@@ -92,7 +85,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
         }
 
         valid.* = false;
-        message.* = try http.tprint("In use by <a href=\"/mfr:{s}\" target=\"_blank\">{s}</a>", .{ id, id });
+        message.* = try http.tprint("In use by <a href=\"/mfr:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
         return trimmed;
     }
 
@@ -189,7 +182,7 @@ pub fn render(session: ?Session, req: *http.Request, mfr: Manufacturer, relation
 
     const post_prefix = switch (mode) {
         .info => "",
-        .edit => try http.tprint("/mfr:{s}", .{mfr.id}),
+        .edit => try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }),
         .add => "/mfr",
     };
 

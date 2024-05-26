@@ -78,18 +78,25 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, index: Manufacturer.Index) !
 }
 
 pub fn read(self: SX_Manufacturer, db: *DB) !void {
+    const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
+
+    if (!DB.is_valid_id(id)) {
+        log.warn("Skipping Manufacturer {s} (invalid ID)", .{ id });
+        return;
+    }
+
     var full_name = self.full_name;
     if (self.full_name) |name| {
-        if (std.mem.eql(u8, self.id, name)) {
+        if (std.mem.eql(u8, id, name)) {
             full_name = null;
         }
     }
 
     const idx = Manufacturer.maybe_lookup(db, full_name)
         orelse Manufacturer.lookup(db, self.additional_names)
-        orelse try Manufacturer.lookup_or_create(db, self.id);
+        orelse try Manufacturer.lookup_or_create(db, id);
 
-    _ = try Manufacturer.set_id(db, idx, self.id);
+    _ = try Manufacturer.set_id(db, idx, id);
     if (full_name) |name| try Manufacturer.set_full_name(db, idx, name);
     if (self.country) |country| try Manufacturer.set_country(db, idx, country);
     if (self.url) |url| try Manufacturer.set_website(db, idx, url);
@@ -108,6 +115,8 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
     if (self.created) |dto| try Manufacturer.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Manufacturer.set_modified_time(db, idx, dto.timestamp_ms());
 }
+
+const log = std.log.scoped(.db);
 
 const Manufacturer = @import("../Manufacturer.zig");
 const DB = @import("../../DB.zig");

@@ -96,6 +96,8 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
     const old_id = ids[i];
     if (std.mem.eql(u8, id, old_id)) return false;
 
+    if (!DB.is_valid_id(id)) return error.Invalid_ID;
+
     const new_id = try db.intern(id);
     std.debug.assert(db.mfr_lookup.remove(old_id));
     try db.mfr_lookup.putNoClobber(db.container_alloc, new_id, idx);

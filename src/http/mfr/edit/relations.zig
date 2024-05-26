@@ -3,7 +3,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
     const mfr_id = db.mfrs.items(.id)[@intFromEnum(idx)];
     const relation_list = try get_sorted_relations(db, idx);
-    const post_prefix = try http.tprint("/mfr:{s}", .{ mfr_id });
+    const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr_id) });
 
     var new_list = try std.ArrayList(Relation).initCapacity(http.temp(), relation_list.items.len);
     var apply_changes = true;

@@ -170,8 +170,15 @@ pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
     return if (maybe_str) |str| try self.intern(str) else null;
 }
 
+pub fn is_valid_id(id: []const u8) bool {
+    if (id.len == 0) return false;
+    if (std.mem.eql(u8, id, "_")) return false;
+    if (std.mem.indexOfScalar(u8, id, '/')) |_| return false;
+    return true;
+}
+
 const log = std.log.scoped(.db);
-const intern_log = std.log.scoped(.db_intern);
+const intern_log = std.log.scoped(.@"db.intern");
     
 const v1 = @import("db/v1.zig");
 

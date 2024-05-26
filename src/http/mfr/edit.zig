@@ -18,7 +18,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
     var mfr = db.mfrs.get(@intFromEnum(idx));
-    const post_prefix = try http.tprint("/mfr:{s}", .{ mfr.id });
+    const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) });
 
     var path_iter = req.path_iterator();
     _ = path_iter.next(); // /mfr:*
@@ -36,7 +36,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
             .id => {
                 mfr.id = try validate_name(str_value, db, idx, .id, &valid, &message);
                 if (valid and try Manufacturer.set_id(db, idx, mfr.id)) {
-                    try req.add_response_header("HX-Location", try http.tprint("/mfr:{s}?edit", .{ mfr.id }));
+                    try req.add_response_header("HX-Location", try http.tprint("/mfr:{}?edit", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
                 }
             },
             .full_name => {
