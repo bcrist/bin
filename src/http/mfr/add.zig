@@ -7,8 +7,6 @@ pub fn get(session: ?Session, req: *http.Request) !void {
     try render(session, req, mfr, &.{}, .add);
 }
 
-// TODO post()
-
 const log = std.log.scoped(.@"http.mfr");
 
 const render = @import("../mfr.zig").render;

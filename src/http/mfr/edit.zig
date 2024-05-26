@@ -14,7 +14,7 @@ const Field = enum {
     wiki,
 };
 
-    pub fn post(req: *http.Request, db: *DB) !void {
+pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
     var mfr = db.mfrs.get(@intFromEnum(idx));

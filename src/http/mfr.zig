@@ -2,8 +2,6 @@ pub const list = @import("mfr/list.zig");
 pub const add = @import("mfr/add.zig");
 pub const edit = @import("mfr/edit.zig");
 
-// TODO Make Country in edit/add a select
-
 pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse {
@@ -26,6 +24,24 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const relations = try get_sorted_relations(db, idx);
 
     try render(session, req, mfr, relations.items, if (try req.has_query_param("edit")) .edit else .info);
+}
+
+pub fn delete(req: *http.Request, db: *DB) !void {
+    const requested_mfr_name = try req.get_path_param("mfr");
+    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
+
+    // TODO if there are any parts/etc referencing this Mfr, redirect to /mfr:*?error#parts
+
+    try Manufacturer.delete(db, idx);
+
+    if (req.get_header("HX-Request")) |_| {
+        req.response_status = .no_content;
+        try req.add_response_header("HX-Location", "/mfr");
+    } else {
+        req.response_status = .see_other;
+        try req.add_response_header("Location", "/mfr");
+    }
+    try req.respond("");
 }
 
 const Name_Field = union (enum) {
@@ -75,7 +91,6 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
             }
         }
 
-        // TODO Create a /mfr:*/merge:* endpoint?
         valid.* = false;
         message.* = try http.tprint("In use by <a href=\"/mfr:{s}\" target=\"_blank\">{s}</a>", .{ id, id });
         return trimmed;

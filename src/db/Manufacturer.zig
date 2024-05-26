@@ -58,6 +58,38 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     return idx;
 }
 
+pub fn delete(db: *DB, idx: Index) !void {
+    const i = @intFromEnum(idx);
+
+    std.debug.assert(db.mfr_lookup.remove(db.mfrs.items(.id)[i]));
+
+    if (db.mfrs.items(.full_name)[i]) |full_name| {
+        std.debug.assert(db.mfr_lookup.remove(full_name));
+    }
+
+    const additional_names: *std.ArrayListUnmanaged([]const u8) = &db.mfrs.items(.additional_names)[i];
+    for (additional_names.items) |name| {
+        std.debug.assert(db.mfr_lookup.remove(name));
+    }
+    additional_names.deinit(db.container_alloc);
+
+    var relation: usize = 0;
+    var relation_source = db.mfr_relations.items(.source);
+    var relation_target = db.mfr_relations.items(.target);
+    while (relation < db.mfr_relations.len) : (relation += 1) {
+        if (relation_source[relation] == idx or relation_target[relation] == idx) {
+            db.mfr_relations.swapRemove(relation);
+            relation -= 1;
+            relation_source = db.mfr_relations.items(.source);
+            relation_target = db.mfr_relations.items(.target);
+        }
+    }
+
+    const now = std.time.milliTimestamp();
+    db.mfrs.set(i, init_empty("", now));
+    db.mark_dirty(now);
+}
+
 pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
     const i = @intFromEnum(idx);
     const ids = db.mfrs.items(.id);

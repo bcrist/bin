@@ -12,8 +12,8 @@
 \\~
 <h1>All Manufacturers</h1>
 <div class="columns">
-\\mfr_list:
-<a href="/mfr:\\*//">\\*//</a><br>
-\\~
+\\mfr_list: *?
+    <a href="/mfr:\\*//">\\*//</a><br>
+\\~~
 </div>
 \\@include "_bottom.zk"
