@@ -7,6 +7,7 @@ function update_slim_select_data(slimSelect, raw) {
     const data = Array.from(raw);
     const selected = slimSelect.getSelected()[0];
 
+    let found_selected = false;
     for (let i = 0; i < data.length; ++i) {
         const value = data[i].value || data[i].text;
         if (value == selected) {
@@ -15,10 +16,20 @@ function update_slim_select_data(slimSelect, raw) {
                 text: data[i].text,
                 selected: true,
             };
+            found_selected = true;
         }
     }
 
-    // TODO if no selected option is found, recreate it?
+    if (!found_selected) {
+        const old_data = slimSelect.getData();
+        for (let option of old_data) {
+            if (option.value == selected) {
+                data.unshift(option);
+                option.selected = true;
+                break;
+            }
+        }
+    }
 
     slimSelect.setData(data);
 }
@@ -75,6 +86,9 @@ htmx.onLoad(content => {
 
         const slim_select = new SlimSelect({
             select: select,
+            settings: {
+                allowDeselect: select.dataset.deselectable !== undefined,
+            },
             events: {
                 afterChange: _ => select.dispatchEvent(new Event('ss:afterChange')),
                 search: search_handler,
@@ -114,7 +128,8 @@ htmx.onLoad(content => {
             preventOnFilter: false,
 
             onMove: evt => {
-                return !evt.related.classList.contains('htmx-indicator');
+                const classes = evt.related.classList;
+                return !classes.contains('htmx-indicator') && !classes.contains('unsortable');
             },
 
             // Disable sorting on the `end` event
@@ -133,3 +148,12 @@ htmx.onLoad(content => {
     }
 
 });
+
+// function find_next_sibling(elem, selector) {
+// 	var sibling = elem.nextElementSibling;
+// 	if (!selector) return sibling;
+// 	while (sibling) {
+// 		if (sibling.matches(selector)) return sibling;
+// 		sibling = sibling.nextElementSibling;
+// 	}
+// }

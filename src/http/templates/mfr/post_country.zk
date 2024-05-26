@@ -11,7 +11,7 @@
 \\~
         value="\\mfr.country//"
         hx-post="\\post_prefix///country"
-        hx-include="this"
+        hx-params="country"
         hx-target="closest tr">
 </td>
 <td>\\@include "_validation.zk"//</td>

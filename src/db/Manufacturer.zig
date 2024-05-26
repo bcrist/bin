@@ -362,7 +362,7 @@ pub const Relation = struct {
         const current = sources[i];
         if (current != source) {
             sources[i] = source;
-            log.debug("Changed source for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(source) });
+            log.debug("Changed source for mfr relation {} from {} to {}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(source) });
             set_modified_relation(db, idx);
             set_modified(db, current);
             return true;
@@ -376,7 +376,7 @@ pub const Relation = struct {
         const current = targets[i];
         if (current != target) {
             targets[i] = target;
-            log.debug("Changed target for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(target) });
+            log.debug("Changed target for mfr relation {} from {} to {}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(target) });
             set_modified_relation(db, idx);
             set_modified(db, current);
             return true;

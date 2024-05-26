@@ -233,7 +233,7 @@ table.properties th {
 }
 
 .sortable_row div.mfr_relation_kind {
-    flex: 0 0 10em;
+    flex: 0 0 12em;
 }
 .sortable_row div.mfr_relation_other {
     flex: 1 1 100%;

@@ -11,13 +11,11 @@
         hx-target="closest div.sortable_row"
         hx-trigger="ss:afterChange"
         hx-swap="outerHTML"
+        data-deselectable
         data-search-url="/mfr">
-        <option selected
+        <option data-placeholder="true" value="">Select...</option>
 \\other?
-        value="\\other//">\\other_str|other//
-\\;
-        data-placeholder="true" value="">Select...
+        <option selected value="\\other//">\\other_str|other//</option>
 \\~
-        </option>
     </select>
 </div>

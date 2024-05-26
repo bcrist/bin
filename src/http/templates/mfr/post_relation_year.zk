@@ -12,12 +12,10 @@
         hx-trigger="ss:afterChange"
         hx-swap="outerHTML"
         data-options="2024-1900?">
-        <option selected
 \\year?
-        value="\\year//">\\year//
+        <option selected value="\\year//">\\year//</option>
 \\;
-        >
+        <option selected></option>
 \\~
-        </option>
     </select>
 </div>

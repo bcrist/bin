@@ -16,7 +16,7 @@
 \\~~
         value="\\mfr.id//"
         hx-post="\\post_prefix///id"
-        hx-include="this"
+        hx-params="id"
         hx-target="closest tr">
 </td>
 <td>\\@include "_validation.zk"//</td>

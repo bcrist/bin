@@ -1,5 +1,5 @@
 .{
-    .name = "zin",
+    .name = "bin",
     .version = "0.0.0",
     .minimum_zig_version = "0.12.0",
     .paths = .{""},
@@ -7,10 +7,6 @@
         .@"Zig-TempAllocator" = .{
             .url = "git+https://github.com/bcrist/Zig-TempAllocator#caf8a4941aeca4d670c7cf9cb68023b9731c24b3",
             .hash = "1220387f9f8e7bd3d2914c6e55edf661c061d8333287d25c814ff7f29925e4441d11",
-        },
-        .@"Zig-ConsoleHelper" = .{
-            .url = "git+https://github.com/bcrist/Zig-ConsoleHelper#41e35796153f056679d3df3d1aaee34f56541e51",
-            .hash = "1220e40224119b919f4fa66b9a016f75b4f75c4fdd890b56cfd7c7d5de860f752c59",
         },
         .@"Zig-DeepHashMap" = .{
             .url = "git+https://github.com/bcrist/Zig-DeepHashMap#9170ba8266314c2d91fe109311b0f5f1e9170f5e",

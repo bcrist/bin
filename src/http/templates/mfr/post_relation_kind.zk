@@ -13,12 +13,9 @@
         hx-trigger="ss:afterChange"
         hx-swap="outerHTML"
         data-options="/mfr/relation/kinds">
-        <option selected
+        <option data-placeholder="true" value="">Select...</option>
 \\kind.@exists?
-            value="\\kind//">\\kind_str|kind//
-\\;
-            data-placeholder="true" value="">Select...
+        <option selected value="\\kind//">\\kind_str|kind//</option>
 \\~
-        </option>
     </select>
 </div>

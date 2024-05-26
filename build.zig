@@ -1,20 +1,12 @@
 const std = @import("std");
 const shittip = @import("shittip");
 
-var builder: *std.Build = undefined;
-var target: std.Build.ResolvedTarget = undefined;
-var optimize: std.builtin.OptimizeMode = undefined;
-var all_tests_step: *std.Build.Step = undefined;
-
 pub fn build(b: *std.Build) void {
-    builder = b;
-    target = b.standardTargetOptions(.{});
-    optimize = b.standardOptimizeOption(.{});
-    all_tests_step = b.step("test", "Run all tests");
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
 
     const ext = .{
         .Temp_Allocator = b.dependency("Zig-TempAllocator", .{}).module("Temp_Allocator"),
-        .console = b.dependency("Zig-ConsoleHelper", .{}).module("console"),
         .deep_hash_map = b.dependency("Zig-DeepHashMap", .{}).module("deep_hash_map"),
         .sx = b.dependency("Zig-SX", .{}).module("sx"),
         .tempora = b.dependency("tempora", .{}).module("tempora"),
@@ -22,7 +14,12 @@ pub fn build(b: *std.Build) void {
         .http = b.dependency("shittip", .{}).module("http"),
     };
 
-    const exe = makeExe("bin", .{ .path = "src/main.zig" });
+    const exe = b.addExecutable(.{
+        .name = "bin",
+        .root_source_file = b.path("src/main.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
     exe.root_module.addImport("Temp_Allocator", ext.Temp_Allocator);
     exe.root_module.addImport("deep_hash_map", ext.deep_hash_map);
     exe.root_module.addImport("sx", ext.sx);
@@ -31,48 +28,26 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("http", ext.http);
     exe.root_module.addImport("http_resources", shittip.resources(b, .{
         .paths = &.{
-            .{ .path = "src/http/resources" },
-            .{ .path = "src/http/stylesheets" },
-            .{ .path = "src/http/templates" },
+            b.path("src/http/resources"),
+            b.path("src/http/stylesheets"),
+            b.path("src/http/templates"),
         },
     }));
-}
 
-fn makeModule(root_source_file: std.Build.LazyPath) *std.Build.Module {
-    return builder.createModule(.{ .root_source_file = root_source_file });
-}
-
-fn makeExe(comptime name: []const u8, root_source_file: std.Build.LazyPath) *std.Build.Step.Compile {
-    const exe = builder.addExecutable(.{
-        .name = name,
-        .root_source_file = root_source_file,
-        .target = target,
-        .optimize = optimize,
-    });
-
-    builder.installArtifact(exe);
-    var run = builder.addRunArtifact(exe);
-    run.step.dependOn(builder.getInstallStep());
-    builder.step(name, "run " ++ name).dependOn(&run.step);
-    if (builder.args) |args| {
+    b.installArtifact(exe);
+    var run = b.addRunArtifact(exe);
+    run.step.dependOn(b.getInstallStep());
+    b.step("bin", "run bin").dependOn(&run.step);
+    if (b.args) |args| {
         run.addArgs(args);
     }
 
-    _ = makeTest(name, root_source_file);
+    // const t = b.addTest(.{
+    //     .root_source_file = b.path("src/main.zig"),
+    //     .target = target,
+    //     .optimize = optimize,
+    // });
 
-    return exe;
-}
-
-fn makeTest(comptime name: []const u8, root_source_file: std.Build.LazyPath) *std.Build.Step.Compile {
-    const t = builder.addTest(.{
-        .root_source_file = root_source_file,
-        .target = target,
-        .optimize = optimize,
-    });
-
-    const run = builder.addRunArtifact(t);
-    builder.step("test_" ++ name, "test " ++ name).dependOn(&run.step);
-    all_tests_step.dependOn(&run.step);
-
-    return t;
+    // const run_tests = b.addRunArtifact(t);
+    // b.step("test", "Run tests").dependOn(&run_tests.step);
 }

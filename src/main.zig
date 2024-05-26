@@ -94,7 +94,7 @@ pub fn main() !void {
         .{ "/mfr:*/additional_name",    r.module(Injector, mfr.edit.additional_name) },
         .{ "/mfr:*/additional_names",   r.module(Injector, mfr.edit.additional_names) },
         .{ "/mfr:*/relation",           r.module(Injector, mfr.edit.relation) },
-        // .{ "/mfr:*/relations",          r.module(Injector, mfr.edit.relations) },
+        .{ "/mfr:*/relations",          r.module(Injector, mfr.edit.relations) },
 
 
 

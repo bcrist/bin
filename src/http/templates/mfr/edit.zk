@@ -22,7 +22,7 @@
 \\@include "mfr/post_additional_name_placeholder.zk"
 </form>
 <h2>Relations</h2>
-<form class="sortable">
+<form class="sortable" hx-post="/mfr:\\mfr.id///relations" hx-trigger="end">
 \\relations:
 \\  @include "mfr/post_relation.zk"
 \\~
