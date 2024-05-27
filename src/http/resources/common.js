@@ -7,9 +7,11 @@ function update_slim_select_data(slimSelect, raw) {
     const data = Array.from(raw);
     const selected = slimSelect.getSelected()[0];
 
+    let placeholder_index = -1;
     let found_selected = false;
     for (let i = 0; i < data.length; ++i) {
         const value = data[i].value || data[i].text;
+        if (data[i].placeholder) placeholder_index = i;
         if (value == selected) {
             data[i] = {
                 value: data[i].value,
@@ -24,8 +26,8 @@ function update_slim_select_data(slimSelect, raw) {
         const old_data = slimSelect.getData();
         for (let option of old_data) {
             if (option.value == selected) {
-                data.unshift(option);
                 option.selected = true;
+                data.splice(placeholder_index + 1, 0, option);
                 break;
             }
         }
@@ -41,19 +43,34 @@ function get_slim_select_range_data(slimSelect, raw) {
         const first = Number(result[1]);
         const last = Number(result[2]);
         const data = [];
-        const placeholder = { placeholder: true, text: 'Select...', value: '' };
-        if (result[3] == '?') placeholder.text = ' ';
-        if (!selected) placeholder.selected = true;
-        data.push(placeholder);
+        let found_selected = false;
         const delta = first > last ? -1 : 1;
         for (let i = first; i != last; i += delta) {
             const value = '' + i;
             if (selected == value) {
                 data.push({ text: value, selected: true });
+                found_selected = true;
             } else {
                 data.push({ text: value });
             }
         }
+
+        if (!found_selected) {
+            const old_data = slimSelect.getData();
+            for (let option of old_data) {
+                if (option.value == selected) {
+                    option.selected = true;
+                    data.unshift(option);
+                    break;
+                }
+            }
+        }
+
+        const placeholder = { placeholder: true, text: 'Select...', value: '' };
+        if (result[3] == '?') placeholder.text = ' ';
+        if (!selected) placeholder.selected = true;
+        data.unshift(placeholder);
+
         return data;
     }
     return undefined;
@@ -66,7 +83,7 @@ htmx.onLoad(content => {
     for (const select of selects) {
         //const hx = has_hx(select);
 
-        var search_handler = undefined;
+        let search_handler = undefined;
         const search_url = select.dataset.searchUrl;
         if (search_url) {
             search_handler = async (search, currentData) => {
@@ -81,15 +98,21 @@ htmx.onLoad(content => {
             };
         }
 
+        const events = {
+            afterChange: _ => select.dispatchEvent(new Event('ss:afterChange')),
+            search: search_handler,
+        };
+
+        if (select.dataset.addable !== undefined) {
+            events.addable = value => value;
+        }
+
         const slim_select = new SlimSelect({
             select: select,
             settings: {
                 allowDeselect: select.dataset.deselectable !== undefined,
             },
-            events: {
-                afterChange: _ => select.dispatchEvent(new Event('ss:afterChange')),
-                search: search_handler,
-            },
+            events
         });
 
         const options_url = select.dataset.options;
@@ -150,12 +173,3 @@ document.addEventListener('htmx:beforeCleanupElement', evt => {
         select.slim.destroy();
     }
 });
-
-// function find_next_sibling(elem, selector) {
-// 	var sibling = elem.nextElementSibling;
-// 	if (!selector) return sibling;
-// 	while (sibling) {
-// 		if (sibling.matches(selector)) return sibling;
-// 		sibling = sibling.nextElementSibling;
-// 	}
-// }
