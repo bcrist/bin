@@ -5,7 +5,7 @@
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
 \\;
-        class="slimselect submitted_field"
+        class="slimselect\\@index.@exists?// submitted_field\\~//"
 \\~
         hx-post="\\post_prefix///relation"
         hx-params="relation_kind\\@index|index//,relation_other\\@index|index//,relation_year\\@index|index//"

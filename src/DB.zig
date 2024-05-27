@@ -7,7 +7,7 @@ last_modification_timestamp_ms: ?i64 = null,
 
 strings: std.StringHashMapUnmanaged(void) = .{},
 
-mfr_lookup: std.StringHashMapUnmanaged(Manufacturer.Index) = .{},
+mfr_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
 mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
@@ -176,6 +176,38 @@ pub fn is_valid_id(id: []const u8) bool {
     if (std.mem.indexOfScalar(u8, id, '/')) |_| return false;
     return true;
 }
+
+pub fn String_Hash_Map_Ignore_Case(comptime V: type) type {
+    return std.HashMap([]const u8, V, String_Context_Ignore_Case, std.hash_map.default_max_load_percentage);
+}
+
+pub fn String_Hash_Map_Ignore_Case_Unmanaged(comptime V: type) type {
+    return std.HashMapUnmanaged([]const u8, V, String_Context_Ignore_Case, std.hash_map.default_max_load_percentage);
+}
+
+pub const String_Context_Ignore_Case = struct {
+    pub fn hash(self: @This(), s: []const u8) u64 {
+        _ = self;
+        return hash_string_ignore_case(s);
+    }
+    pub fn eql(self: @This(), a: []const u8, b: []const u8) bool {
+        _ = self;
+        return std.ascii.eqlIgnoreCase(a, b);
+    }
+};
+
+pub fn hash_string_ignore_case(s: []const u8) u64 {
+    var hash = std.hash.Wyhash.init(0);
+    var buf: [64]u8 = undefined;
+    var remaining = s;
+    while (remaining.len > buf.len) {
+        hash.update(std.ascii.lowerString(&buf, remaining[0..buf.len]));
+        remaining = remaining[buf.len..];
+    }
+    hash.update(std.ascii.lowerString(&buf, remaining));
+    return hash.final();
+}
+
 
 const log = std.log.scoped(.db);
 const intern_log = std.log.scoped(.@"db.intern");

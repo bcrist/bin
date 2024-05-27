@@ -1,6 +1,6 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
+    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
     const mfr_id = db.mfrs.items(.id)[@intFromEnum(idx)];
     const name_list = &db.mfrs.items(.additional_names)[@intFromEnum(idx)];
     const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr_id) });

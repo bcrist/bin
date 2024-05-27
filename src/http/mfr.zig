@@ -5,7 +5,7 @@ pub const countries = @import("mfr/countries.zig");
 
 pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse {
+    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
         if (try req.has_query_param("edit")) {
             try add.get(session, req);
         } else {
@@ -29,7 +29,7 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
 
 pub fn delete(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
+    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
 
     // TODO if there are any parts/etc referencing this Mfr, redirect to /mfr:*?error#parts
 
@@ -58,7 +58,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
         return trimmed;
     }
 
-    if (db.mfr_lookup.get(trimmed)) |idx| {
+    if (Manufacturer.maybe_lookup(db, trimmed)) |idx| {
         const i = @intFromEnum(idx);
         const id = db.mfrs.items(.id)[i];
 

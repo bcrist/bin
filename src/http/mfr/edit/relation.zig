@@ -1,6 +1,6 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
+    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
     const mfr_id = db.mfrs.items(.id)[@intFromEnum(idx)];
     const relations = try get_sorted_relations(db, idx);
     const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr_id) });
@@ -63,7 +63,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                 log.debug("Could not parse relation kind", .{});
                 return error.BadRequest;
             };
-            const new_other_idx = db.mfr_lookup.get(relation_other) orelse {
+            const new_other_idx = Manufacturer.maybe_lookup(db, relation_other) orelse {
                 log.debug("Could not find other manufacturer: {s}", .{ relation_other });
                 return error.BadRequest;
             };
@@ -104,7 +104,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         const new_year = try validate_year(relation_year, &valid_year, &message);
 
         var new_other_idx: ?Manufacturer.Index = null;
-        if (db.mfr_lookup.get(relation_other)) |other_idx| {
+        if (Manufacturer.maybe_lookup(db, relation_other)) |other_idx| {
             new_other_idx = other_idx;
             relation_other = db.mfrs.items(.id)[@intFromEnum(other_idx)];
             if (new_other_idx == idx) {

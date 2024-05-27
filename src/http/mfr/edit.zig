@@ -16,7 +16,7 @@ const Field = enum {
 
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = db.mfr_lookup.get(requested_mfr_name.?) orelse return;
+    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
     var mfr = db.mfrs.get(@intFromEnum(idx));
     const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) });
 

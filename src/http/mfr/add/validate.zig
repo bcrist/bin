@@ -42,7 +42,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         }
     }
 
-    if (mode != .add and was_valid != valid) {
+    if (mode == .id or mode != .add and was_valid != valid) {
         try req.add_response_header("hx-trigger", "revalidate");
     }
 

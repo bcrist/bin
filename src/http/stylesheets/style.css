@@ -170,15 +170,20 @@ div.ss-main.invalid {
     color: #f77;
 }
 
-table.properties {
+table.edit_properties {
     border-spacing: 0.5em 0.1em;
 }
-table.properties th {
+table.edit_properties th {
     text-align: right;
+    line-height: 1.7em;
 }
 
 .va_top {
     vertical-align: top;
+}
+
+select.slimselect {
+    display: none;
 }
 
 .sortable_dragging input {

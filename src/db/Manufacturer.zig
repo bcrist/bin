@@ -32,14 +32,14 @@ pub fn init_empty(id: []const u8, timestamp_ms: i64) Manufacturer {
     };
 }
 
-pub fn maybe_lookup(db: *DB, possible_name: ?[]const u8) ?Index {
+pub fn maybe_lookup(db: *const DB, possible_name: ?[]const u8) ?Index {
     if (possible_name) |name| {
         if (db.mfr_lookup.get(name)) |idx| return idx;
     }
     return null;
 }
 
-pub fn lookup(db: *DB, possible_names: []const []const u8) ?Index {
+pub fn lookup_multiple(db: *const DB, possible_names: []const []const u8) ?Index {
     for (possible_names) |name| {
         if (db.mfr_lookup.get(name)) |idx| return idx;
     }

@@ -93,7 +93,7 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
     }
 
     const idx = Manufacturer.maybe_lookup(db, full_name)
-        orelse Manufacturer.lookup(db, self.additional_names)
+        orelse Manufacturer.lookup_multiple(db, self.additional_names)
         orelse try Manufacturer.lookup_or_create(db, id);
 
     _ = try Manufacturer.set_id(db, idx, id);

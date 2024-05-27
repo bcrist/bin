@@ -98,8 +98,26 @@ htmx.onLoad(content => {
             };
         }
 
+        let changed = false;
+        let open = false;
+
         const events = {
-            afterChange: _ => select.dispatchEvent(new Event('ss:afterChange')),
+            beforeOpen: _ => open = true,
+            afterClose: _ => {
+                open = false;
+                if (changed) {
+                    select.dispatchEvent(new Event('ss:afterChange'));
+                    changed = false;
+                }
+            },
+            afterChange: _ => {
+                if (open) {
+                    slim_select.close();
+                    changed = true;
+                } else {
+                    select.dispatchEvent(new Event('ss:afterChange'));
+                }
+            },
             search: search_handler,
         };
 
@@ -168,8 +186,10 @@ htmx.onLoad(content => {
 });
 
 document.addEventListener('htmx:beforeCleanupElement', evt => {
-    const selects = evt.detail.elt.querySelectorAll('select.slimselect');
-    for (select of selects) {
-        select.slim.destroy();
+    const el = evt.detail.elt;
+    if (el.tagName == 'SELECT' && el.classList.contains('slimselect') && el.slim) {
+        console.log(el);
+        el.slim.destroy();
+        el.slim = undefined;
     }
 });

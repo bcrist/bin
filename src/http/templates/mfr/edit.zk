@@ -4,7 +4,7 @@
     <button hx-delete="/mfr:\\mfr.id//" hx-confirm="Are you sure you want to delete \\mfr.id//?">Delete</button>
 </aside>
 <h1>Edit \\full_name//</h1>
-<table class="properties">
+<table class="edit_properties">
 <tr>\\@include "mfr/post_id.zk"//</tr>
 <tr>\\@include "mfr/post_full_name.zk"//</tr>
 <tr>\\@include "mfr/post_country.zk"//</tr>
