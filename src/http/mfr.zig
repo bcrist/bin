@@ -1,6 +1,7 @@
 pub const list = @import("mfr/list.zig");
 pub const add = @import("mfr/add.zig");
 pub const edit = @import("mfr/edit.zig");
+pub const countries = @import("mfr/countries.zig");
 
 pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");

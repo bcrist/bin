@@ -70,6 +70,7 @@ pub fn main() !void {
         .{ "/mfr/id",                   r.module(Injector, mfr.add.validate) },
         .{ "/mfr/full_name",            r.module(Injector, mfr.add.validate) },
         .{ "/mfr/country",              r.module(Injector, mfr.add.validate) },
+        .{ "/mfr/countries",            r.module(Injector, mfr.countries) },
         .{ "/mfr/founded_year",         r.module(Injector, mfr.add.validate) },
         .{ "/mfr/suspended_year",       r.module(Injector, mfr.add.validate) },
         .{ "/mfr/website",              r.module(Injector, mfr.add.validate) },

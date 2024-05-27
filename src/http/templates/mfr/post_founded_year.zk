@@ -16,7 +16,10 @@
         data-deselectable
         data-addable
         data-options="2024-1900?">
+        <option data-placeholder="true" value> </option>
+\\mfr.founded_year?
         <option selected value="\\mfr.founded_year//">\\mfr.founded_year//</option>
+\\~
     </select>
 </td>
 <td>\\@include "_validation.zk"//</td>

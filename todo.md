@@ -1,4 +1,3 @@
-* Mfr country select
 * Mfr add
 * DB save thread
 

@@ -2,16 +2,24 @@
     <label for="country">Country</label>
 </th>
 <td>
-    <input type="text" id="country" name="country"
-\\err?
-        class="submitted_field invalid"
+    <select id="country" name="country"
+\\err_kind?
+        class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
 \\;
-        class="submitted_field"
+        class="slimselect submitted_field"
 \\~
-        value="\\mfr.country//"
         hx-post="\\post_prefix///country"
         hx-params="country"
-        hx-target="closest tr">
+        hx-target="closest tr"
+        hx-trigger="ss:afterChange"
+        data-deselectable
+        data-addable
+        data-options="/mfr/countries">
+        <option data-placeholder="true" value> </option>
+\\mfr.country?
+        <option selected value="\\mfr.country//">\\mfr.country//</option>
+\\~
+    </select>
 </td>
 <td>\\@include "_validation.zk"//</td>
