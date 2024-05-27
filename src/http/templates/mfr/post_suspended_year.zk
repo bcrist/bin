@@ -10,7 +10,6 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///suspended_year"
-        hx-params="suspended_year"
         hx-target="closest tr"
         hx-trigger="ss:afterChange"
         data-deselectable

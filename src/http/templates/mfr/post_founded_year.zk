@@ -10,7 +10,6 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///founded_year"
-        hx-params="founded_year"
         hx-target="closest tr"
         hx-trigger="ss:afterChange"
         data-deselectable

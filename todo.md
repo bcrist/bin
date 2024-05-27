@@ -1,4 +1,5 @@
-* Mfr add
+* /mfr/add post handler
+* /mfr/add Cancel button
 * DB save thread
 
 * Locations

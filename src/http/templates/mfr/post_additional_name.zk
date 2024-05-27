@@ -10,7 +10,6 @@
 \\~
             value="\\*.name|*//"
             hx-post="\\post_prefix///additional_name"
-            hx-params="additional_name\\@index|index//"
             hx-target="closest div.sortable_row"
             hx-swap="outerHTML">
     </div>

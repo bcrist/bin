@@ -10,7 +10,6 @@
         class="submitted_field"
 \\~
         hx-post="\\post_prefix///notes"
-        hx-target="closest tr"
-        hx-params="notes">\\mfr.notes//</textarea>
+        hx-target="closest tr">\\mfr.notes//</textarea>
 </td>
 <td>\\@include "_validation.zk"//</td>

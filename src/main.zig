@@ -76,10 +76,8 @@ pub fn main() !void {
         .{ "/mfr/website",              r.module(Injector, mfr.add.validate) },
         .{ "/mfr/wiki",                 r.module(Injector, mfr.add.validate) },
         .{ "/mfr/notes",                r.module(Injector, mfr.add.validate) },
-        // .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate_additional_name) },
-        // .{ "/mfr/additional_names",     r.module(Injector, mfr.add.validate_additional_names) },
-        // .{ "/mfr/relation",             r.module(Injector, mfr.add.validate_relation) },
-        // .{ "/mfr/relations",            r.module(Injector, mfr.add.validate_relations) },
+        .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate_additional_name) },
+        .{ "/mfr/relation",             r.module(Injector, mfr.add.validate_relation) },
         .{ "/mfr/relation/kinds",       r.module(Injector, mfr.relation_kinds) },
         .{ "/mfr:*",                    r.module(Injector, mfr) },
         .{ "/mfr:*/id",                 r.module(Injector, mfr.edit) },
@@ -147,6 +145,8 @@ var config_mutex: std.Thread.Mutex = .{};
 var db: DB = undefined;
 var db_lock: std.Thread.RwLock = .{};
 
+threadlocal var thread_rnd: ?std.rand.Xoshiro256 = null;
+
 const inject = struct {
     pub fn inject_config() Config {
         return config;
@@ -181,6 +181,12 @@ const inject = struct {
     pub fn inject_db_cleanup(_: *DB) void {
         mutex_log.debug("releasing DB write lock", .{});
         db_lock.unlock();
+    }
+
+    pub fn inject_rnd() *std.rand.Xoshiro256 {
+        if (thread_rnd) |*rnd| return rnd;
+        thread_rnd = std.rand.Xoshiro256.init(std.crypto.random.int(u64));
+        return &thread_rnd.?;
     }
 };
 

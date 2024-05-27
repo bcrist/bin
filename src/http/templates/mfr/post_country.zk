@@ -10,7 +10,6 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///country"
-        hx-params="country"
         hx-target="closest tr"
         hx-trigger="ss:afterChange"
         data-deselectable
