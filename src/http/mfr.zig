@@ -45,6 +45,17 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
+pub const Field = enum {
+    id,
+    full_name,
+    country,
+    founded_year,
+    suspended_year,
+    notes,
+    website,
+    wiki,
+};
+
 const Name_Field = union (enum) {
     id,
     full_name,

@@ -14,7 +14,10 @@ additional_names: std.ArrayListUnmanaged([]const u8),
 // Parts tagged with this mfr
 
 const Manufacturer = @This();
-pub const Index = enum (u32) { _ };
+pub const Index = enum (u32) {
+    unknown = std.math.maxInt(u32),
+    _,
+};
 
 pub fn init_empty(id: []const u8, timestamp_ms: i64) Manufacturer {
     return .{

@@ -37,19 +37,23 @@ pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void 
         } else if (std.mem.startsWith(u8, param.name, "relation")) {
             continue;
         } else {
+            log.debug("Unrecognized parameter: {s}", .{ param.name });
             return error.BadRequest;
         }
 
         if (expected_index_str) |expected| {
-            if (!std.meta.eql(expected, index_str)) {
-                log.debug("Index mismatch; expected {s}, found {s}", .{ expected, param.name });
+            if (!std.mem.eql(u8, expected, index_str)) {
+                log.debug("Index mismatch; expected {s}, found {s}", .{ expected, index_str });
                 return error.BadRequest;
             }
         }
         expected_index_str = index_str;
     }
 
-    if (expected_index_str == null) return error.BadRequest;
+    if (expected_index_str == null) {
+        log.debug("Index not found!", .{});
+        return error.BadRequest;
+    }
 
     if (expected_index_str.?.len > 0) {
         if (relation_other.len == 0) {

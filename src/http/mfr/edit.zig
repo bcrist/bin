@@ -3,17 +3,6 @@ pub const additional_names = @import("edit/additional_names.zig");
 pub const relation = @import("edit/relation.zig");
 pub const relations = @import("edit/relations.zig");
 
-const Field = enum {
-    id,
-    full_name,
-    country,
-    founded_year,
-    suspended_year,
-    notes,
-    website,
-    wiki,
-};
-
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
@@ -113,6 +102,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
 
 const log = std.log.scoped(.@"http.mfr");
 
+const Field = @import("../mfr.zig").Field;
 const validate_name = @import("../mfr.zig").validate_name;
 const validate_year = @import("../mfr.zig").validate_year;
 
