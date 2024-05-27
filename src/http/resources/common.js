@@ -41,13 +41,10 @@ function get_slim_select_range_data(slimSelect, raw) {
         const first = Number(result[1]);
         const last = Number(result[2]);
         const data = [];
-        if (result[3] == '?') {
-            if (!selected) {
-                data.push({ text: '', selected: true });
-            } else {
-                data.push({ text: '' });
-            }
-        }
+        const placeholder = { placeholder: true, text: 'Select...', value: '' };
+        if (result[3] == '?') placeholder.text = ' ';
+        if (!selected) placeholder.selected = true;
+        data.push(placeholder);
         const delta = first > last ? -1 : 1;
         for (let i = first; i != last; i += delta) {
             const value = '' + i;
@@ -65,7 +62,7 @@ function get_slim_select_range_data(slimSelect, raw) {
 const select_options = {};
 
 htmx.onLoad(content => {
-    const selects = content.querySelectorAll(".slimselect");
+    const selects = content.querySelectorAll("select.slimselect");
     for (const select of selects) {
         //const hx = has_hx(select);
 
@@ -95,8 +92,6 @@ htmx.onLoad(content => {
             },
         });
 
-        select.addEventListener('htmx:beforeSwap', _ => slim_select.destroy());
-        
         const options_url = select.dataset.options;
         if (options_url) {
             const range_data = get_slim_select_range_data(slim_select, options_url);
@@ -147,6 +142,13 @@ htmx.onLoad(content => {
         }
     }
 
+});
+
+document.addEventListener('htmx:beforeCleanupElement', evt => {
+    const selects = evt.detail.elt.querySelectorAll('select.slimselect');
+    for (select of selects) {
+        select.slim.destroy();
+    }
 });
 
 // function find_next_sibling(elem, selector) {

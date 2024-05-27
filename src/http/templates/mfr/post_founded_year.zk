@@ -13,6 +13,7 @@
         hx-params="founded_year"
         hx-target="closest tr"
         hx-trigger="ss:afterChange"
+        data-deselectable
         data-options="2024-1900?">
         <option selected value="\\mfr.founded_year//">\\mfr.founded_year//</option>
     </select>

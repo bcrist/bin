@@ -11,6 +11,7 @@
         hx-target="closest div.sortable_row"
         hx-trigger="ss:afterChange"
         hx-swap="outerHTML"
+        data-deselectable
         data-options="2024-1900?">
 \\year?
         <option selected value="\\year//">\\year//</option>
