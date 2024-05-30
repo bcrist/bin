@@ -1,6 +1,7 @@
-* Natural sorting for mfr list, etc. (case insensitive, number handling)
 * /mfr/add Cancel button
 * DB save thread
+
+* Search bar
 
 * Locations
 * Parts

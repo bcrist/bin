@@ -2,7 +2,7 @@
     const missing_mfr = try req.get_path_param("mfr");
 
     const mfr_list = try http.temp().dupe([]const u8, db.mfrs.items(.id));
-    sort.lexicographic(mfr_list);
+    sort.natural(mfr_list);
 
     try req.render("mfr/list.zk", .{
         .mfr_list = mfr_list,

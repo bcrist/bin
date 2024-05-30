@@ -20,7 +20,7 @@ pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void 
         index_str = try http.temp().dupe(u8, param.name[expected_prefix.len..]);
         const str_value = try http.temp().dupe(u8, param.value orelse "");
 
-        new_name = try validate_name(str_value, db, null, .{ .additional_name = null }, &valid, &message);
+        new_name = if (str_value.len == 0) str_value else try validate_name(str_value, db, null, .{ .additional_name = null }, &valid, &message) orelse "";
     }
 
     if (was_valid != valid) {

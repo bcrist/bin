@@ -23,23 +23,15 @@ pub fn post(req: *http.Request, db: *DB) !void {
         if (!std.mem.eql(u8, param.name, field_str)) continue;
         switch (field) {
             .id => {
-                mfr.id = try validate_name(str_value, db, idx, .id, &valid, &message);
+                mfr.id = (try validate_name(str_value, db, idx, .id, &valid, &message)).?;
                 if (valid and try Manufacturer.set_id(db, idx, mfr.id)) {
                     try req.add_response_header("HX-Location", try http.tprint("/mfr:{}?edit", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
                 }
             },
             .full_name => {
-                const full_name = try validate_name(str_value, db, idx, .full_name, &valid, &message);
-                mfr.full_name = if (full_name.len == 0) null else full_name;
+                mfr.full_name = try validate_name(str_value, db, idx, .full_name, &valid, &message);
                 if (valid) {
                     try Manufacturer.set_full_name(db, idx, mfr.full_name);
-                }
-            },
-            .country => {
-                mfr.country = str_value;
-                if (valid) {
-                    const maybe_country: ?[]const u8 = if (str_value.len == 0) null else str_value;
-                    try Manufacturer.set_country(db, idx, maybe_country);
                 }
             },
             .founded_year => {
@@ -54,26 +46,21 @@ pub fn post(req: *http.Request, db: *DB) !void {
                     try Manufacturer.set_suspended_year(db, idx, mfr.suspended_year);
                 }
             },
+            .country => {
+                mfr.country = if (str_value.len > 0) str_value else null;
+                try Manufacturer.set_country(db, idx, mfr.country);
+            },
             .notes => {
-                mfr.notes = str_value;
-                if (valid) {
-                    const maybe_str: ?[]const u8 = if (str_value.len == 0) null else str_value;
-                    try Manufacturer.set_notes(db, idx, maybe_str);
-                }
+                mfr.notes = if (str_value.len > 0) str_value else null;
+                try Manufacturer.set_notes(db, idx, mfr.notes);
             },
             .website => {
-                mfr.website = str_value;
-                if (valid) {
-                    const maybe_str: ?[]const u8 = if (str_value.len == 0) null else str_value;
-                    try Manufacturer.set_website(db, idx, maybe_str);
-                }
+                mfr.website = if (str_value.len > 0) str_value else null;
+                try Manufacturer.set_website(db, idx, mfr.website);
             },
             .wiki => {
-                mfr.wiki = str_value;
-                if (valid) {
-                    const maybe_str: ?[]const u8 = if (str_value.len == 0) null else str_value;
-                    try Manufacturer.set_wiki(db, idx, maybe_str);
-                }
+                mfr.wiki = if (str_value.len > 0) str_value else null;
+                try Manufacturer.set_wiki(db, idx, mfr.wiki);
             },
         }
         break;

@@ -30,7 +30,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
             var message: []const u8 = "";
             const name = try validate_name(value, db, null, .{ .additional_name = null }, &valid, &message);
             if (valid) {
-                try mfr.additional_names.append(alloc, try alloc.dupe(u8, name));
+                try mfr.additional_names.append(alloc, try alloc.dupe(u8, name.?));
             } else {
                 log.warn("Invalid additional name {s} ({s})", .{ value, message });
                 return error.BadRequest;
@@ -119,14 +119,14 @@ pub fn post(req: *http.Request, db: *DB) !void {
             var valid = true;
             var message: []const u8 = "";
             switch (field) {
-                .id => mfr.id = try validate_name(copied_value, db, null, .id, &valid, &message),
+                .id => mfr.id = try validate_name(copied_value, db, null, .id, &valid, &message) orelse "",
                 .full_name => mfr.full_name = try validate_name(copied_value, db, null, .full_name, &valid, &message),
-                .country => mfr.country = copied_value,
+                .country => mfr.country = if (copied_value.len > 0) copied_value else null,
                 .founded_year => mfr.founded_year = try validate_year(copied_value, &valid, &message),
                 .suspended_year => mfr.suspended_year = try validate_year(copied_value, &valid, &message),
-                .notes => mfr.notes = copied_value,
-                .website => mfr.website = copied_value,
-                .wiki => mfr.wiki = copied_value,
+                .notes => mfr.notes = if (copied_value.len > 0) copied_value else null,
+                .website => mfr.website = if (copied_value.len > 0) copied_value else null,
+                .wiki => mfr.wiki = if (copied_value.len > 0) copied_value else null,
             }
             if (!valid) {
                 log.warn("Invalid {s} parameter: {s} ({s})", .{ param.name, copied_value, message });

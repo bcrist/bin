@@ -61,12 +61,22 @@ const Name_Field = union (enum) {
     full_name,
     additional_name: ?usize,
 };
-pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) ![]const u8 {
+pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) !?[]const u8 {
     const trimmed = std.mem.trim(u8, name, &std.ascii.whitespace);
     if (for_field == .id and !DB.is_valid_id(trimmed)) {
+        log.debug("Invalid ID: {s}", .{ name });
         valid.* = false;
         message.* = "ID may not be empty or '_', or contain '/'";
         return trimmed;
+    }
+
+    if (trimmed.len == 0) {
+        if (for_field == .additional_name) {
+            log.debug("Additional name cannot be empty", .{});
+            valid.* = false;
+            message.* = "Additional name must be provided";
+        }
+        return null;
     }
 
     if (Manufacturer.maybe_lookup(db, trimmed)) |idx| {
@@ -96,9 +106,9 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
             }
         }
 
+        log.debug("Invalid name (in use): {s}", .{ name });
         valid.* = false;
         message.* = try http.tprint("In use by <a href=\"/mfr:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
-        return trimmed;
     }
 
     return trimmed;
@@ -110,6 +120,7 @@ pub fn validate_year(str_value: []const u8, valid: *bool, message: *[]const u8) 
         return null;
     }
     return std.fmt.parseInt(u16, str_value, 10) catch {
+        log.debug("Invalid Year: {s}", .{ str_value });
         valid.* = false;
         message.* = try http.tprint("'{s}' is not a valid year!", .{ str_value });
         return null;

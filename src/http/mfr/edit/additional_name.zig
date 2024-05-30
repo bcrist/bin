@@ -17,7 +17,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         const index_str = param.name[expected_prefix.len..];
         const maybe_index: ?usize = if (index_str.len == 0) null else std.fmt.parseUnsigned(usize, index_str, 10) catch return error.BadRequest;
 
-        const new_name = try validate_name(str_value, db, idx, .{ .additional_name = maybe_index }, &valid, &message);
+        const new_name = if (str_value.len == 0) str_value else try validate_name(str_value, db, idx, .{ .additional_name = maybe_index }, &valid, &message) orelse "";
 
         if (maybe_index) |index| {
             if (new_name.len == 0) {

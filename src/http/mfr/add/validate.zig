@@ -45,6 +45,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
             const index_str = param.name["relation_other".len..];
             if (index_str.len > 0 or str_value.len > 0) {
                 _ = Manufacturer.maybe_lookup(db, str_value) orelse {
+                    log.debug("Invalid mfr relation: {s}", .{ str_value });
                     valid = false;
                     message = "invalid relation manufacturer";
                 };
@@ -63,14 +64,14 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         const field = std.meta.stringToEnum(Validate_Mode, param.name) orelse return error.BadRequest;
         switch (field) {
             .add => return error.BadRequest,
-            .id => mfr.id = try validate_name(str_value, db, null, .id, &valid, &message),
+            .id => mfr.id = try validate_name(str_value, db, null, .id, &valid, &message) orelse "",
             .full_name => mfr.full_name = try validate_name(str_value, db, null, .full_name, &valid, &message),
-            .country => mfr.country = str_value,
+            .country => mfr.country = if (str_value.len > 0) str_value else null,
             .founded_year => mfr.founded_year = try validate_year(str_value, &valid, &message),
             .suspended_year => mfr.suspended_year = try validate_year(str_value, &valid, &message),
-            .notes => mfr.notes = str_value,
-            .website => mfr.website = str_value,
-            .wiki => mfr.wiki = str_value,
+            .notes => mfr.notes = if (str_value.len > 0) str_value else null,
+            .website => mfr.website = if (str_value.len > 0) str_value else null,
+            .wiki => mfr.wiki = if (str_value.len > 0) str_value else null,
         }
     }
 
