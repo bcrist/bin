@@ -11,6 +11,9 @@ mfr_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
 mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
+loc_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
+locs: std.MultiArrayList(Location) = .{},
+
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
@@ -23,14 +26,18 @@ pub const Location = @import("db/Location.zig");
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
 
+    self.locs.deinit(gpa);
+    self.loc_lookup.deinit(gpa);
+
     for (self.mfrs.items(.additional_names)) |*list| {
         list.deinit(gpa);
     }
-
     self.mfr_relations.deinit(gpa);
     self.mfrs.deinit(gpa);
     self.mfr_lookup.deinit(gpa);
+
     self.strings.deinit(gpa);
+    
     self.arena.deinit();
     self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
@@ -40,14 +47,18 @@ pub fn deinit(self: *DB) void {
 pub fn reset(self: *DB) void {
     const gpa = self.container_alloc;
 
+    self.locs.len = 0;
+    self.loc_lookup.clearRetainingCapacity();
+
     for (self.mfrs.items(.additional_names)) |*list| {
         list.deinit(gpa);
     }
-
     self.mfrs.len = 0;
     self.mfr_relations.len = 0;
     self.mfr_lookup.clearRetainingCapacity();
+
     self.strings.clearRetainingCapacity();
+
     self.arena.reset(.retain_capacity);
     self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
@@ -59,6 +70,9 @@ pub fn reset(self: *DB) void {
 pub fn recompute_last_modification_time(self: *DB) void {
     var last_mod: i64 = 0;
     for (self.mfrs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.locs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
     log.debug("Updated last modification time to {}", .{ last_mod });
@@ -177,6 +191,63 @@ pub fn is_valid_id(id: []const u8) bool {
     if (std.mem.eql(u8, id, "_")) return false;
     if (std.mem.indexOfScalar(u8, id, '/')) |_| return false;
     return true;
+}
+
+
+pub fn set_optional(self: *DB, comptime T: type, list: *std.MultiArrayList(T), comptime F: type, idx: T.Index, comptime field: @TypeOf(.enum_field), raw: ?F) !void {
+    const i = @intFromEnum(idx);
+    const array = list.items(field);
+    if (array[i]) |current| {
+        if (raw) |new| {
+            if (F == []const u8) {
+                if (!std.mem.eql(u8, current, new)) {
+                    array[i] = try self.intern(new);
+                    self.set_modified(T, list, idx);
+                }
+            } else {
+                if (!std.meta.eql(current, new)) {
+                    if (F == T.Index) {
+                        if (array[i]) |old| {
+                            self.set_modified(T, list, old);
+                        }
+                        self.set_modified(T, list, new);
+                    }
+                    array[i] = new;
+                    self.set_modified(T, list, idx);
+                }
+            }
+            
+        } else {
+            // removing
+            if (F == T.Index) {
+                if (array[i]) |old| {
+                    self.set_modified(T, list, old);
+                }
+            }
+            array[i] = null;
+            self.set_modified(T, list, idx);
+        }
+    } else {
+        if (raw) |new| {
+            // adding
+            if (F == []const u8) {
+                array[i] = try self.intern(new);
+            } else {
+                array[i] = new;
+                if (F == T.Index) {
+                    self.set_modified(T, list, new);
+                }
+            }
+            self.set_modified(T, list, idx);
+        }
+    }
+}
+
+pub fn set_modified(self: *DB, comptime T: type, list: *std.MultiArrayList(T), idx: T.Index) void {
+    const i = @intFromEnum(idx);
+    const now = std.time.milliTimestamp();
+    list.items(.modified_timestamp_ms)[i] = now;
+    self.mark_dirty(now);
 }
 
 pub fn String_Hash_Map_Ignore_Case(comptime V: type) type {

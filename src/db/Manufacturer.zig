@@ -52,9 +52,9 @@ pub fn lookup_multiple(db: *const DB, possible_names: []const []const u8) ?Index
 pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     if (db.mfr_lookup.get(id)) |idx| return idx;
     
-    const idx: Manufacturer.Index = @enumFromInt(db.mfrs.len);
+    const idx: Index = @enumFromInt(db.mfrs.len);
     const now = std.time.milliTimestamp();
-    const mfr = Manufacturer.init_empty(try db.intern(id), now);
+    const mfr = init_empty(try db.intern(id), now);
     try db.mfrs.append(db.container_alloc, mfr);
     try db.mfr_lookup.putNoClobber(db.container_alloc, mfr.id, idx);
     db.mark_dirty(now);
@@ -237,45 +237,11 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    const i = @intFromEnum(idx);
-    const array = db.mfrs.items(field);
-    if (array[i]) |current| {
-        if (raw) |new| {
-            if (T == []const u8) {
-                if (!std.mem.eql(u8, current, new)) {
-                    array[i] = try db.intern(new);
-                    set_modified(db, idx);
-                }
-            } else {
-                if (!std.meta.eql(current, new)) {
-                    array[i] = new;
-                    set_modified(db, idx);
-                }
-            }
-            
-        } else {
-            // removing
-            array[i] = null;
-            set_modified(db, idx);
-        }
-    } else {
-        if (raw) |new| {
-            // adding
-            if (T == []const u8) {
-                array[i] = try db.intern(new);
-            } else {
-                array[i] = new;
-            }
-            set_modified(db, idx);
-        }
-    }
+    try db.set_optional(Manufacturer, &db.mfrs, T, idx, field, raw);
 }
 
 fn set_modified(db: *DB, idx: Index) void {
-    const i = @intFromEnum(idx);
-    const now = std.time.milliTimestamp();
-    db.mfrs.items(.modified_timestamp_ms)[i] = now;
-    db.mark_dirty(now);
+    db.set_modified(Manufacturer, &db.mfrs, idx);
 }
 
 pub const Relation = struct {

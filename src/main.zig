@@ -175,7 +175,7 @@ fn persist_thread_task() void {
 }
 
 fn persist() !void {
-    std.log.scoped(.db).info("Beginning DB persist", .{});
+    std.log.scoped(.db).debug("Beginning DB persist", .{});
     const start = std.time.microTimestamp();
 
     var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{});

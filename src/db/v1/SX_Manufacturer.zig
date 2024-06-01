@@ -57,7 +57,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, index: Manufacturer.Index) !
 
     const data = db.mfrs.get(@intFromEnum(index));
     var full_name = data.full_name;
-    if (rels.len > 0 and full_name == null) {
+    if (data.additional_names.items.len > 0 and full_name == null) {
         full_name = data.id;
     }
 
@@ -116,10 +116,48 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
     if (self.modified) |dto| try Manufacturer.set_modified_time(db, idx, dto.timestamp_ms());
 }
 
+pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, filenames: *paths.StringHashSet) !void {
+    try filenames.ensureUnusedCapacity(@intCast(db.mfrs.len));
+    defer filenames.clearRetainingCapacity();
+
+    const dirty_timestamp_ms = db.dirty_timestamp_ms orelse std.time.milliTimestamp();
+
+    var dir = try root.makeOpenPath("mfr", .{ .iterate = true });
+    defer dir.close();
+
+    for (0..db.mfrs.len, db.mfrs.items(.id), db.mfrs.items(.modified_timestamp_ms)) |i, id, modified_ts| {
+        const dest_path = try paths.unique_path(allocator, id, filenames);
+        
+        if (modified_ts < dirty_timestamp_ms) continue;
+
+        log.info("Writing mfr{s}{s}", .{ std.fs.path.sep_str, dest_path });
+
+        var af = try dir.atomicFile(dest_path, .{});
+        defer af.deinit();
+
+        var sxw = sx.writer(allocator, af.file.writer().any());
+        defer sxw.deinit();
+
+        try sxw.expression("version");
+        try sxw.int(1, 10);
+        try sxw.close();
+
+        try sxw.expression_expanded("mfr");
+        try sxw.object(try init(allocator, db, @enumFromInt(i)), context);
+        try sxw.close();
+
+        try af.finish();
+    }
+
+    try paths.delete_all_except(&dir, filenames.*, "mfr" ++ std.fs.path.sep_str);
+}
+
 const log = std.log.scoped(.db);
 
 const Manufacturer = @import("../Manufacturer.zig");
 const DB = @import("../../DB.zig");
+const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;
 const tempora = @import("tempora");
+const sx = @import("sx");
 const std = @import("std");
