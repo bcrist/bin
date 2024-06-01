@@ -1,4 +1,6 @@
-* Locations
+* List children on location info page
+* share post_id.zk, etc. between different object types
+
 * Parts
 * Inventory
 * Orders

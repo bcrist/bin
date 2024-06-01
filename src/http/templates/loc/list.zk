@@ -1,0 +1,19 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/loc/add">Add</a>
+</aside>
+\\~
+\\missing_loc?
+<div class="error">
+    No location named <b>\\missing_loc//</b> was found!
+    Would you like to <a href="/loc:\\missing_loc//?edit">add it</a>?
+</div>
+\\~
+<h1>All Locations</h1>
+<div class="columns">
+\\loc_list: *?
+    <a href="/loc:\\*//">\\*//</a><br>
+\\~~
+</div>
+\\@include "_bottom.zk"

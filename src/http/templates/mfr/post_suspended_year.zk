@@ -3,7 +3,7 @@
 </th>
 <td>
     <select id="suspended_year" name="suspended_year"
-\\err_kind?
+\\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
 \\;

@@ -1,0 +1,21 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/loc:\\loc.id//?edit">Edit</a>
+</aside>
+\\~
+<div>loc:\\loc.id//</div>
+<h1>\\full_name//</h1>
+\\parent_id?
+Parent: <a href="/loc:\\parent_id//">\\parent_id//</a>
+\\~
+\\loc://
+\\  notes?
+    <h2>Notes</h2>
+    <div>\\notes//</div>
+\\  ~
+\\~
+<hr>
+<div>Created: \\created//</div>
+<div>Modified: \\modified//</div>
+\\@include "_bottom.zk" 

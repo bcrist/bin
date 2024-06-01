@@ -54,22 +54,47 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     return idx;
 }
 
-pub fn delete(db: *DB, idx: Index) !void {
+pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
+    const parents = db.locs.items(.parent);
+    var maybe_idx: ?Index = descendant_idx;
+    var depth: usize = 0;
+    while (maybe_idx) |idx| {
+        if (idx == ancestor_idx) return true;
+
+        const i = @intFromEnum(idx);
+        if (depth > 1000) {
+            log.warn("Too many location ancestors; probably recursive parent chain involving {s}", .{
+                db.locs.items(.id)[i],
+            });
+            return false;
+        } else {
+            depth += 1;
+            maybe_idx = parents[i];
+        }
+    }
+    return false;
+}
+
+pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     const i = @intFromEnum(idx);
+
+    const parents = db.locs.items(.parent);
+    for (0.., parents) |child_idx, maybe_parent_idx| {
+        if (maybe_parent_idx) |parent_idx| {
+            if (parent_idx == idx) {
+                if (recursive) {
+                    try delete(db, @enumFromInt(child_idx), true);
+                } else {
+                    try set_parent(db, @enumFromInt(child_idx), null);
+                }
+            }
+        }
+    }
 
     std.debug.assert(db.loc_lookup.remove(db.locs.items(.id)[i]));
 
     if (db.locs.items(.full_name)[i]) |full_name| {
         std.debug.assert(db.loc_lookup.remove(full_name));
-    }
-
-    const parents = db.locs.items(.parent);
-    for (parents) |maybe_parent_idx| {
-        if (maybe_parent_idx) |parent_idx| {
-            if (parent_idx == idx) {
-                set_parent(db, parent_idx, null);
-            }
-        }
     }
 
     if (parents[@intFromEnum(idx)]) |parent_idx| {
@@ -123,7 +148,7 @@ pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
     const i = @intFromEnum(idx);
-    const created_timestamps = db.mfrs.items(.created_timestamp_ms);
+    const created_timestamps = db.locs.items(.created_timestamp_ms);
     if (timestamp_ms == created_timestamps[i]) return;
     created_timestamps[i] = timestamp_ms;
     set_modified(db, idx);
@@ -131,7 +156,7 @@ pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 
 pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
     const i = @intFromEnum(idx);
-    const modified_timestamps = db.mfrs.items(.modified_timestamp_ms);
+    const modified_timestamps = db.locs.items(.modified_timestamp_ms);
     if (timestamp_ms == modified_timestamps[i]) return;
     modified_timestamps[i] = timestamp_ms;
     db.mark_dirty(timestamp_ms);

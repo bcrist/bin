@@ -1,0 +1,21 @@
+<th>
+    <label for="id">ID</label>
+</th>
+<td>
+    <input type="text" id="id" name="id" \\validating?;//autofocus\\~//
+\\err?
+        class="submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\; loc.id?
+        class="submitted_field"
+\\;
+\\$ When we first render /loc/add the ID is empty, but err is not set.
+\\$ We want to trigger revalidate as soon as an ID is entered, so we need the invalid flag set here:
+        class="submitted_field"
+        hx-vals='{"invalid":true}'
+\\~~
+        value="\\loc.id//"
+        hx-post="\\post_prefix///id"
+        hx-target="closest tr">
+</td>
+<td>\\@include "_validation.zk"//</td>

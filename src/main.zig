@@ -44,8 +44,7 @@ pub fn main() !void {
     const misc = @import("http/misc.zig");
     const search = @import("http/search.zig");
     const mfr = @import("http/mfr.zig");
-    const debug = @import("http/debug.zig");
-    _ = debug;
+    const loc = @import("http/loc.zig");
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -92,12 +91,22 @@ pub fn main() !void {
         .{ "/mfr:*/relation",           r.module(Injector, mfr.edit.relation) },
         .{ "/mfr:*/relations",          r.module(Injector, mfr.edit.relations) },
 
-
+        .{ "/loc",              r.module(Injector, loc.list) },
+        .{ "/loc/add",          r.module(Injector, loc.add) },
+        .{ "/loc/add/validate", r.module(Injector, loc.add.validate) },
+        .{ "/loc/id",           r.module(Injector, loc.add.validate) },
+        .{ "/loc/full_name",    r.module(Injector, loc.add.validate) },
+        .{ "/loc/notes",        r.module(Injector, loc.add.validate) },
+        .{ "/loc/parent",       r.module(Injector, loc.add.validate) },
+        .{ "/loc:*",            r.module(Injector, loc) },
+        .{ "/loc:*/id",         r.module(Injector, loc.edit) },
+        .{ "/loc:*/full_name",  r.module(Injector, loc.edit) },
+        .{ "/loc:*/notes",      r.module(Injector, loc.edit) },
+        .{ "/loc:*/parent",     r.module(Injector, loc.edit) },
 
         .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
         .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
         .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
-        .{ "/loc:*",    r.module(Injector, @import("http/location.zig")) },
         .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
         .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
         .{ "/pkg:*",    r.module(Injector, @import("http/package.zig")) },

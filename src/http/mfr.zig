@@ -193,12 +193,14 @@ const Render_Mode = enum {
 pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, mfr: Manufacturer, relations: []const Relation, mode: Render_Mode) !void {
     if (mode != .info) try Session.redirect_if_missing(req, session);
 
-    const created_dto = tempora.Date_Time.With_Offset.from_timestamp_ms(mfr.created_timestamp_ms, tz);
-    const modified_dto = tempora.Date_Time.With_Offset.from_timestamp_ms(mfr.modified_timestamp_ms, tz);
+    const DTO = tempora.Date_Time.With_Offset;
+
+    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, tz);
+    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, tz);
 
     const Context = struct {
-        pub const created = tempora.Date_Time.With_Offset.fmt_sql;
-        pub const modified = tempora.Date_Time.With_Offset.fmt_sql;
+        pub const created = DTO.fmt_sql;
+        pub const modified = DTO.fmt_sql;
     };
 
     const post_prefix = switch (mode) {
