@@ -3,6 +3,8 @@ import: ?[]const u8 = null,
 host: []const u8 = "127.0.0.1",
 port: u16 = 16777,
 http_threads: ?u32 = 10,
+autosave_delay_ms: i64 = 30_000,
+persist_thread_interval_ms: i64 = 1_000,
 timezone: ?[]const u8 = null,
 user: []const Session = &.{ .{} },
 

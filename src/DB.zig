@@ -78,6 +78,7 @@ pub fn import_data(self: *DB, dir: *std.fs.Dir, options: Import_Options) !void {
     defer walker.deinit();
 
     self.loading = options.loading;
+    defer self.loading = false;
 
     while (try walker.next()) |entry| {
         if (entry.kind != .file) continue;
@@ -137,6 +138,7 @@ fn parse_data(self: *DB, reader: *sx.Reader) !void {
 
 pub fn export_data(self: *DB, dir: *std.fs.Dir) !void {
     try v1.write_data(self, dir);
+    self.dirty_timestamp_ms = null;
 }
 
 pub fn mark_dirty(self: *DB, timestamp_ms: i64) void {
@@ -207,7 +209,6 @@ pub fn hash_string_ignore_case(s: []const u8) u64 {
     hash.update(std.ascii.lowerString(&buf, remaining));
     return hash.final();
 }
-
 
 const log = std.log.scoped(.db);
 const intern_log = std.log.scoped(.@"db.intern");

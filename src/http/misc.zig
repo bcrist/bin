@@ -1,8 +1,7 @@
 pub const entry = struct {
     const DTO = tempora.Date_Time.With_Offset;
-    pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
-        const tz = if (session) |s| try tempora.tzdb.timezone(s.timezone) else null;
-        const last_modified = DTO.from_timestamp_ms(db.last_modification_timestamp_ms orelse 0, null).in_timezone(tz);
+    pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
+        const last_modified = if (db.last_modification_timestamp_ms) |last_mod| DTO.from_timestamp_ms(last_mod, tz) else null;
         try req.render("index.zk", .{
             .session = session,
             .last_modified = last_modified,

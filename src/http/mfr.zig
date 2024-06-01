@@ -3,11 +3,11 @@ pub const add = @import("mfr/add.zig");
 pub const edit = @import("mfr/edit.zig");
 pub const countries = @import("mfr/countries.zig");
 
-pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
+pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req);
+            try add.get(session, req, tz);
         } else {
             try list.get(session, req, db);
         }
@@ -24,7 +24,7 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
 
     const relations = try get_sorted_relations(db, idx);
 
-    try render(session, req, mfr, relations.items, if (try req.has_query_param("edit")) .edit else .info);
+    try render(session, req, tz, mfr, relations.items, if (try req.has_query_param("edit")) .edit else .info);
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
@@ -190,10 +190,8 @@ const Render_Mode = enum {
     edit,
 };
 
-pub fn render(session: ?Session, req: *http.Request, mfr: Manufacturer, relations: []const Relation, mode: Render_Mode) !void {
+pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, mfr: Manufacturer, relations: []const Relation, mode: Render_Mode) !void {
     if (mode != .info) try Session.redirect_if_missing(req, session);
-
-    const tz = try tempora.tzdb.timezone(if (session) |s| s.timezone else "GMT");
 
     const created_dto = tempora.Date_Time.With_Offset.from_timestamp_ms(mfr.created_timestamp_ms, tz);
     const modified_dto = tempora.Date_Time.With_Offset.from_timestamp_ms(mfr.modified_timestamp_ms, tz);

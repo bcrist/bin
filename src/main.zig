@@ -29,13 +29,9 @@ pub fn main() !void {
         try db.import_data(&import_dir, .{ .prefix = import_path });
     }
 
-    {
-        var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{});
-        defer db_dir.close();
-        try db.export_data(&db_dir);
-    }
-
+    try persist();
     db.recompute_last_modification_time();
+    persist_thread = try std.Thread.spawn(.{}, persist_thread_task, .{});
 
     const Injector = http.Default_Injector
         .extend(Session.inject)
@@ -137,6 +133,54 @@ pub fn main() !void {
     });
 
     try server.run();
+
+    mutex_log.debug("locking DB for shutdown", .{});
+    db_lock.lock();
+    shut_down = true;
+    db_lock.unlock();
+
+    persist_thread.join();
+
+    persist();
+}
+
+fn persist_thread_task() void {
+    while (true) {
+        var sleep_time_ms = config.persist_thread_interval_ms;
+        {
+            mutex_log.debug("locking DB for persist", .{});
+            db_lock.lock();
+            defer db_lock.unlock();
+
+            if (shut_down) break;
+
+            if (db.dirty_timestamp_ms != null) {
+                if (db.last_modification_timestamp_ms) |last_mod| {
+                    const ms_since_last_mod = std.time.milliTimestamp() - last_mod;
+                    if (ms_since_last_mod >= config.autosave_delay_ms) {
+                        persist() catch |err| {
+                            std.log.scoped(.db).err("Failed to persist changes: {s}", .{ @errorName(err) });
+                        };
+                    } else {
+                        sleep_time_ms = @min(sleep_time_ms, config.autosave_delay_ms - ms_since_last_mod);
+                    }
+                }
+            }
+        }
+        std.time.sleep(@intCast(sleep_time_ms * 1_000_000));
+    }
+}
+
+fn persist() !void {
+    std.log.scoped(.db).info("Beginning DB persist", .{});
+    const start = std.time.microTimestamp();
+
+    var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{});
+    defer db_dir.close();
+    try db.export_data(&db_dir);
+
+    const end = std.time.microTimestamp();
+    std.log.scoped(.db).info("Finished DB persist (took {d:.1} ms)", .{ @as(f32, @floatFromInt(end - start)) / 1000 });
 }
 
 var config: Config = .{};
@@ -144,6 +188,9 @@ var config_mutex: std.Thread.Mutex = .{};
 
 var db: DB = undefined;
 var db_lock: std.Thread.RwLock = .{};
+
+var shut_down: bool = false; // protected by db_lock
+var persist_thread: std.Thread = undefined;
 
 threadlocal var thread_rnd: ?std.rand.Xoshiro256 = null;
 
@@ -187,6 +234,11 @@ const inject = struct {
         if (thread_rnd) |*rnd| return rnd;
         thread_rnd = std.rand.Xoshiro256.init(std.crypto.random.int(u64));
         return &thread_rnd.?;
+    }
+
+    pub fn inject_timezone(session: ?Session) !?*const tempora.Timezone {
+        const tz_name = if (session) |s| s.timezone else config.timezone;
+        return try tempora.tzdb.timezone(tz_name orelse "GMT");
     }
 };
 

@@ -1,5 +1,3 @@
-* DB save thread
-
 * Search bar
 
 * Locations
