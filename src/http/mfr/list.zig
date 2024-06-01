@@ -17,7 +17,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     var param_iter = try req.form_iterator();
     while (try param_iter.next()) |param| {
         if (std.mem.eql(u8, param.name, "name")) {
-            name_filter = param.value orelse "";
+            name_filter = try http.temp().dupe(u8, param.value orelse "");
         } else {
             log.warn("Unrecognized search filter: {s}={s}", .{ param.name, param.value orelse "" });
         }

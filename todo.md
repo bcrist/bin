@@ -1,5 +1,3 @@
-* Search bar
-
 * Locations
 * Parts
 * Inventory

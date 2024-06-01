@@ -36,7 +36,7 @@ header {
     top: 0;
     left: 0;
     right: 0;
-    height: 10em;
+    padding-bottom: 0.2em;
     z-index: 999;
     background: #4f7186;
     border-bottom: 2px solid #999;
@@ -83,7 +83,7 @@ main {
     flex: 1 0 auto;
     width: 50em;
     margin: auto;
-    padding-top: 12em;
+    padding-top: 6em;
     padding-left: 13em;
     padding-right: 1em;
 }
@@ -136,7 +136,7 @@ aside.flex button, aside.flex a {
     transition: opacity 1s ease-out;
 }
 
-textarea, input[type=text], input[type=number] {
+textarea, input[type=text], input[type=search], input[type=number] {
     background: #111;
     color: #eee;
     border-radius: 0.5em;
@@ -155,7 +155,7 @@ textarea {
     min-height: 8em;
 }
 
-textarea.invalid, input[type=text].invalid, input[type=number].invalid {
+textarea.invalid, input[type=text].invalid, input[type=search].invalid, input[type=number].invalid {
     background: #100;
     border-color: #722;
     color: #ccc;
@@ -164,6 +164,15 @@ div.ss-main.invalid {
     --ss-bg-color: #100;
     --ss-border-color: #722;
     --ss-font-color: #ccc;
+}
+
+#main_search {
+    max-width: 60em;
+    margin: auto;
+}
+
+input[type="search"]::-webkit-search-cancel-button {
+    display: none;
 }
 
 .validation_error {
@@ -217,6 +226,7 @@ select.slimselect {
     direction: ltr;
     -webkit-font-feature-settings: 'liga';
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'liga';
     width: 2em;
     height: 2em;
     line-height: 2em;

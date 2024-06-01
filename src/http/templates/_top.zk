@@ -21,6 +21,15 @@
             <a href="/p">Parts</a>
             <a href="/mfr">Manufacturers</a>
         </nav>
+        <form id="main_search" autocomplete="off"
+            hx-post="/search"
+            hx-trigger="submit, change[target === document.activeElement] from:#main_search_input"
+            hx-target="#main_search_datalist">
+            <input type="hidden" name="go" value="true">
+            <input type="search" id="main_search_input" name="q" autocomplete="off" list="main_search_datalist"
+                hx-post="/search" hx-params="q" hx-trigger="input changed delay:200ms" hx-target="#main_search_datalist" hx-sync="closest form:abort">
+            <datalist id="main_search_datalist"></datalist>
+        </form>
     </header>
 
-    <main><section id="content">
+<main><section id="content">

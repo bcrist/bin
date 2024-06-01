@@ -42,6 +42,7 @@ pub fn main() !void {
     defer server.deinit();
 
     const misc = @import("http/misc.zig");
+    const search = @import("http/search.zig");
     const mfr = @import("http/mfr.zig");
     const debug = @import("http/debug.zig");
     _ = debug;
@@ -59,6 +60,8 @@ pub fn main() !void {
             .last_modified_utc = tempora.Date_Time.epoch,
             .etag = "nil",
         })},
+
+        .{ "/search", r.module(Injector, search) },
 
         .{ "/mfr",                      r.module(Injector, mfr.list) },
         .{ "/mfr/add",                  r.module(Injector, mfr.add) },
@@ -141,7 +144,7 @@ pub fn main() !void {
 
     persist_thread.join();
 
-    persist();
+    try persist();
 }
 
 fn persist_thread_task() void {
