@@ -7,6 +7,7 @@
     <form hx-post="/mfr/add" hx-include=".submitted_field">
         \\@include "_add_button.zk"//
     </form>
+    <a href="/mfr">Cancel</a>
 </aside>
 <h1>Add Manufacturer</h1>
 <table class="edit_properties">

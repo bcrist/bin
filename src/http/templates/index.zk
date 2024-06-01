@@ -1,7 +1,10 @@
 \\@include "_top.zk"
-        <aside>
-<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras fringilla lacus eu viverra consectetur. Praesent malesuada molestie dolor, ultricies luctus nisi varius tempus. Nullam at venenatis est. Ut ex nunc, sagittis non tempor a, eleifend ac velit. Duis feugiat blandit volutpat. Phasellus aliquam tincidunt ex, et tincidunt urna sollicitudin convallis. Sed quis ultricies tortor. Praesent non auctor nibh, maximus tincidunt leo. Mauris at dapibus urna. Nullam interdum rhoncus leo, sed pulvinar purus consectetur quis.
-        </aside>
-<p>Vivamus auctor magna ac dui ultricies, quis commodo risus eleifend. Proin a nulla a velit dapibus tincidunt. Ut at placerat lorem. Donec auctor felis sed nisl feugiat lobortis. Phasellus suscipit velit in luctus viverra. Sed sagittis massa odio, in porttitor justo scelerisque quis. Fusce blandit fringilla turpis nec faucibus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Pellentesque aliquam cursus turpis, et tempus nisi laoreet id. Praesent tincidunt turpis at neque vehicula, a accumsan massa pulvinar. Nulla rhoncus in leo non pharetra. Proin viverra urna nec vestibulum lacinia. Ut aliquam ex a enim sollicitudin, sed gravida purus mollis. Sed quis justo leo. Vivamus rhoncus ac libero vitae pellentesque.
+<aside>
+</aside>
+
+Database Last Modified: \\last_modified//
+<br>
+\\dirty?//(Has unsaved changes)\\~
+
 
 \\@include "_bottom.zk"

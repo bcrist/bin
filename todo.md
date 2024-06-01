@@ -1,4 +1,3 @@
-* /mfr/add Cancel button
 * DB save thread
 
 * Search bar

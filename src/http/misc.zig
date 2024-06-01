@@ -1,9 +1,18 @@
 pub const entry = struct {
-    pub fn get(session: ?Session, req: *http.Request) !void {
+    const DTO = tempora.Date_Time.With_Offset;
+    pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
+        const tz = if (session) |s| try tempora.tzdb.timezone(s.timezone) else null;
+        const last_modified = DTO.from_timestamp_ms(db.last_modification_timestamp_ms orelse 0, null).in_timezone(tz);
         try req.render("index.zk", .{
             .session = session,
-        }, .{});
+            .last_modified = last_modified,
+            .dirty = db.dirty_timestamp_ms != null,
+        }, .{ .Context = Context });
     }
+
+    const Context = struct {
+        pub const last_modified = DTO.fmt_sql;
+    };
 };
 
 pub const login = struct {
@@ -106,7 +115,9 @@ pub const shutdown = struct {
 
 const log = std.log.scoped(.http);
 
+const DB = @import("../DB.zig");
 const Config = @import("../Config.zig");
 const Session = @import("../Session.zig");
+const tempora = @import("tempora");
 const http = @import("http");
 const std = @import("std");
