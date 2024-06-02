@@ -1,13 +1,13 @@
 \\@include "_top.zk"
 <aside class="flex">
-    <a href="/loc:\\loc.id//">Done</a>
-    <button hx-delete="/loc:\\loc.id//" hx-confirm="Are you sure you want to delete \\loc.id//?  Any child locations will also be deleted.">Delete</button>
+    <a href="/loc:\\obj.id//">Done</a>
+    <button hx-delete="/loc:\\obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?  Any child locations will also be deleted.">Delete</button>
 </aside>
 <h1>Edit \\full_name//</h1>
 <table class="edit_properties">
-<tr>\\@include "loc/post_id.zk"//</tr>
-<tr>\\@include "loc/post_full_name.zk"//</tr>
-<tr>\\@include "loc/post_parent.zk"//</tr>
-<tr>\\@include "loc/post_notes.zk"//</tr>
+<tr>\\@include "common/post_id.zk"//</tr>
+<tr>\\@include "common/post_full_name.zk"//</tr>
+<tr>\\@include "common/post_parent.zk"//</tr>
+<tr>\\@include "common/post_notes.zk"//</tr>
 </table>
 \\@include "_bottom.zk" 

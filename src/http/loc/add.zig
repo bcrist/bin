@@ -4,7 +4,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) 
     const id = (try req.get_path_param("loc")) orelse "";
     const now = std.time.milliTimestamp();
     const loc = Location.init_empty(id, now);
-    try render(session, req, tz, loc, null, .add);
+    try render(session, req, tz, loc, null, &.{}, .add);
 }
 
 pub fn post(req: *http.Request, db: *DB) !void {

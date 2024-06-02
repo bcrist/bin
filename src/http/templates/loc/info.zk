@@ -1,14 +1,19 @@
 \\@include "_top.zk"
 \\session?
 <aside class="flex">
-    <a href="/loc:\\loc.id//?edit">Edit</a>
+    <a href="/loc:\\obj.id//?edit">Edit</a>
 </aside>
 \\~
-<div>loc:\\loc.id//</div>
+<div>loc:\\obj.id//</div>
 <h1>\\full_name//</h1>
 \\parent_id?
 Parent: <a href="/loc:\\parent_id//">\\parent_id//</a>
 \\~
+\\children?
+<h2>Children</h2>
+\\children:
+<a href="/loc:\\*//">\\*//</a><span class="separator"></span>
+\\~~
 \\loc://
 \\  notes?
     <h2>Notes</h2>

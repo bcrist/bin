@@ -71,19 +71,20 @@ pub fn post(req: *http.Request, db: *DB) !void {
         .valid = valid,
         .saved = valid,
         .err = message,
-        .mfr = mfr,
+        .obj = mfr,
+        .country_search_url = "/mfr/countries",
         .post_prefix = post_prefix,
     };
 
     switch (field) {
-        .id => try req.render("mfr/post_id.zk", render_data, .{}),
-        .full_name => try req.render("mfr/post_full_name.zk", render_data, .{}),
-        .country => try req.render("mfr/post_country.zk", render_data, .{}),
-        .founded_year => try req.render("mfr/post_founded_year.zk", render_data, .{}),
-        .suspended_year => try req.render("mfr/post_suspended_year.zk", render_data, .{}),
-        .notes => try req.render("mfr/post_notes.zk", render_data, .{}),
-        .website => try req.render("mfr/post_website.zk", render_data, .{}),
-        .wiki => try req.render("mfr/post_wiki.zk", render_data, .{}),
+        .id => try req.render("common/post_id.zk", render_data, .{}),
+        .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
+        .country => try req.render("common/post_country.zk", render_data, .{}),
+        .founded_year => try req.render("common/post_founded_year.zk", render_data, .{}),
+        .suspended_year => try req.render("common/post_suspended_year.zk", render_data, .{}),
+        .notes => try req.render("common/post_notes.zk", render_data, .{}),
+        .website => try req.render("common/post_website.zk", render_data, .{}),
+        .wiki => try req.render("common/post_wiki.zk", render_data, .{}),
     }
 }
 

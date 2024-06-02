@@ -1,10 +1,10 @@
 \\@include "_top.zk"
 \\session?
 <aside class="flex">
-    <a href="/mfr:\\mfr.id//?edit">Edit</a>
+    <a href="/mfr:\\obj.id//?edit">Edit</a>
 </aside>
 \\~
-<div>mfr:\\mfr.id//</div>
+<div>mfr:\\obj.id//</div>
 <h1>\\full_name//</h1>
 \\mfr://
 \\  country//

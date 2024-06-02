@@ -1,23 +1,23 @@
 <th>
-    <label for="founded_year">Founded Year</label>
+    <label for="parent">Parent</label>
 </th>
 <td>
-    <select id="founded_year" name="founded_year"
+    <select id="parent" name="parent"
 \\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
 \\;
         class="slimselect submitted_field"
 \\~
-        hx-post="\\post_prefix///founded_year"
+        hx-post="\\post_prefix///parent"
         hx-target="closest tr"
         hx-trigger="ss:afterChange"
         data-deselectable
         data-addable
-        data-options="2024-1900?">
+        data-search-url="\\parent_search_url//">
         <option data-placeholder="true" value> </option>
-\\mfr.founded_year?
-        <option selected value="\\mfr.founded_year//">\\mfr.founded_year//</option>
+\\parent_id?
+        <option selected value="\\parent_id//">\\parent_id//</option>
 \\~
     </select>
 </td>

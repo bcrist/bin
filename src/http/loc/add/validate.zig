@@ -51,17 +51,18 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         .validating = true,
         .valid = valid,
         .err = message,
-        .loc = loc,
+        .obj = loc,
         .parent_id = parent_id,
+        .parent_search_url = "/loc",
         .post_prefix = "/loc",
     };
 
     switch (mode) {
         .add => try req.render("_add_button.zk", render_data, .{}),
-        .id => try req.render("loc/post_id.zk", render_data, .{}),
-        .full_name => try req.render("loc/post_full_name.zk", render_data, .{}),
-        .notes => try req.render("loc/post_notes.zk", render_data, .{}),
-        .parent => try req.render("loc/post_parent.zk", render_data, .{}),
+        .id => try req.render("common/post_id.zk", render_data, .{}),
+        .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
+        .notes => try req.render("common/post_notes.zk", render_data, .{}),
+        .parent => try req.render("common/post_parent.zk", render_data, .{}),
     }
 }
 

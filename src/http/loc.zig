@@ -22,7 +22,15 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
 
     const parent_id = if (loc.parent) |parent_idx| db.locs.items(.id)[@intFromEnum(parent_idx)] else null;
-    try render(session, req, tz, loc, parent_id, if (try req.has_query_param("edit")) .edit else .info);
+
+    var children = std.ArrayList([]const u8).init(http.temp());
+    for (db.locs.items(.parent), db.locs.items(.id)) |parent_idx, id| {
+        if (parent_idx == idx) {
+            try children.append(id);
+        }
+    }
+
+    try render(session, req, tz, loc, parent_id, children.items, if (try req.has_query_param("edit")) .edit else .info);
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
@@ -99,7 +107,7 @@ const Render_Mode = enum {
     edit,
 };
 
-pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, loc: Location, parent_id: ?[]const u8, mode: Render_Mode) !void {
+pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, loc: Location, parent_id: ?[]const u8, children: []const []const u8, mode: Render_Mode) !void {
     if (mode != .info) try Session.redirect_if_missing(req, session);
 
     const DTO = tempora.Date_Time.With_Offset;
@@ -123,9 +131,11 @@ pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezon
         .mode = mode,
         .post_prefix = post_prefix,
         .title = loc.full_name orelse loc.id,
-        .loc = loc,
+        .obj = loc,
         .full_name = loc.full_name orelse loc.id,
         .parent_id = parent_id,
+        .parent_search_url = "/loc",
+        .children = children,
         .created = created_dto,
         .modified = modified_dto,
     };
