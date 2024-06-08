@@ -6,7 +6,14 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) 
     const id = (try req.get_path_param("mfr")) orelse "";
     const now = std.time.milliTimestamp();
     const mfr = Manufacturer.init_empty(id, now);
-    try render(session, req, tz, mfr, &.{}, .add);
+    try render(mfr, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .relations = &.{},
+        .packages = &.{},
+        .mode = .add,
+    });
 }
 
 pub fn post(req: *http.Request, db: *DB) !void {

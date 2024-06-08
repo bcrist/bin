@@ -64,8 +64,13 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
-    const i = @intFromEnum(idx);
+    for (0.., db.pkgs.items(.manufacturer)) |pkg_idx, maybe_mfr_idx| {
+        if (maybe_mfr_idx == idx) {
+            try Package.set_mfr(db, @enumFromInt(pkg_idx), null);
+        }
+    }
 
+    const i = @intFromEnum(idx);
     std.debug.assert(db.mfr_lookup.remove(db.mfrs.items(.id)[i]));
 
     if (db.mfrs.items(.full_name)[i]) |full_name| {
@@ -447,6 +452,7 @@ pub const Relation = struct {
 
 const log = std.log.scoped(.db);
 
+const Package = DB.Package;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");

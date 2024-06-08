@@ -24,14 +24,27 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     const relations = try get_sorted_relations(db, idx);
 
-    try render(session, req, tz, mfr, relations.items, if (try req.has_query_param("edit")) .edit else .info);
+    var packages = std.ArrayList([]const u8).init(http.temp());
+    for (db.pkgs.items(.id), db.pkgs.items(.manufacturer)) |id, mfr_idx| {
+        if (mfr_idx == idx) {
+            try packages.append(id);
+        }
+    }
+    sort.natural(packages.items);
+
+    try render(mfr, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .relations = relations.items,
+        .packages = packages.items,
+        .mode = if (try req.has_query_param("edit")) .edit else .info,
+    });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
-
-    // TODO if there are any parts/etc referencing this Mfr, redirect to /mfr:*?error#parts
 
     try Manufacturer.delete(db, idx);
 
@@ -184,34 +197,40 @@ pub const Relation = struct {
     }
 };
 
-const Render_Mode = enum {
-    info,
-    add,
-    edit,
+const Render_Info = struct {
+    session: ?Session,
+    req: *http.Request,
+    tz: ?*const tempora.Timezone,
+    relations: []const Relation,
+    packages: []const []const u8,
+    mode: enum {
+        info,
+        add,
+        edit,
+    },
 };
-
-pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, mfr: Manufacturer, relations: []const Relation, mode: Render_Mode) !void {
-    if (mode != .info) try Session.redirect_if_missing(req, session);
+pub fn render(mfr: Manufacturer, info: Render_Info) !void {
+    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
 
     const DTO = tempora.Date_Time.With_Offset;
 
-    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, tz);
-    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, tz);
+    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, info.tz);
+    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, info.tz);
 
     const Context = struct {
         pub const created = DTO.fmt_sql;
         pub const modified = DTO.fmt_sql;
     };
 
-    const post_prefix = switch (mode) {
+    const post_prefix = switch (info.mode) {
         .info => "",
         .edit => try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }),
         .add => "/mfr",
     };
 
     const data = .{
-        .session = session,
-        .mode = mode,
+        .session = info.session,
+        .mode = info.mode,
         .post_prefix = post_prefix,
         .title = mfr.full_name orelse mfr.id,
         .obj = mfr,
@@ -220,13 +239,14 @@ pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezon
         .country_search_url = "/mfr/countries",
         .created = created_dto,
         .modified = modified_dto,
-        .relations = relations,
+        .relations = info.relations,
+        .packages = info.packages,
     };
 
-    switch (mode) {
-        .info => try req.render("mfr/info.zk", data, .{ .Context = Context }),
-        .edit => try req.render("mfr/edit.zk", data, .{ .Context = Context }),
-        .add => try req.render("mfr/add.zk", data, .{ .Context = Context }),
+    switch (info.mode) {
+        .info => try info.req.render("mfr/info.zk", data, .{ .Context = Context }),
+        .edit => try info.req.render("mfr/edit.zk", data, .{ .Context = Context }),
+        .add => try info.req.render("mfr/add.zk", data, .{ .Context = Context }),
     }
 }
 

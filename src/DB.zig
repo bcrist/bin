@@ -257,9 +257,11 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
             // adding
             if (F == []const u8) {
                 array[i] = try self.intern(new);
-            } else if (F == T.Index) {
+            } else {
+                if (F == T.Index) {
+                    self.maybe_set_modified(new);
+                }
                 array[i] = new;
-                self.maybe_set_modified(new);
             }
             self.maybe_set_modified(idx);
         }

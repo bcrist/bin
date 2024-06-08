@@ -22,14 +22,20 @@
     <div>\\notes//</div>
 \\  ~
 \\~
-\\  relations?
+\\relations?
     <h2>Relations</h2>
-\\      relations:
+\\  relations:
     <div>
         \\kind_str|kind// <a href="/mfr:\\other//">\\other//</a>
         \\year?//(\\year//)\\~//
     </div>
-\\  ~~
+\\~~
+\\packages?
+    <h2>Packages</h2>
+\\  packages:
+    <div><a href="/pkg:\\*//">\\*//</a></div>
+\\~~
+
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>
