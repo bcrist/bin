@@ -6,9 +6,9 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{});
 
     const ext = .{
-        .Temp_Allocator = b.dependency("Zig-TempAllocator", .{}).module("Temp_Allocator"),
-        .deep_hash_map = b.dependency("Zig-DeepHashMap", .{}).module("deep_hash_map"),
-        .sx = b.dependency("Zig-SX", .{}).module("sx"),
+        .Temp_Allocator = b.dependency("Temp_Allocator", .{}).module("Temp_Allocator"),
+        .deep_hash_map = b.dependency("deep_hash_map", .{}).module("deep_hash_map"),
+        .sx = b.dependency("sx", .{}).module("sx"),
         .tempora = b.dependency("tempora", .{}).module("tempora"),
         .dizzy = b.dependency("dizzy", .{}).module("dizzy"),
         .http = b.dependency("shittip", .{}).module("http"),

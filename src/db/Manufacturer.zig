@@ -17,6 +17,8 @@ const Manufacturer = @This();
 pub const Index = enum (u32) {
     unknown = std.math.maxInt(u32),
     _,
+
+    pub const Type = Manufacturer;
 };
 
 pub fn init_empty(id: []const u8, timestamp_ms: i64) Manufacturer {
@@ -237,11 +239,11 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Manufacturer, &db.mfrs, T, idx, field, raw);
+    try db.set_optional(Manufacturer, idx, field, T, raw);
 }
 
 fn set_modified(db: *DB, idx: Index) void {
-    db.set_modified(Manufacturer, &db.mfrs, idx);
+    db.maybe_set_modified(idx);
 }
 
 pub const Relation = struct {

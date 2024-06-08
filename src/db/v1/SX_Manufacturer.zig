@@ -6,10 +6,10 @@ wiki: ?[]const u8 = null,
 country: ?[]const u8 = null,
 founded: ?u16 = null,
 suspended: ?u16 = null,
-created: ?Date_Time.With_Offset = null,
-modified: ?Date_Time.With_Offset = null,
 rel: []const Relation = &.{},
 notes: ?[]const u8 = null,
+created: ?Date_Time.With_Offset = null,
+modified: ?Date_Time.With_Offset = null,
 
 const SX_Manufacturer = @This();
 

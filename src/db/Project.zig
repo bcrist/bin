@@ -9,7 +9,12 @@ completed_timestamp_ms: ?i64,
 // Attachments/Images
 // Tags
 
-pub const Index = enum (u32) { _ };
+const Project = @This();
+pub const Index = enum (u32) {
+    _,
+
+    pub const Type = Project;
+};
 
 const Date_Time = @import("tempora").Date_Time;
 const std = @import("std");

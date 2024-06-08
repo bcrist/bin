@@ -2,11 +2,12 @@ id: []const u8 = "",
 full_name: ?[]const u8 = null,
 parent: ?[]const u8 = null,
 child: []const []const u8 = &.{},
+mfr: ?[]const u8 = null,
 notes: ?[]const u8 = null,
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
 
-const SX_Location = @This();
+const SX_Package = @This();
 
 pub const context = struct {
     pub const inline_fields = &.{ "id", "full_name" };
@@ -14,9 +15,10 @@ pub const context = struct {
     pub const modified = Date_Time.With_Offset.fmt_sql;
 };
 
-pub fn init(temp: std.mem.Allocator, db: *const DB, index: Location.Index) !SX_Location {
-    const ids = db.locs.items(.id);
-    const parents = db.locs.items(.parent);
+pub fn init(temp: std.mem.Allocator, db: *const DB, index: Package.Index) !SX_Package {
+    const ids = db.pkgs.items(.id);
+    const mfr_ids = db.mfrs.items(.id);
+    const parents = db.pkgs.items(.parent);
 
     var children = std.ArrayList([]const u8).init(temp);
     for (0.., parents) |child_idx, parent_idx| {
@@ -25,25 +27,27 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, index: Location.Index) !SX_L
         }
     }
 
-    const data = db.locs.get(@intFromEnum(index));
+    const data = db.pkgs.get(@intFromEnum(index));
 
     const parent_id = if (data.parent) |parent_idx| ids[@intFromEnum(parent_idx)] else null;
+    const mfr_id = if (data.manufacturer) |mfr_idx| mfr_ids[@intFromEnum(mfr_idx)] else null;
     return .{
         .id = data.id,
         .full_name = data.full_name,
         .parent = parent_id,
         .child = children.items,
+        .mfr = mfr_id,
         .notes = data.notes,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
         .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
     };
 }
 
-pub fn read(self: SX_Location, db: *DB) !void {
+pub fn read(self: SX_Package, db: *DB) !void {
     const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
 
     if (!DB.is_valid_id(id)) {
-        log.warn("Skipping Location {s} (invalid ID)", .{ id });
+        log.warn("Skipping Package {s} (invalid ID)", .{ id });
         return;
     }
 
@@ -54,32 +58,40 @@ pub fn read(self: SX_Location, db: *DB) !void {
         }
     }
 
-    const idx = Location.maybe_lookup(db, full_name) orelse try Location.lookup_or_create(db, id);
-    const parent_idx = if (self.parent) |parent_id| try Location.lookup_or_create(db, parent_id) else null;
+    const idx = Package.maybe_lookup(db, full_name) orelse try Package.lookup_or_create(db, id);
+    _ = try Package.set_id(db, idx, id);
 
-    _ = try Location.set_id(db, idx, id);
-    _ = try Location.set_parent(db, idx, parent_idx);
-    if (full_name) |name| try Location.set_full_name(db, idx, name);
-    if (self.notes) |notes| try Location.set_notes(db, idx, notes);
-    if (self.created) |dto| try Location.set_created_time(db, idx, dto.timestamp_ms());
-    if (self.modified) |dto| try Location.set_modified_time(db, idx, dto.timestamp_ms());
+    if (self.parent) |parent_id| {
+        const parent_idx = try Package.lookup_or_create(db, parent_id);
+        _ = try Package.set_parent(db, idx, parent_idx);
+    }
+
+    if (self.mfr) |mfr_id| {
+        const mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
+        _ = try Package.set_mfr(db, idx, mfr_idx);
+    }
+
+    if (full_name) |name| try Package.set_full_name(db, idx, name);
+    if (self.notes) |notes| try Package.set_notes(db, idx, notes);
+    if (self.created) |dto| try Package.set_created_time(db, idx, dto.timestamp_ms());
+    if (self.modified) |dto| try Package.set_modified_time(db, idx, dto.timestamp_ms());
 }
 
 pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, filenames: *paths.StringHashSet) !void {
-    try filenames.ensureUnusedCapacity(@intCast(db.locs.len));
+    try filenames.ensureUnusedCapacity(@intCast(db.pkgs.len));
     defer filenames.clearRetainingCapacity();
 
     const dirty_timestamp_ms = db.dirty_timestamp_ms orelse std.time.milliTimestamp();
 
-    var dir = try root.makeOpenPath("loc", .{ .iterate = true });
+    var dir = try root.makeOpenPath("pkg", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.locs.len, db.locs.items(.id), db.locs.items(.modified_timestamp_ms)) |i, id, modified_ts| {
+    for (0..db.pkgs.len, db.pkgs.items(.id), db.pkgs.items(.modified_timestamp_ms)) |i, id, modified_ts| {
         const dest_path = try paths.unique_path(allocator, id, filenames);
         
         if (modified_ts < dirty_timestamp_ms) continue;
 
-        log.info("Writing loc{s}{s}", .{ std.fs.path.sep_str, dest_path });
+        log.info("Writing pkg{s}{s}", .{ std.fs.path.sep_str, dest_path });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();
@@ -91,19 +103,20 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try sxw.int(1, 10);
         try sxw.close();
 
-        try sxw.expression_expanded("loc");
-        try sxw.object(try SX_Location.init(allocator, db, @enumFromInt(i)), SX_Location.context);
+        try sxw.expression_expanded("pkg");
+        try sxw.object(try SX_Package.init(allocator, db, @enumFromInt(i)), SX_Package.context);
         try sxw.close();
 
         try af.finish();
     }
 
-    try paths.delete_all_except(&dir, filenames.*, "loc" ++ std.fs.path.sep_str);
+    try paths.delete_all_except(&dir, filenames.*, "pkg" ++ std.fs.path.sep_str);
 }
 
 const log = std.log.scoped(.db);
 
-const Location = @import("../Location.zig");
+const Package = @import("../Package.zig");
+const Manufacturer = @import("../Manufacturer.zig");
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;

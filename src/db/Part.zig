@@ -1,9 +1,9 @@
 
 id: []const u8,
 full_name: ?[]const u8,
-parent_id: ?[]const u8,
-manufacturer_id: ?[]const u8,
-package_id: ?[]const u8,
+parent: ?Index,
+manufacturer: ?Manufacturer.Index,
+package: ?Package.Index,
 notes: ?[]const u8,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
@@ -18,7 +18,14 @@ modified_timestamp_ms: i64,
 // Parameters expected for children
 // Tags - lead free
 
-pub const Index = enum (u32) { _ };
+const Part = @This();
+pub const Index = enum (u32) {
+    _,
 
-const Date_Time = @import("tempora").Date_Time;
+    pub const Type = Part;
+};
+
+
+const Package = @import("Package.zig");
+const Manufacturer = @import("Manufacturer.zig");
 const std = @import("std");

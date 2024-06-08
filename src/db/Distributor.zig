@@ -13,7 +13,12 @@ modified: Date_Time,
 // Attachments/Images
 // orders tagged with this distributor
 
-pub const Index = enum (u32) { _ };
+const Distributor = @This();
+pub const Index = enum (u32) {
+    _,
+
+    pub const Type = Distributor;
+};
 
 const Date_Time = @import("tempora").Date_Time;
 const std = @import("std");

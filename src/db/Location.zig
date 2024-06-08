@@ -15,7 +15,11 @@ modified_timestamp_ms: i64,
 // Tags - lead free
 
 const Location = @This();
-pub const Index = enum (u32) { _ };
+pub const Index = enum (u32) {
+    _,
+
+    pub const Type = Location;
+};
 
 pub fn init_empty(id: []const u8, timestamp_ms: i64) Location {
     return .{
@@ -138,8 +142,8 @@ pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
     }
 }
 
-pub fn set_parent(db: *DB, idx: Index, parent: ?Index) !void {
-    return set_optional(Index, db, idx, .parent, parent);
+pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
+    return set_optional(Index, db, idx, .parent, parent_idx);
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
@@ -163,16 +167,15 @@ pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Location, &db.locs, T, idx, field, raw);
+    try db.set_optional(Location, idx, field, T, raw);
 }
 
 fn set_modified(db: *DB, idx: Index) void {
-    db.set_modified(Location, &db.locs, idx);
+    db.maybe_set_modified(idx);
 }
 
 const log = std.log.scoped(.db);
 
 const DB = @import("../DB.zig");
-const Date_Time = @import("tempora").Date_Time;
 const deep = @import("deep_hash_map");
 const std = @import("std");

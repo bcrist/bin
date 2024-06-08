@@ -14,6 +14,9 @@ mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 loc_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
 locs: std.MultiArrayList(Location) = .{},
 
+pkg_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Package.Index) = .{},
+pkgs: std.MultiArrayList(Package) = .{},
+
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
@@ -25,6 +28,9 @@ pub const Location = @import("db/Location.zig");
 
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.pkgs.deinit(gpa);
+    self.pkg_lookup.deinit(gpa);
 
     self.locs.deinit(gpa);
     self.loc_lookup.deinit(gpa);
@@ -46,6 +52,9 @@ pub fn deinit(self: *DB) void {
 
 pub fn reset(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.pkgs.len = 0;
+    self.pkg_lookup.clearRetainingCapacity();
 
     self.locs.len = 0;
     self.loc_lookup.clearRetainingCapacity();
@@ -75,8 +84,24 @@ pub fn recompute_last_modification_time(self: *DB) void {
     for (self.locs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
+    for (self.pkgs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
     log.debug("Updated last modification time to {}", .{ last_mod });
     self.last_modification_timestamp_ms = last_mod;
+}
+
+fn get_list(self: *DB, comptime T: type) *std.MultiArrayList(T) {
+    return switch (T) {
+        Manufacturer => &self.mfrs,
+        //Distributor => &self.mfrs,
+        //Part => &self.mfrs,
+        //Order => &self.mfrs,
+        //Project => &self.mfrs,
+        Package => &self.pkgs,
+        Location => &self.locs,
+        else => unreachable,
+    };
 }
 
 pub const Import_Options = struct {
@@ -193,39 +218,35 @@ pub fn is_valid_id(id: []const u8) bool {
     return true;
 }
 
-
-pub fn set_optional(self: *DB, comptime T: type, list: *std.MultiArrayList(T), comptime F: type, idx: T.Index, comptime field: @TypeOf(.enum_field), raw: ?F) !void {
+pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @TypeOf(.enum_field), comptime F: type, raw: ?F) !void {
     const i = @intFromEnum(idx);
+    const list = self.get_list(T);
     const array = list.items(field);
     if (array[i]) |current| {
         if (raw) |new| {
             if (F == []const u8) {
                 if (!std.mem.eql(u8, current, new)) {
                     array[i] = try self.intern(new);
-                    self.set_modified(T, list, idx);
+                    self.maybe_set_modified(idx);
                 }
             } else {
                 if (!std.meta.eql(current, new)) {
-                    if (F == T.Index) {
-                        if (array[i]) |old| {
-                            self.set_modified(T, list, old);
-                        }
-                        self.set_modified(T, list, new);
+                    if (array[i]) |old| {
+                        self.maybe_set_modified(old);
                     }
+                    self.maybe_set_modified(new);
                     array[i] = new;
-                    self.set_modified(T, list, idx);
+                    self.maybe_set_modified(idx);
                 }
             }
             
         } else {
             // removing
-            if (F == T.Index) {
-                if (array[i]) |old| {
-                    self.set_modified(T, list, old);
-                }
+            if (array[i]) |old| {
+                self.maybe_set_modified(old);
             }
             array[i] = null;
-            self.set_modified(T, list, idx);
+            self.maybe_set_modified(idx);
         }
     } else {
         if (raw) |new| {
@@ -234,20 +255,22 @@ pub fn set_optional(self: *DB, comptime T: type, list: *std.MultiArrayList(T), c
                 array[i] = try self.intern(new);
             } else {
                 array[i] = new;
-                if (F == T.Index) {
-                    self.set_modified(T, list, new);
-                }
+                self.maybe_set_modified(new);
             }
-            self.set_modified(T, list, idx);
+            self.maybe_set_modified(idx);
         }
     }
 }
 
-pub fn set_modified(self: *DB, comptime T: type, list: *std.MultiArrayList(T), idx: T.Index) void {
-    const i = @intFromEnum(idx);
-    const now = std.time.milliTimestamp();
-    list.items(.modified_timestamp_ms)[i] = now;
-    self.mark_dirty(now);
+pub fn maybe_set_modified(self: *DB, idx: anytype) void {
+    const Index = @TypeOf(idx);
+    if (comptime @typeInfo(Index) == .Enum and @hasDecl(Index, "Type") and std.mem.endsWith(u8, @typeName(Index), ".Index")) {
+        const list = self.get_list(Index.Type);
+        const i = @intFromEnum(idx);
+        const now = std.time.milliTimestamp();
+        list.items(.modified_timestamp_ms)[i] = now;
+        self.mark_dirty(now);
+    }
 }
 
 pub fn String_Hash_Map_Ignore_Case(comptime V: type) type {

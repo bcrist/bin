@@ -15,7 +15,12 @@ received: ?Date_Time,
 // Attachments/Images
 // Tags
 
-pub const Index = enum (u32) { _ };
+const Order = @This();
+pub const Index = enum (u32) {
+    _,
+
+    pub const Type = Order;
+};
 
 const Date_Time = @import("tempora").Date_Time;
 const std = @import("std");

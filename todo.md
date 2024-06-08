@@ -1,3 +1,6 @@
+* Packages
+* remove package mfrs when mfr is deleted
+* show packages linked to mfr on mfr page
 * Parts
 * Inventory
 * Orders
