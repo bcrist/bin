@@ -1,6 +1,10 @@
-* Packages
 * remove package mfrs when mfr is deleted
 * show packages linked to mfr on mfr page
+* add another button on add page
+* add child button on packages/locations
+* search for locations, packages
+
+
 * Parts
 * Inventory
 * Orders

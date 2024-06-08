@@ -231,10 +231,12 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
                 }
             } else {
                 if (!std.meta.eql(current, new)) {
-                    if (array[i]) |old| {
-                        self.maybe_set_modified(old);
+                    if (F == T.Index) {
+                        if (array[i]) |old| {
+                            self.maybe_set_modified(old);
+                        }
+                        self.maybe_set_modified(new);
                     }
-                    self.maybe_set_modified(new);
                     array[i] = new;
                     self.maybe_set_modified(idx);
                 }
@@ -242,8 +244,10 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
             
         } else {
             // removing
-            if (array[i]) |old| {
-                self.maybe_set_modified(old);
+            if (F == T.Index) {
+                if (array[i]) |old| {
+                    self.maybe_set_modified(old);
+                }
             }
             array[i] = null;
             self.maybe_set_modified(idx);
@@ -253,7 +257,7 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
             // adding
             if (F == []const u8) {
                 array[i] = try self.intern(new);
-            } else {
+            } else if (F == T.Index) {
                 array[i] = new;
                 self.maybe_set_modified(new);
             }

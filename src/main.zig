@@ -45,6 +45,7 @@ pub fn main() !void {
     const search = @import("http/search.zig");
     const mfr = @import("http/mfr.zig");
     const loc = @import("http/loc.zig");
+    const pkg = @import("http/pkg.zig");
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -104,12 +105,26 @@ pub fn main() !void {
         .{ "/loc:*/notes",      r.module(Injector, loc.edit) },
         .{ "/loc:*/parent",     r.module(Injector, loc.edit) },
 
+        .{ "/pkg",              r.module(Injector, pkg.list) },
+        .{ "/pkg/add",          r.module(Injector, pkg.add) },
+        .{ "/pkg/add/validate", r.module(Injector, pkg.add.validate) },
+        .{ "/pkg/id",           r.module(Injector, pkg.add.validate) },
+        .{ "/pkg/full_name",    r.module(Injector, pkg.add.validate) },
+        .{ "/pkg/notes",        r.module(Injector, pkg.add.validate) },
+        .{ "/pkg/parent",       r.module(Injector, pkg.add.validate) },
+        .{ "/pkg/mfr",          r.module(Injector, pkg.add.validate) },
+        .{ "/pkg:*",            r.module(Injector, pkg) },
+        .{ "/pkg:*/id",         r.module(Injector, pkg.edit) },
+        .{ "/pkg:*/full_name",  r.module(Injector, pkg.edit) },
+        .{ "/pkg:*/notes",      r.module(Injector, pkg.edit) },
+        .{ "/pkg:*/parent",     r.module(Injector, pkg.edit) },
+        .{ "/pkg:*/mfr",        r.module(Injector, pkg.edit) },
+
         .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
         .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
         .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
         .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
         .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
-        .{ "/pkg:*",    r.module(Injector, @import("http/package.zig")) },
         .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
         .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 

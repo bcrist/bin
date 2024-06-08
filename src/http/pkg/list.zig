@@ -1,18 +1,18 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
-    const missing_loc = try req.get_path_param("loc");
+    const missing_pkg = try req.get_path_param("pkg");
 
-    var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.locs.len);
-    for (db.locs.items(.id), db.locs.items(.parent)) |id, parent| {
+    var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.pkgs.len);
+    for (db.pkgs.items(.id), db.pkgs.items(.parent)) |id, parent| {
         if (parent == null) {
             list.appendAssumeCapacity(id);
         }
     }
     sort.natural(list.items);
 
-    try req.render("loc/list.zk", .{
-        .loc_list = list.items,
+    try req.render("pkg/list.zk", .{
+        .pkg_list = list.items,
         .session = session,
-        .missing_loc = missing_loc,
+        .missing_pkg = missing_pkg,
     }, .{});
 }
 
@@ -28,8 +28,8 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         }
     }
 
-    const ids = db.locs.items(.id);
-    var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.loc_lookup.size + 1);
+    const ids = db.pkgs.items(.id);
+    var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.pkg_lookup.size + 1);
 
     try options.append(.{
         .placeholder = true,
@@ -37,7 +37,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         .text = "Select...",
     });
 
-    var name_iter = db.loc_lookup.iterator();
+    var name_iter = db.pkg_lookup.iterator();
     while (name_iter.next()) |entry| {
         const name = entry.key_ptr.*;
         if (name_filter.len == 0 or std.ascii.indexOfIgnoreCase(name, name_filter) != null) {
@@ -52,7 +52,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     try slimselect.respond_with_options(req, options.items);
 }
 
-const log = std.log.scoped(.@"http.loc");
+const log = std.log.scoped(.@"http.pkg");
 
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");

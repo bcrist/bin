@@ -46,7 +46,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                         log.debug("Recursive location parent chain involving: {s}", .{ str_value });
                         valid = false;
                         message = "Recursive locations are not allowed!";
-                        parent_id = loc.id;
+                        parent_id = str_value;
                         continue;
                     }
 

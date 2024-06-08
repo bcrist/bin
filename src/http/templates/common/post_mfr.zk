@@ -1,0 +1,24 @@
+<th>
+    <label for="mfr">Manufacturer</label>
+</th>
+<td>
+    <select id="mfr" name="mfr"
+\\err?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///mfr"
+        hx-target="closest tr"
+        hx-trigger="ss:afterChange"
+        data-deselectable
+        data-addable
+        data-search-url="/mfr">
+        <option data-placeholder="true" value> </option>
+\\mfr_id?
+        <option selected value="\\mfr_id//">\\mfr_id//</option>
+\\~
+    </select>
+</td>
+<td>\\@include "_validation.zk"//</td>

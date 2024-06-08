@@ -1,0 +1,20 @@
+\\@include "_top.zk"
+<div class="hidden" hx-post="/pkg/add/validate" hx-trigger="revalidate from:body"
+    hx-include=".submitted_field"
+    hx-target="#submit"
+    hx-swap="outerHTML"></div>
+<aside class="flex">
+    <form hx-post="/pkg/add" hx-include=".submitted_field">
+        \\@include "_add_button.zk"//
+    </form>
+    <a href="/pkg">Cancel</a>
+</aside>
+<h1>Add Package</h1>
+<table class="edit_properties">
+<tr>\\@include "common/post_id.zk"//</tr>
+<tr>\\@include "common/post_full_name.zk"//</tr>
+<tr>\\@include "common/post_parent.zk"//</tr>
+<tr>\\@include "common/post_mfr.zk"//</tr>
+<tr>\\@include "common/post_notes.zk"//</tr>
+</table>
+\\@include "_bottom.zk" 
