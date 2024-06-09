@@ -6,7 +6,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req, tz);
+            try add.get(session, req, tz, db);
         } else {
             try list.get(session, req, db);
         }
@@ -31,7 +31,15 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
     }
 
-    try render(session, req, tz, pkg, parent_id, children.items, mfr_id, if (try req.has_query_param("edit")) .edit else .info);
+    try render(pkg, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .parent_id = parent_id,
+        .children = children.items,
+        .mfr_id = mfr_id,
+        .mode = if (try req.has_query_param("edit")) .edit else .info,
+    });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
@@ -103,50 +111,59 @@ pub fn validate_name(name: []const u8, db: *const DB, for_pkg: ?Package.Index, f
     return trimmed;
 }
 
-const Render_Mode = enum {
-    info,
-    add,
-    edit,
+const Render_Info = struct {
+    session: ?Session,
+    req: *http.Request,
+    tz: ?*const tempora.Timezone,
+    parent_id: ?[]const u8,
+    children: []const []const u8,
+    mfr_id: ?[]const u8,
+    mode: enum {
+        info,
+        add,
+        edit,
+    },
 };
 
-pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, pkg: Package, parent_id: ?[]const u8, children: []const []const u8, mfr_id: ?[]const u8, mode: Render_Mode) !void {
-    if (mode != .info) try Session.redirect_if_missing(req, session);
+pub fn render(pkg: Package, info: Render_Info) !void {
+    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
 
     const DTO = tempora.Date_Time.With_Offset;
 
-    const created_dto = DTO.from_timestamp_ms(pkg.created_timestamp_ms, tz);
-    const modified_dto = DTO.from_timestamp_ms(pkg.modified_timestamp_ms, tz);
+    const created_dto = DTO.from_timestamp_ms(pkg.created_timestamp_ms, info.tz);
+    const modified_dto = DTO.from_timestamp_ms(pkg.modified_timestamp_ms, info.tz);
 
     const Context = struct {
         pub const created = DTO.fmt_sql;
         pub const modified = DTO.fmt_sql;
     };
 
-    const post_prefix = switch (mode) {
+    const post_prefix = switch (info.mode) {
         .info => "",
         .edit => try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }),
         .add => "/pkg",
     };
 
     const data = .{
-        .session = session,
-        .mode = mode,
+        .session = info.session,
+        .mode = info.mode,
         .post_prefix = post_prefix,
         .title = pkg.full_name orelse pkg.id,
         .obj = pkg,
         .full_name = pkg.full_name orelse pkg.id,
-        .parent_id = parent_id,
-        .mfr_id = mfr_id,
+        .parent_id = info.parent_id,
+        .mfr_id = info.mfr_id,
         .parent_search_url = "/pkg",
-        .children = children,
+        .cancel_url = "/pkg",
+        .children = info.children,
         .created = created_dto,
         .modified = modified_dto,
     };
 
-    switch (mode) {
-        .info => try req.render("pkg/info.zk", data, .{ .Context = Context }),
-        .edit => try req.render("pkg/edit.zk", data, .{ .Context = Context }),
-        .add => try req.render("pkg/add.zk", data, .{ .Context = Context }),
+    switch (info.mode) {
+        .info => try info.req.render("pkg/info.zk", data, .{ .Context = Context }),
+        .edit => try info.req.render("pkg/edit.zk", data, .{ .Context = Context }),
+        .add => try info.req.render("pkg/add.zk", data, .{ .Context = Context }),
     }
 }
 

@@ -2,6 +2,7 @@
 \\session?
 <aside class="flex">
     <a href="/loc:\\obj.id//?edit">Edit</a>
+    <a href="/loc/add?parent=\\obj.id//">Add Child</a>
 </aside>
 \\~
 <div>loc:\\obj.id//</div>

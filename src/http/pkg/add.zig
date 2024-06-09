@@ -1,10 +1,37 @@
 pub const validate = @import("add/validate.zig");
 
-pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) !void {
+pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const id = (try req.get_path_param("mfr")) orelse "";
     const now = std.time.milliTimestamp();
     const pkg = Package.init_empty(id, now);
-    try render(session, req, tz, pkg, null, &.{}, null, .add);
+
+    var parent_id: ?[]const u8 = null;
+    var mfr_id: ?[]const u8 = null;
+
+    var iter = req.query_iterator();
+    while (try iter.next()) |param| {
+        if (std.mem.eql(u8, param.name, "parent")) {
+            if (Package.maybe_lookup(db, param.value)) |parent_idx| {
+                parent_id = db.pkgs.items(.id)[@intFromEnum(parent_idx)];
+            }
+        } else if (std.mem.eql(u8, param.name, "mfr")) {
+            if (Manufacturer.maybe_lookup(db, param.value)) |mfr_idx| {
+                mfr_id = db.mfrs.items(.id)[@intFromEnum(mfr_idx)];
+            }
+        } else {
+            log.debug("Unrecognized parameter for /pkg/add: {s}={s}", .{ param.name, param.value orelse "" });
+        }
+    }
+
+    try render(pkg, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .parent_id = parent_id,
+        .mfr_id = mfr_id,
+        .children = &.{},
+        .mode = .add,
+    });
 }
 
 pub fn post(req: *http.Request, db: *DB) !void {
@@ -77,7 +104,18 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try Package.set_full_name(db, idx, pkg.full_name);
     try Package.set_notes(db, idx, pkg.notes);
 
-    try req.see_other(if (another) "/pkg/add" else try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
+    if (another) {
+        if (req.get_header("hx-current-url")) |param| {
+            const url = param.value;
+            if (std.mem.indexOfScalar(u8, url, '?')) |query_start| {
+                try req.see_other(try http.tprint("/pkg/add{s}", .{ url[query_start..] }));
+                return;
+            }
+        }
+        try req.see_other("/pkg/add");
+    }
+
+    try req.see_other(try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
 }
 
 const log = std.log.scoped(.@"http.pkg");

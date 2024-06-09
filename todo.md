@@ -1,6 +1,5 @@
-* add child button on packages/locations
+* clean up direct access to DB MultiArrayLists requiring @intFromEnum in http code
 * search for locations, packages
-
 
 * Parts
 * Inventory

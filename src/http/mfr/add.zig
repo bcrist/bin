@@ -191,7 +191,18 @@ pub fn post(req: *http.Request, db: *DB) !void {
         try Manufacturer.Relation.create(mutable_relation, db);
     }
 
-    try req.see_other(if (another) "/mfr/add" else try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
+    if (another) {
+        if (req.get_header("hx-current-url")) |param| {
+            const url = param.value;
+            if (std.mem.indexOfScalar(u8, url, '?')) |query_start| {
+                try req.see_other(try http.tprint("/mfr/add{s}", .{ url[query_start..] }));
+                return;
+            }
+        }
+        try req.see_other("/mfr/add");
+    }
+
+    try req.see_other(try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
 }
 
 const log = std.log.scoped(.@"http.mfr");

@@ -2,6 +2,7 @@
 \\session?
 <aside class="flex">
     <a href="/pkg:\\obj.id//?edit">Edit</a>
+    <a href="/pkg/add?parent=\\obj.id//">Add Child</a>
 </aside>
 \\~
 <div>pkg:\\obj.id//</div>

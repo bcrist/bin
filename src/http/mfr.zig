@@ -237,6 +237,7 @@ pub fn render(mfr: Manufacturer, info: Render_Info) !void {
         .full_name = mfr.full_name orelse mfr.id,
         .show_years = mfr.founded_year != null or mfr.suspended_year != null,
         .country_search_url = "/mfr/countries",
+        .cancel_url = "/mfr",
         .created = created_dto,
         .modified = modified_dto,
         .relations = info.relations,

@@ -1,10 +1,31 @@
 pub const validate = @import("add/validate.zig");
 
-pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) !void {
+pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const id = (try req.get_path_param("loc")) orelse "";
     const now = std.time.milliTimestamp();
     const loc = Location.init_empty(id, now);
-    try render(session, req, tz, loc, null, &.{}, .add);
+
+    var parent_id: ?[]const u8 = null;
+
+    var iter = req.query_iterator();
+    while (try iter.next()) |param| {
+        if (std.mem.eql(u8, param.name, "parent")) {
+            if (Location.maybe_lookup(db, param.value)) |parent_idx| {
+                parent_id = db.locs.items(.id)[@intFromEnum(parent_idx)];
+            }
+        } else {
+            log.debug("Unrecognized parameter for /loc/add: {s}={s}", .{ param.name, param.value orelse "" });
+        }
+    }
+
+    try render(loc, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .parent_id = parent_id,
+        .children = &.{},
+        .mode = .add,
+    });
 }
 
 pub fn post(req: *http.Request, db: *DB) !void {
@@ -67,7 +88,18 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try Location.set_full_name(db, idx, loc.full_name);
     try Location.set_notes(db, idx, loc.notes);
 
-    try req.see_other(if (another) "/loc/add" else try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
+    if (another) {
+        if (req.get_header("hx-current-url")) |param| {
+            const url = param.value;
+            if (std.mem.indexOfScalar(u8, url, '?')) |query_start| {
+                try req.see_other(try http.tprint("/loc/add{s}", .{ url[query_start..] }));
+                return;
+            }
+        }
+        try req.see_other("/loc/add");
+    }
+
+    try req.see_other(try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
 }
 
 const log = std.log.scoped(.@"http.loc");

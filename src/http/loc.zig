@@ -6,7 +6,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const requested_loc_name = try req.get_path_param("loc");
     const idx = Location.maybe_lookup(db, requested_loc_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req, tz);
+            try add.get(session, req, tz, db);
         } else {
             try list.get(session, req, db);
         }
@@ -30,7 +30,14 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
     }
 
-    try render(session, req, tz, loc, parent_id, children.items, if (try req.has_query_param("edit")) .edit else .info);
+    try render(loc, .{
+        .session = session,
+        .req = req,
+        .tz = tz,
+        .parent_id = parent_id,
+        .children = children.items,
+        .mode = if (try req.has_query_param("edit")) .edit else .info,
+    });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
@@ -101,49 +108,57 @@ pub fn validate_name(name: []const u8, db: *const DB, for_loc: ?Location.Index, 
     return trimmed;
 }
 
-const Render_Mode = enum {
-    info,
-    add,
-    edit,
+const Render_Info = struct {
+    session: ?Session,
+    req: *http.Request,
+    tz: ?*const tempora.Timezone,
+    parent_id: ?[]const u8,
+    children: []const []const u8,
+    mode: enum {
+        info,
+        add,
+        edit,
+    },
 };
 
-pub fn render(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, loc: Location, parent_id: ?[]const u8, children: []const []const u8, mode: Render_Mode) !void {
-    if (mode != .info) try Session.redirect_if_missing(req, session);
+pub fn render(loc: Location, info: Render_Info) !void {
+    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
 
     const DTO = tempora.Date_Time.With_Offset;
 
-    const created_dto = DTO.from_timestamp_ms(loc.created_timestamp_ms, tz);
-    const modified_dto = DTO.from_timestamp_ms(loc.modified_timestamp_ms, tz);
+    const created_dto = DTO.from_timestamp_ms(loc.created_timestamp_ms, info.tz);
+    const modified_dto = DTO.from_timestamp_ms(loc.modified_timestamp_ms, info.tz);
 
     const Context = struct {
         pub const created = DTO.fmt_sql;
         pub const modified = DTO.fmt_sql;
     };
 
-    const post_prefix = switch (mode) {
+    const post_prefix = switch (info.mode) {
         .info => "",
         .edit => try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }),
         .add => "/loc",
     };
 
     const data = .{
-        .session = session,
-        .mode = mode,
+        .session = info.session,
+        .mode = info.mode,
         .post_prefix = post_prefix,
         .title = loc.full_name orelse loc.id,
         .obj = loc,
         .full_name = loc.full_name orelse loc.id,
-        .parent_id = parent_id,
+        .parent_id = info.parent_id,
         .parent_search_url = "/loc",
-        .children = children,
+        .cancel_url = "/loc",
+        .children = info.children,
         .created = created_dto,
         .modified = modified_dto,
     };
 
-    switch (mode) {
-        .info => try req.render("loc/info.zk", data, .{ .Context = Context }),
-        .edit => try req.render("loc/edit.zk", data, .{ .Context = Context }),
-        .add => try req.render("loc/add.zk", data, .{ .Context = Context }),
+    switch (info.mode) {
+        .info => try info.req.render("loc/info.zk", data, .{ .Context = Context }),
+        .edit => try info.req.render("loc/edit.zk", data, .{ .Context = Context }),
+        .add => try info.req.render("loc/add.zk", data, .{ .Context = Context }),
     }
 }
 

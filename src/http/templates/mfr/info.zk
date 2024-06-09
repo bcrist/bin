@@ -2,6 +2,7 @@
 \\session?
 <aside class="flex">
     <a href="/mfr:\\obj.id//?edit">Edit</a>
+    <a href="/pkg/add?mfr=\\obj.id//">Add Package</a>
 </aside>
 \\~
 <div>mfr:\\obj.id//</div>
