@@ -14,11 +14,11 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     const mode = std.meta.stringToEnum(Validate_Mode, mode_str) orelse return error.BadRequest;
 
     var was_valid = true;
-    var valid = true;
-    var message: []const u8 = "";
-    var pkg = Package.init_empty("", 0);
-    var parent_id: ?[]const u8 = null;
-    var mfr_id: ?[]const u8 = null;
+
+    var txn: Transaction = .{
+        .db = db,
+        .idx = null,
+    };
 
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
@@ -26,44 +26,26 @@ pub fn post(req: *http.Request, db: *const DB) !void {
             was_valid = false;
             continue;
         }
-        const str_value = try http.temp().dupe(u8, param.value orelse "");
-        const field = std.meta.stringToEnum(Validate_Mode, param.name) orelse return error.BadRequest;
-        switch (field) {
-            .add => return error.BadRequest,
-            .id => pkg.id = try validate_name(str_value, db, null, .id, &valid, &message) orelse "",
-            .full_name => pkg.full_name = try validate_name(str_value, db, null, .full_name, &valid, &message),
-            .notes => pkg.notes = if (str_value.len > 0) str_value else null,
-            .parent => if (str_value.len > 0) {
-                const parent_idx = Package.maybe_lookup(db, str_value) orelse {
-                    log.debug("Invalid parent package: {s}", .{ str_value });
-                    valid = false;
-                    message = "invalid package";
-                    continue;
-                };
-                parent_id = Package.get_id(db, parent_idx);
-            },
-            .mfr => if (str_value.len > 0) {
-                const mfr_idx = Manufacturer.maybe_lookup(db, str_value) orelse {
-                    log.debug("Invalid manufacturer: {s}", .{ str_value });
-                    valid = false;
-                    message = "invalid manufacturer";
-                    continue;
-                };
-                mfr_id = Manufacturer.get_id(db, mfr_idx);
-            },
-        }
+        try txn.process_param(param);
     }
 
-    if (mode != .add and was_valid != valid) {
+    try txn.validate();
+
+    if (mode != .add and was_valid != txn.valid) {
         try req.add_response_header("hx-trigger", "revalidate");
     }
 
+    var pkg = Package.init_empty(txn.id orelse "", 0);
+    pkg.full_name = txn.full_name;
+    pkg.notes = txn.notes;
+
     const render_data = .{
         .validating = true,
-        .valid = valid,
-        .err = message,
+        .valid = txn.valid,
+        .err = txn.err,
         .obj = pkg,
-        .parent_id = parent_id,
+        .parent_id = txn.parent,
+        .mfr_id = txn.mfr,
         .parent_search_url = "/pkg",
         .post_prefix = "/pkg",
         .cancel_url = "/pkg",
@@ -81,8 +63,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
 const log = std.log.scoped(.@"http.pkg");
 
-const validate_name = @import("../../pkg.zig").validate_name;
-
+const Transaction = @import("../Transaction.zig");
 const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../../DB.zig");

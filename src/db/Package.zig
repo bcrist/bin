@@ -73,6 +73,14 @@ pub inline fn get_full_name(db: *const DB, idx: Index) ?[]const u8 {
     return db.pkgs.items(.full_name)[@intFromEnum(idx)];
 }
 
+pub inline fn get_parent(db: *const DB, idx: Index) ?Index {
+    return db.pkgs.items(.parent)[@intFromEnum(idx)];
+}
+
+pub inline fn get_mfr(db: *const DB, idx: Index) ?Manufacturer.Index {
+    return db.pkgs.items(.manufacturer)[@intFromEnum(idx)];
+}
+
 pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
     const parents = db.pkgs.items(.parent);
     var maybe_idx: ?Index = descendant_idx;
@@ -125,11 +133,11 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     db.mark_dirty(now);
 }
 
-pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
+pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
     const i = @intFromEnum(idx);
     const ids = db.pkgs.items(.id);
     const old_id = ids[i];
-    if (std.mem.eql(u8, id, old_id)) return false;
+    if (std.mem.eql(u8, id, old_id)) return;
 
     if (!DB.is_valid_id(id)) return error.Invalid_ID;
 
@@ -138,7 +146,6 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
     try db.pkg_lookup.putNoClobber(db.container_alloc, new_id, idx);
     ids[i] = new_id;
     set_modified(db, idx);
-    return true;
 }
 
 pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {

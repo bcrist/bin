@@ -34,7 +34,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         .saved = txn.valid,
         .err = txn.err,
         .obj = loc,
-        .parent_id = if (loc.parent) |parent| Location.get_id(db, parent) else null,
+        .parent_id = txn.parent orelse if (loc.parent) |parent| Location.get_id(db, parent) else null,
         .parent_search_url = "/loc",
         .post_prefix = post_prefix,
     };

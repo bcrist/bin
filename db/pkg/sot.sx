@@ -1,0 +1,6 @@
+(version 1)
+(pkg SOT "Small Outline Transistor"
+   (child SOT23-?)
+   (created "2024-06-09 22:30:06 +00:00")
+   (modified "2024-06-09 22:33:54 +00:00")
+)

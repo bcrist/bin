@@ -1,0 +1,8 @@
+(version 1)
+(pkg SOT23-?
+   (parent SOT)
+   (child SOT23-5)
+   (child SOT23-6)
+   (created "2024-06-09 22:30:27 +00:00")
+   (modified "2024-06-09 22:39:37 +00:00")
+)

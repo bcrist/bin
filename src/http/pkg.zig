@@ -61,56 +61,6 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-pub const Field = enum {
-    id,
-    full_name,
-    parent,
-    mfr,
-    notes,
-};
-
-const Name_Field = enum {
-    id,
-    full_name,
-};
-pub fn validate_name(name: []const u8, db: *const DB, for_pkg: ?Package.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) !?[]const u8 {
-    const trimmed = std.mem.trim(u8, name, &std.ascii.whitespace);
-    if (for_field == .id and !DB.is_valid_id(trimmed)) {
-        log.debug("Invalid ID: {s}", .{ name });
-        valid.* = false;
-        message.* = "ID may not be empty or '_', or contain '/'";
-        return trimmed;
-    }
-
-    if (trimmed.len == 0) {
-        return null;
-    }
-
-    if (Package.maybe_lookup(db, trimmed)) |idx| {
-
-        if (for_pkg) |for_pkg_idx| {
-            if (idx == for_pkg_idx) {
-                const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => Package.get_id(db, idx),
-                    .full_name => Package.get_full_name(db, idx),
-                };
-                if (maybe_current_name) |current_name| {
-                    if (std.mem.eql(u8, trimmed, current_name)) {
-                        return trimmed;
-                    }
-                }
-            }
-        }
-
-        log.debug("Invalid name (in use): {s}", .{ name });
-        valid.* = false;
-        const id = Package.get_id(db, idx);
-        message.* = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(id), id });
-    }
-
-    return trimmed;
-}
-
 const Render_Info = struct {
     session: ?Session,
     req: *http.Request,
@@ -124,7 +74,6 @@ const Render_Info = struct {
         edit,
     },
 };
-
 pub fn render(pkg: Package, info: Render_Info) !void {
     if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
 
