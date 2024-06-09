@@ -12,11 +12,18 @@ pub fn post(req: *http.Request, db: *DB) !void {
 
     var pkg = Package.init_empty("", std.time.milliTimestamp());
 
+    var another = false;
+
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
         if (std.mem.eql(u8, param.name, "invalid")) {
             log.warn("Found 'invalid' param in request body!", .{});
             return error.BadRequest;
+        }
+
+        if (std.mem.eql(u8, param.name, "another")) {
+            another = true;
+            continue;
         }
 
         const value = param.value orelse "";
@@ -70,15 +77,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try Package.set_full_name(db, idx, pkg.full_name);
     try Package.set_notes(db, idx, pkg.notes);
 
-    if (req.get_header("hx-request")) |_| {
-        try req.add_response_header("hx-location", try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
-        req.response_status = .no_content;
-        try req.respond("");
-    } else {
-        try req.add_response_header("location", try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
-        req.response_status = .see_other;
-        try req.respond("");
-    }
+    try req.see_other(if (another) "/pkg/add" else try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
 }
 
 const log = std.log.scoped(.@"http.pkg");

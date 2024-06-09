@@ -1,14 +1,11 @@
 \\@include "_top.zk"
 <div class="hidden" hx-post="/mfr/add/validate" hx-trigger="revalidate from:body"
     hx-include=".submitted_field"
-    hx-target="#submit"
+    hx-target="#add_cancel_aside"
     hx-swap="outerHTML"></div>
-<aside class="flex">
-    <form hx-post="/mfr/add" hx-include=".submitted_field">
-        \\@include "_add_button.zk"//
-    </form>
-    <a href="/mfr">Cancel</a>
-</aside>
+<form hx-post="/mfr/add" hx-include=".submitted_field">
+\\@include "common/add_cancel.zk"//
+</form>
 <h1>Add Manufacturer</h1>
 <table class="edit_properties">
 <tr>\\@include "common/post_id.zk"//</tr>

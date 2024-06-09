@@ -24,13 +24,13 @@
             .url = "git+https://github.com/bcrist/dizzy#a81b4ea573ce2020cb70fdc7f0047178662fecba",
             .hash = "1220aac52c4e9bba0baae290d4171bd3980c19d22d8709900da5a7dc8ce6486d7819",
         },
-        .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#5344e11b8536535565f5ad8baa66548d5b63d84c",
-            .hash = "1220dd609e8e40d66418b73ee3e93a275601e6277bc4d062eeea986730943b6d9d5d",
-        },
         .zkittle = .{
             .url = "git+https://github.com/bcrist/zkittle#858dc502361ef2cd70ef79b0f837b889967a86d4",
             .hash = "1220595b2a7eeb4b15d39fa78eaadb335c73f0f77dc1835efff554bdb741858c8a48",
+        },
+        .shittip = .{
+            .url = "git+https://github.com/bcrist/shittip#9fa54cd4bb719bc50816909f4b68651de40eb09e",
+            .hash = "1220c6c4837e58b4ba64b030e1f3aecc6b659a12cf1222a26274f1c4a1f9d1f321d1",
         },
     },
 }

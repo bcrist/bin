@@ -86,10 +86,11 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         .obj = mfr,
         .country_search_url = "/mfr/countries",
         .post_prefix = "/mfr",
+        .cancel_url = "/mfr",
     };
 
     switch (mode) {
-        .add => try req.render("_add_button.zk", render_data, .{}),
+        .add => try req.render("common/add_cancel.zk", render_data, .{}),
         .id => try req.render("common/post_id.zk", render_data, .{}),
         .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
         .country => try req.render("common/post_country.zk", render_data, .{}),

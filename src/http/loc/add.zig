@@ -10,6 +10,8 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) 
 pub fn post(req: *http.Request, db: *DB) !void {
     const alloc = http.temp();
 
+    var another = false;
+
     var loc = Location.init_empty("", std.time.milliTimestamp());
 
     var iter = try req.form_iterator();
@@ -17,6 +19,11 @@ pub fn post(req: *http.Request, db: *DB) !void {
         if (std.mem.eql(u8, param.name, "invalid")) {
             log.warn("Found 'invalid' param in request body!", .{});
             return error.BadRequest;
+        }
+
+        if (std.mem.eql(u8, param.name, "another")) {
+            another = true;
+            continue;
         }
 
         const value = param.value orelse "";
@@ -60,15 +67,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try Location.set_full_name(db, idx, loc.full_name);
     try Location.set_notes(db, idx, loc.notes);
 
-    if (req.get_header("hx-request")) |_| {
-        try req.add_response_header("hx-location", try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
-        req.response_status = .no_content;
-        try req.respond("");
-    } else {
-        try req.add_response_header("location", try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
-        req.response_status = .see_other;
-        try req.respond("");
-    }
+    try req.see_other(if (another) "/loc/add" else try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
 }
 
 const log = std.log.scoped(.@"http.loc");

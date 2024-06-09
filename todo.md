@@ -1,4 +1,3 @@
-* add another button on add page
 * add child button on packages/locations
 * search for locations, packages
 

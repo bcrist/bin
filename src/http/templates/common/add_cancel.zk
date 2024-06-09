@@ -1,0 +1,5 @@
+<aside class="flex" id="add_cancel_aside">
+    <button type="submit" id="add_btn" \\valid?;//disabled\\~//>Add</button>
+    <button type="submit" id="add_another_btn" name="another" value="true" \\valid?;//disabled\\~//>Add Another</button>
+    <a href="\\cancel_url//">Cancel</a>
+</aside>

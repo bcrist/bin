@@ -19,6 +19,8 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) 
 pub fn post(req: *http.Request, db: *DB) !void {
     const alloc = http.temp();
 
+    var another = false;
+
     var mfr = Manufacturer.init_empty("", std.time.milliTimestamp());
     var relations = std.StringArrayHashMap(Relation).init(alloc);
 
@@ -27,6 +29,11 @@ pub fn post(req: *http.Request, db: *DB) !void {
         if (std.mem.eql(u8, param.name, "invalid")) {
             log.warn("Found 'invalid' param in request body!", .{});
             return error.BadRequest;
+        }
+
+        if (std.mem.eql(u8, param.name, "another")) {
+            another = true;
+            continue;
         }
 
         const value = param.value orelse "";
@@ -184,15 +191,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         try Manufacturer.Relation.create(mutable_relation, db);
     }
 
-    if (req.get_header("hx-request")) |_| {
-        try req.add_response_header("hx-location", try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
-        req.response_status = .no_content;
-        try req.respond("");
-    } else {
-        try req.add_response_header("location", try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
-        req.response_status = .see_other;
-        try req.respond("");
-    }
+    try req.see_other(if (another) "/mfr/add" else try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
 }
 
 const log = std.log.scoped(.@"http.mfr");
