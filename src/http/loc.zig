@@ -12,7 +12,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
         return;
     };
-    const loc = db.locs.get(@intFromEnum(idx));
+    const loc = Location.get(db, idx);
 
     if (!std.mem.eql(u8, requested_loc_name.?, loc.id)) {
         req.response_status = .moved_permanently;
@@ -21,7 +21,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
-    const parent_id = if (loc.parent) |parent_idx| db.locs.items(.id)[@intFromEnum(parent_idx)] else null;
+    const parent_id = if (loc.parent) |parent_idx| Location.get_id(db, parent_idx) else null;
 
     var children = std.ArrayList([]const u8).init(http.temp());
     for (db.locs.items(.parent), db.locs.items(.id)) |parent_idx, id| {
@@ -29,6 +29,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
             try children.append(id);
         }
     }
+    sort.natural(children.items);
 
     try render(loc, .{
         .session = session,
@@ -83,14 +84,12 @@ pub fn validate_name(name: []const u8, db: *const DB, for_loc: ?Location.Index, 
     }
 
     if (Location.maybe_lookup(db, trimmed)) |idx| {
-        const i = @intFromEnum(idx);
-        const id = db.locs.items(.id)[i];
 
         if (for_loc) |for_loc_idx| {
             if (idx == for_loc_idx) {
                 const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => id,
-                    .full_name => db.locs.items(.full_name)[i],
+                    .id => Location.get_id(db, idx),
+                    .full_name => Location.get_full_name(db, idx),
                 };
                 if (maybe_current_name) |current_name| {
                     if (std.mem.eql(u8, trimmed, current_name)) {
@@ -102,6 +101,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_loc: ?Location.Index, 
 
         log.debug("Invalid name (in use): {s}", .{ name });
         valid.* = false;
+        const id = Location.get_id(db, idx);
         message.* = try http.tprint("In use by <a href=\"/loc:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
     }
 

@@ -1,7 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse return;
-    var pkg = db.pkgs.get(@intFromEnum(idx));
+    var pkg = Package.get(db, idx);
     const post_prefix = try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) });
 
     var path_iter = req.path_iterator();
@@ -52,7 +52,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                     }
 
                     try Package.set_parent(db, idx, parent_idx);
-                    parent_id = db.pkgs.items(.id)[@intFromEnum(parent_idx)];
+                    parent_id = Package.get_id(db, parent_idx);
                 } else {
                     try Package.set_parent(db, idx, null);
                 }
@@ -67,7 +67,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                     };
 
                     try Package.set_mfr(db, idx, mfr_idx);
-                    mfr_id = db.mfrs.items(.id)[@intFromEnum(mfr_idx)];
+                    mfr_id = Manufacturer.get_id(db, mfr_idx);
                 } else {
                     try Package.set_mfr(db, idx, null);
                 }

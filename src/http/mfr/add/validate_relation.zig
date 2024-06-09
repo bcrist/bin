@@ -65,7 +65,7 @@ pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void 
             };
             const new_other = blk: {
                 if (Manufacturer.maybe_lookup(db, relation_other)) |idx| {
-                    break :blk db.mfrs.items(.id)[@intFromEnum(idx)];
+                    break :blk Manufacturer.get_id(db, idx);
                 } else {
                     valid_other = false;
                     message = "Other manufacturer not found";
@@ -99,7 +99,7 @@ pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void 
         var new_other_idx: ?Manufacturer.Index = null;
         if (Manufacturer.maybe_lookup(db, relation_other)) |other_idx| {
             new_other_idx = other_idx;
-            relation_other = db.mfrs.items(.id)[@intFromEnum(other_idx)];
+            relation_other = Manufacturer.get_id(db, other_idx);
         }
 
         if (relation_other.len > 0 and relation_kind == null) {

@@ -1,7 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
-    const mfr_id = db.mfrs.items(.id)[@intFromEnum(idx)];
+    const mfr_id = Manufacturer.get_id(db, idx);
     const relation_list = try get_sorted_relations(db, idx);
     const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr_id) });
 
@@ -34,7 +34,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
 
     if (apply_changes) {
         for (0.., new_list.items) |i, relation| {
-            log.debug("Setting Mfr#{} Relation#{} order index to {}", .{ @intFromEnum(idx), @intFromEnum(relation.db_index.?), i });
+            log.debug("Setting {} {} order index to {}", .{ idx, relation.db_index.?, i });
             try Manufacturer.Relation.set_order_index(db, idx, relation.db_index.?, @intCast(i));
         }
     }

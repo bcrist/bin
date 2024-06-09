@@ -38,7 +38,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
                     message = "invalid location";
                     continue;
                 };
-                parent_id = db.locs.items(.id)[@intFromEnum(parent_idx)];
+                parent_id = Location.get_id(db, parent_idx);
             },
         }
     }

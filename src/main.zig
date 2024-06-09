@@ -272,7 +272,7 @@ const inject = struct {
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{
         .{ .scope = .sx, .level = .info },
-        .{ .scope = .db, .level = .info },
+        //.{ .scope = .db, .level = .info },
         .{ .scope = .@"db.intern", .level = .info },
         .{ .scope = .zkittle, .level = .info },
         .{ .scope = .http, .level = .info },

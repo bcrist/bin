@@ -12,7 +12,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
         return;
     };
-    const pkg = db.pkgs.get(@intFromEnum(idx));
+    const pkg = Package.get(db, idx);
 
     if (!std.mem.eql(u8, requested_pkg_name.?, pkg.id)) {
         req.response_status = .moved_permanently;
@@ -21,8 +21,8 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
-    const parent_id = if (pkg.parent) |parent_idx| db.pkgs.items(.id)[@intFromEnum(parent_idx)] else null;
-    const mfr_id = if (pkg.manufacturer) |mfr_idx| db.mfrs.items(.id)[@intFromEnum(mfr_idx)] else null;
+    const parent_id = if (pkg.parent) |parent_idx| Package.get_id(db, parent_idx) else null;
+    const mfr_id = if (pkg.manufacturer) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
 
     var children = std.ArrayList([]const u8).init(http.temp());
     for (db.pkgs.items(.parent), db.pkgs.items(.id)) |parent_idx, id| {
@@ -30,6 +30,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
             try children.append(id);
         }
     }
+    sort.natural(children.items);
 
     try render(pkg, .{
         .session = session,
@@ -86,14 +87,12 @@ pub fn validate_name(name: []const u8, db: *const DB, for_pkg: ?Package.Index, f
     }
 
     if (Package.maybe_lookup(db, trimmed)) |idx| {
-        const i = @intFromEnum(idx);
-        const id = db.pkgs.items(.id)[i];
 
         if (for_pkg) |for_pkg_idx| {
             if (idx == for_pkg_idx) {
                 const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => id,
-                    .full_name => db.pkgs.items(.full_name)[i],
+                    .id => Package.get_id(db, idx),
+                    .full_name => Package.get_full_name(db, idx),
                 };
                 if (maybe_current_name) |current_name| {
                     if (std.mem.eql(u8, trimmed, current_name)) {
@@ -105,6 +104,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_pkg: ?Package.Index, f
 
         log.debug("Invalid name (in use): {s}", .{ name });
         valid.* = false;
+        const id = Package.get_id(db, idx);
         message.* = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
     }
 
@@ -170,6 +170,7 @@ pub fn render(pkg: Package, info: Render_Info) !void {
 const log = std.log.scoped(.@"http.pkg");
 
 const Package = DB.Package;
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");

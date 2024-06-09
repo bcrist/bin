@@ -14,20 +14,17 @@ pub const context = struct {
     pub const modified = Date_Time.With_Offset.fmt_sql;
 };
 
-pub fn init(temp: std.mem.Allocator, db: *const DB, index: Location.Index) !SX_Location {
-    const ids = db.locs.items(.id);
-    const parents = db.locs.items(.parent);
-
+pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Location.Index) !SX_Location {
     var children = std.ArrayList([]const u8).init(temp);
-    for (0.., parents) |child_idx, parent_idx| {
-        if (parent_idx == index) {
-            try children.append(ids[child_idx]);
+    const ids = db.locs.items(.id);
+    for (0.., db.locs.items(.parent)) |child_i, parent_idx| {
+        if (parent_idx == idx) {
+            try children.append(ids[child_i]);
         }
     }
 
-    const data = db.locs.get(@intFromEnum(index));
-
-    const parent_id = if (data.parent) |parent_idx| ids[@intFromEnum(parent_idx)] else null;
+    const data = Location.get(db, idx);
+    const parent_id = if (data.parent) |parent_idx| Location.get_id(db, parent_idx) else null;
     return .{
         .id = data.id,
         .full_name = data.full_name,
@@ -79,7 +76,9 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         
         if (modified_ts < dirty_timestamp_ms) continue;
 
-        log.info("Writing loc{s}{s}", .{ std.fs.path.sep_str, dest_path });
+        const DTO = Date_Time.With_Offset;
+        const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
+        log.info("Writing loc{s}{s} (modified {" ++ DTO.fmt_sql_ms ++ "})", .{ std.fs.path.sep_str, dest_path, modified_dto });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();

@@ -176,6 +176,10 @@ fn parse_data(self: *DB, reader: *sx.Reader) !void {
 }
 
 pub fn export_data(self: *DB, dir: *std.fs.Dir) !void {
+    const dirty_timestamp_ms = self.dirty_timestamp_ms orelse std.time.milliTimestamp();
+    const DTO = tempora.Date_Time.With_Offset;
+    const dirty_timestamp = DTO.from_timestamp_ms(dirty_timestamp_ms, null);
+    log.info("Writing data modified after {" ++ DTO.fmt_sql_ms ++ "}", .{ dirty_timestamp });
     try v1.write_data(self, dir);
     self.dirty_timestamp_ms = null;
 }
@@ -316,5 +320,6 @@ const intern_log = std.log.scoped(.@"db.intern");
 const v1 = @import("db/v1.zig");
 
 const Temp_Allocator = @import("Temp_Allocator");
+const tempora = @import("tempora");
 const sx = @import("sx");
 const std = @import("std");

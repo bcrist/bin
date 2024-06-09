@@ -23,7 +23,6 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         }
     }
 
-    const ids = db.mfrs.items(.id);
     var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.mfr_lookup.size + 1);
 
     try options.append(.{
@@ -37,7 +36,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         const name = entry.key_ptr.*;
         if (name_filter.len == 0 or std.ascii.indexOfIgnoreCase(name, name_filter) != null) {
             options.appendAssumeCapacity(.{
-                .value = ids[@intFromEnum(entry.value_ptr.*)],
+                .value = Manufacturer.get_id(db, entry.value_ptr.*),
                 .text = entry.key_ptr.*,
             });
         }
@@ -49,6 +48,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
 const log = std.log.scoped(.@"http.mfr");
 
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
 const sort = @import("../../sort.zig");

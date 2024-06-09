@@ -12,11 +12,11 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     while (try iter.next()) |param| {
         if (std.mem.eql(u8, param.name, "parent")) {
             if (Package.maybe_lookup(db, param.value)) |parent_idx| {
-                parent_id = db.pkgs.items(.id)[@intFromEnum(parent_idx)];
+                parent_id = Package.get_id(db, parent_idx);
             }
         } else if (std.mem.eql(u8, param.name, "mfr")) {
             if (Manufacturer.maybe_lookup(db, param.value)) |mfr_idx| {
-                mfr_id = db.mfrs.items(.id)[@intFromEnum(mfr_idx)];
+                mfr_id = Manufacturer.get_id(db, mfr_idx);
             }
         } else {
             log.debug("Unrecognized parameter for /pkg/add: {s}={s}", .{ param.name, param.value orelse "" });

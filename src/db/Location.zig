@@ -58,6 +58,18 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     return idx;
 }
 
+pub inline fn get(db: *const DB, idx: Index) Location {
+    return db.locs.get(@intFromEnum(idx));
+}
+
+pub inline fn get_id(db: *const DB, idx: Index) []const u8 {
+    return db.locs.items(.id)[@intFromEnum(idx)];
+}
+
+pub inline fn get_full_name(db: *const DB, idx: Index) ?[]const u8 {
+    return db.locs.items(.full_name)[@intFromEnum(idx)];
+}
+
 pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
     const parents = db.locs.items(.parent);
     var maybe_idx: ?Index = descendant_idx;

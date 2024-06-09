@@ -1,7 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
-    const mfr_id = db.mfrs.items(.id)[@intFromEnum(idx)];
+    const mfr_id = Manufacturer.get_id(db, idx);
     const relations = try get_sorted_relations(db, idx);
     const post_prefix = try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr_id) });
 
@@ -94,7 +94,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                 .index = local_index,
                 .kind = new_kind,
                 .kind_str = new_kind.display(),
-                .other = db.mfrs.items(.id)[@intFromEnum(new_other_idx)],
+                .other = Manufacturer.get_id(db, new_other_idx),
                 .year = new_year,
                 .err_year = !valid,
             }, .{});
@@ -106,7 +106,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         var new_other_idx: ?Manufacturer.Index = null;
         if (Manufacturer.maybe_lookup(db, relation_other)) |other_idx| {
             new_other_idx = other_idx;
-            relation_other = db.mfrs.items(.id)[@intFromEnum(other_idx)];
+            relation_other = Manufacturer.get_id(db, other_idx);
             if (new_other_idx == idx) {
                 message = "Incest is not allowed";
                 valid_other = false;

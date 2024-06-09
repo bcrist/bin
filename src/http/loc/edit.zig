@@ -1,7 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_loc_name = try req.get_path_param("loc");
     const idx = Location.maybe_lookup(db, requested_loc_name) orelse return;
-    var loc = db.locs.get(@intFromEnum(idx));
+    var loc = Location.get(db, idx);
     const post_prefix = try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) });
 
     var path_iter = req.path_iterator();
@@ -51,7 +51,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
                     }
 
                     try Location.set_parent(db, idx, parent_idx);
-                    parent_id = db.locs.items(.id)[@intFromEnum(parent_idx)];
+                    parent_id = Location.get_id(db, parent_idx);
                 } else {
                     try Location.set_parent(db, idx, null);
                 }

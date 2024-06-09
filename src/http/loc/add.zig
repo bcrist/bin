@@ -11,7 +11,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     while (try iter.next()) |param| {
         if (std.mem.eql(u8, param.name, "parent")) {
             if (Location.maybe_lookup(db, param.value)) |parent_idx| {
-                parent_id = db.locs.items(.id)[@intFromEnum(parent_idx)];
+                parent_id = Location.get_id(db, parent_idx);
             }
         } else {
             log.debug("Unrecognized parameter for /loc/add: {s}={s}", .{ param.name, param.value orelse "" });

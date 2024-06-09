@@ -29,16 +29,14 @@ pub const context = struct {
     };
 };
 
-pub fn init(temp: std.mem.Allocator, db: *const DB, index: Manufacturer.Index) !SX_Manufacturer {
-    const ids = db.mfrs.items(.id);
-
+pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Manufacturer.Index) !SX_Manufacturer {
     var temp_rels = std.ArrayList(Manufacturer.Relation).init(temp);
     defer temp_rels.deinit();
 
     for (0.., db.mfr_relations.items(.source), db.mfr_relations.items(.target)) |rel_i, source, target| {
-        if (source == index) {
+        if (source == idx) {
             try temp_rels.append(db.mfr_relations.get(rel_i));
-        } else if (target == index) {
+        } else if (target == idx) {
             try temp_rels.append(db.mfr_relations.get(rel_i).inverse());
         }
     }
@@ -47,15 +45,15 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, index: Manufacturer.Index) !
 
     const rels = try temp.alloc(Relation, temp_rels.items.len);
     for (rels, temp_rels.items) |*out, in| {
-        const other: Manufacturer.Index = if (in.source == index) in.target else in.source;
+        const other = if (in.source == idx) in.target else in.source;
         out.* = .{
             .kind = in.kind,
-            .other = ids[@intFromEnum(other)],
+            .other = Manufacturer.get_id(db, other),
             .year = in.year,
         };
     }
 
-    const data = db.mfrs.get(@intFromEnum(index));
+    const data = Manufacturer.get(db, idx);
     var full_name = data.full_name;
     if (data.additional_names.items.len > 0 and full_name == null) {
         full_name = data.id;
@@ -130,7 +128,9 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         
         if (modified_ts < dirty_timestamp_ms) continue;
 
-        log.info("Writing mfr{s}{s}", .{ std.fs.path.sep_str, dest_path });
+        const DTO = Date_Time.With_Offset;
+        const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
+        log.info("Writing mfr{s}{s} (modified {" ++ DTO.fmt_sql_ms ++ "})", .{ std.fs.path.sep_str, dest_path, modified_dto });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();

@@ -63,6 +63,22 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     return idx;
 }
 
+pub inline fn get(db: *const DB, idx: Index) Manufacturer {
+    return db.mfrs.get(@intFromEnum(idx));
+}
+
+pub inline fn get_id(db: *const DB, idx: Index) []const u8 {
+    return db.mfrs.items(.id)[@intFromEnum(idx)];
+}
+
+pub inline fn get_full_name(db: *const DB, idx: Index) ?[]const u8 {
+    return db.mfrs.items(.full_name)[@intFromEnum(idx)];
+}
+
+pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8 {
+    return db.mfrs.items(.additional_names)[@intFromEnum(idx)].items;
+}
+
 pub fn delete(db: *DB, idx: Index) !void {
     for (0.., db.pkgs.items(.manufacturer)) |pkg_idx, maybe_mfr_idx| {
         if (maybe_mfr_idx == idx) {
@@ -359,7 +375,7 @@ pub const Relation = struct {
         const current = kinds[i];
         if (current != kind) {
             kinds[i] = kind;
-            log.debug("Changed kind for mfr relation {} from {s} to {s}", .{ @intFromEnum(idx), @tagName(current), @tagName(kind) });
+            log.debug("Changed kind for {} from {s} to {s}", .{ idx, @tagName(current), @tagName(kind) });
             set_modified_relation(db, idx);
             return true;
         }
@@ -372,7 +388,7 @@ pub const Relation = struct {
         const current = sources[i];
         if (current != source) {
             sources[i] = source;
-            log.debug("Changed source for mfr relation {} from {} to {}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(source) });
+            log.debug("Changed source for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(source) });
             set_modified_relation(db, idx);
             set_modified(db, current);
             return true;
@@ -386,7 +402,7 @@ pub const Relation = struct {
         const current = targets[i];
         if (current != target) {
             targets[i] = target;
-            log.debug("Changed target for mfr relation {} from {} to {}", .{ @intFromEnum(idx), @intFromEnum(current), @intFromEnum(target) });
+            log.debug("Changed target for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(target) });
             set_modified_relation(db, idx);
             set_modified(db, current);
             return true;
@@ -401,20 +417,20 @@ pub const Relation = struct {
             if (year) |new| {
                 if (current != new) {
                     years[i] = new;
-                    log.debug("Changed year for mfr relation {} from {} to {}", .{ @intFromEnum(idx), current, new });
+                    log.debug("Changed year for {} from {} to {}", .{ idx, current, new });
                     set_modified_relation(db, idx);
                     return true;
                 }
             } else {
                 years[i] = null;
-                log.debug("Removed year from mfr relation {}", .{ @intFromEnum(idx) });
+                log.debug("Removed year from {}", .{ idx });
                 set_modified_relation(db, idx);
                 return true;
             }
         } else {
             if (year) |new| {
                 years[i] = new;
-                log.debug("Assigned year for mfr relation {} to {}", .{ @intFromEnum(idx), new });
+                log.debug("Assigned year for {} to {}", .{ idx, new });
                 set_modified_relation(db, idx);
                 return true;
             }
@@ -435,7 +451,7 @@ pub const Relation = struct {
         if (old_order_index == order_index) return;
 
         order_indices[i] = order_index;
-        log.debug("Changed order_index for mfr relation {} from {} to {}", .{ @intFromEnum(idx), old_order_index, order_index });
+        log.debug("Changed order_index for {} from {} to {}", .{ idx, old_order_index, order_index });
         set_modified(db, mfr_idx);
     }
 

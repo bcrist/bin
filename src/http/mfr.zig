@@ -13,7 +13,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
         return;
     };
-    const mfr = db.mfrs.get(@intFromEnum(idx));
+    const mfr = Manufacturer.get(db, idx);
 
     if (!std.mem.eql(u8, requested_mfr_name.?, mfr.id)) {
         req.response_status = .moved_permanently;
@@ -93,17 +93,14 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
     }
 
     if (Manufacturer.maybe_lookup(db, trimmed)) |idx| {
-        const i = @intFromEnum(idx);
-        const id = db.mfrs.items(.id)[i];
-
         if (for_mfr) |for_mfr_idx| {
             if (idx == for_mfr_idx) {
                 const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => id,
-                    .full_name => db.mfrs.items(.full_name)[i],
+                    .id => Manufacturer.get_id(db, idx),
+                    .full_name => Manufacturer.get_full_name(db, idx),
                     .additional_name => |maybe_additional_name_index| current: {
                         if (maybe_additional_name_index) |n| {
-                            const additional_names = db.mfrs.items(.additional_names)[i].items;
+                            const additional_names = Manufacturer.get_additional_names(db, idx);
                             if (n < additional_names.len) {
                                 break :current additional_names[n];
                             }
@@ -121,6 +118,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Ind
 
         log.debug("Invalid name (in use): {s}", .{ name });
         valid.* = false;
+        const id = Manufacturer.get_id(db, idx);
         message.* = try http.tprint("In use by <a href=\"/mfr:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
     }
 
@@ -151,7 +149,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
                 .is_inverted = false,
                 .kind = rel.kind,
                 .kind_str = rel.kind.display(),
-                .other = db.mfrs.items(.id)[@intFromEnum(rel.target)],
+                .other = Manufacturer.get_id(db, rel.target),
                 .year = rel.year,
                 .order_index = rel.source_order_index,
             });
@@ -162,7 +160,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
                 .is_inverted = true,
                 .kind = rel.kind.inverse(),
                 .kind_str = rel.kind.inverse().display(),
-                .other = db.mfrs.items(.id)[@intFromEnum(rel.source)],
+                .other = Manufacturer.get_id(db, rel.source),
                 .year = rel.year,
                 .order_index = rel.target_order_index,
             });

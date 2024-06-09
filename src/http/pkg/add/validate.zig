@@ -40,7 +40,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
                     message = "invalid package";
                     continue;
                 };
-                parent_id = db.pkgs.items(.id)[@intFromEnum(parent_idx)];
+                parent_id = Package.get_id(db, parent_idx);
             },
             .mfr => if (str_value.len > 0) {
                 const mfr_idx = Manufacturer.maybe_lookup(db, str_value) orelse {
@@ -49,7 +49,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
                     message = "invalid manufacturer";
                     continue;
                 };
-                mfr_id = db.mfrs.items(.id)[@intFromEnum(mfr_idx)];
+                mfr_id = Manufacturer.get_id(db, mfr_idx);
             },
         }
     }

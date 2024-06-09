@@ -34,13 +34,11 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     }
 
     if (q.len > 0) {
-
-        const mfr_ids = db.mfrs.items(.id);
         var name_iter = db.mfr_lookup.iterator();
         while (name_iter.next()) |entry| {
             const name = entry.key_ptr.*;
             if (std.ascii.indexOfIgnoreCase(name, q)) |start_of_match| {
-                const url = try http.tprint("/mfr:{s}", .{ mfr_ids[@intFromEnum(entry.value_ptr.*)] });
+                const url = try http.tprint("/mfr:{s}", .{ Manufacturer.get_id(db, entry.value_ptr.*) });
 
                 var relevance: f64 = @floatFromInt(q.len);
                 relevance /= @floatFromInt(1 + name.len - q.len);
@@ -71,6 +69,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
 const log = std.log.scoped(.@"http.search");
 
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const http = @import("http");
