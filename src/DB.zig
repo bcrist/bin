@@ -275,9 +275,13 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
 pub fn maybe_set_modified(self: *DB, idx: anytype) void {
     const Index = @TypeOf(idx);
     if (comptime @typeInfo(Index) == .Enum and @hasDecl(Index, "Type") and std.mem.endsWith(u8, @typeName(Index), ".Index")) {
+        if (self.loading) return;
         const list = self.get_list(Index.Type);
         const i = @intFromEnum(idx);
         const now = std.time.milliTimestamp();
+        const DTO = tempora.Date_Time.With_Offset;
+        const now_dto = DTO.from_timestamp_ms(now, null);
+        log.debug("Setting {} last modified to {" ++ DTO.fmt_sql_ms ++ "}", .{ idx, now_dto });
         list.items(.modified_timestamp_ms)[i] = now;
         self.mark_dirty(now);
     }

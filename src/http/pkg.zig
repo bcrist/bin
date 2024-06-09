@@ -16,7 +16,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     if (!std.mem.eql(u8, requested_pkg_name.?, pkg.id)) {
         req.response_status = .moved_permanently;
-        try req.add_response_header("Location", try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
+        try req.add_response_header("Location", try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }));
         try req.respond("");
         return;
     }
@@ -105,7 +105,7 @@ pub fn validate_name(name: []const u8, db: *const DB, for_pkg: ?Package.Index, f
         log.debug("Invalid name (in use): {s}", .{ name });
         valid.* = false;
         const id = Package.get_id(db, idx);
-        message.* = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
+        message.* = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(id), id });
     }
 
     return trimmed;
@@ -140,7 +140,7 @@ pub fn render(pkg: Package, info: Render_Info) !void {
 
     const post_prefix = switch (info.mode) {
         .info => "",
-        .edit => try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }),
+        .edit => try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }),
         .add => "/pkg",
     };
 

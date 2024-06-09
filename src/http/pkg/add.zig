@@ -113,9 +113,9 @@ pub fn post(req: *http.Request, db: *DB) !void {
             }
         }
         try req.see_other("/pkg/add");
+    } else {
+        try req.see_other(try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }));
     }
-
-    try req.see_other(try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
 }
 
 const log = std.log.scoped(.@"http.pkg");

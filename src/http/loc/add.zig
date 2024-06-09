@@ -29,64 +29,23 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 }
 
 pub fn post(req: *http.Request, db: *DB) !void {
-    const alloc = http.temp();
-
     var another = false;
-
-    var loc = Location.init_empty("", std.time.milliTimestamp());
+    var txn: Transaction = .{
+        .db = db,
+        .idx = null,
+    };
 
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
-        if (std.mem.eql(u8, param.name, "invalid")) {
-            log.warn("Found 'invalid' param in request body!", .{});
-            return error.BadRequest;
-        }
-
         if (std.mem.eql(u8, param.name, "another")) {
             another = true;
             continue;
         }
-
-        const value = param.value orelse "";
-
-        const field = std.meta.stringToEnum(Field, param.name) orelse {
-            log.warn("Unrecognized parameter: {s}", .{ param.name });
-            return error.BadRequest;
-        };
-        const copied_value = try alloc.dupe(u8, value);
-        var valid = true;
-        var message: []const u8 = "";
-        switch (field) {
-            .id => loc.id = try validate_name(copied_value, db, null, .id, &valid, &message) orelse "",
-            .full_name => loc.full_name = try validate_name(copied_value, db, null, .full_name, &valid, &message),
-            .notes => loc.notes = if (copied_value.len > 0) copied_value else null,
-            .parent => {
-                if (copied_value.len == 0) {
-                    loc.parent = null;
-                } else if (Location.maybe_lookup(db, copied_value)) |idx| {
-                    loc.parent = idx;
-                } else {
-                    log.warn("Invalid parent location {s}", .{ copied_value });
-                    return error.BadRequest;
-                }
-            },
-        }
-        if (!valid) {
-            log.warn("Invalid {s} parameter: {s} ({s})", .{ param.name, copied_value, message });
-            return error.BadRequest;
-        }
+        try txn.process_param(param);
     }
 
-    if (loc.full_name) |full_name| {
-        if (std.mem.eql(u8, loc.id, full_name)) {
-            loc.full_name = null;
-        }
-    }
-
-    const idx = try Location.lookup_or_create(db, loc.id);
-    try Location.set_parent(db, idx, loc.parent);
-    try Location.set_full_name(db, idx, loc.full_name);
-    try Location.set_notes(db, idx, loc.notes);
+    try txn.validate();
+    try txn.apply_changes(db);
 
     if (another) {
         if (req.get_header("hx-current-url")) |param| {
@@ -97,17 +56,15 @@ pub fn post(req: *http.Request, db: *DB) !void {
             }
         }
         try req.see_other("/loc/add");
+    } else {
+        try req.see_other(try http.tprint("/loc:{}", .{ http.fmtForUrl(txn.id.?) }));
     }
-
-    try req.see_other(try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
 }
 
 const log = std.log.scoped(.@"http.loc");
 
-const Field = @import("../loc.zig").Field;
 const render = @import("../loc.zig").render;
-const validate_name = @import("../loc.zig").validate_name;
-
+const Transaction = @import("Transaction.zig");
 const Location = DB.Location;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");

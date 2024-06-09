@@ -16,7 +16,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     if (!std.mem.eql(u8, requested_loc_name.?, loc.id)) {
         req.response_status = .moved_permanently;
-        try req.add_response_header("Location", try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }));
+        try req.add_response_header("Location", try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }));
         try req.respond("");
         return;
     }
@@ -59,55 +59,6 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-pub const Field = enum {
-    id,
-    full_name,
-    parent,
-    notes,
-};
-
-const Name_Field = enum {
-    id,
-    full_name,
-};
-pub fn validate_name(name: []const u8, db: *const DB, for_loc: ?Location.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) !?[]const u8 {
-    const trimmed = std.mem.trim(u8, name, &std.ascii.whitespace);
-    if (for_field == .id and !DB.is_valid_id(trimmed)) {
-        log.debug("Invalid ID: {s}", .{ name });
-        valid.* = false;
-        message.* = "ID may not be empty or '_', or contain '/'";
-        return trimmed;
-    }
-
-    if (trimmed.len == 0) {
-        return null;
-    }
-
-    if (Location.maybe_lookup(db, trimmed)) |idx| {
-
-        if (for_loc) |for_loc_idx| {
-            if (idx == for_loc_idx) {
-                const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => Location.get_id(db, idx),
-                    .full_name => Location.get_full_name(db, idx),
-                };
-                if (maybe_current_name) |current_name| {
-                    if (std.mem.eql(u8, trimmed, current_name)) {
-                        return trimmed;
-                    }
-                }
-            }
-        }
-
-        log.debug("Invalid name (in use): {s}", .{ name });
-        valid.* = false;
-        const id = Location.get_id(db, idx);
-        message.* = try http.tprint("In use by <a href=\"/loc:{}\" target=\"_blank\">{s}</a>", .{ http.percent_encoding.fmtEncoded(id), id });
-    }
-
-    return trimmed;
-}
-
 const Render_Info = struct {
     session: ?Session,
     req: *http.Request,
@@ -136,7 +87,7 @@ pub fn render(loc: Location, info: Render_Info) !void {
 
     const post_prefix = switch (info.mode) {
         .info => "",
-        .edit => try http.tprint("/loc:{}", .{ http.percent_encoding.fmtEncoded(loc.id) }),
+        .edit => try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }),
         .add => "/loc",
     };
 

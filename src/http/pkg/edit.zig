@@ -2,7 +2,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse return;
     var pkg = Package.get(db, idx);
-    const post_prefix = try http.tprint("/pkg:{}", .{ http.percent_encoding.fmtEncoded(pkg.id) });
+    const post_prefix = try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) });
 
     var path_iter = req.path_iterator();
     _ = path_iter.next(); // /pkg:*
@@ -22,7 +22,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
             .id => {
                 pkg.id = (try validate_name(str_value, db, idx, .id, &valid, &message)).?;
                 if (valid and try Package.set_id(db, idx, pkg.id)) {
-                    try req.add_response_header("HX-Location", try http.tprint("/pkg:{}?edit", .{ http.percent_encoding.fmtEncoded(pkg.id) }));
+                    try req.add_response_header("HX-Location", try http.tprint("/pkg:{}?edit", .{ http.fmtForUrl(pkg.id) }));
                 }
             },
             .full_name => {

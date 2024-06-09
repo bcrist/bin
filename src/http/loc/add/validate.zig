@@ -13,10 +13,11 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     const mode = std.meta.stringToEnum(Validate_Mode, mode_str) orelse return error.BadRequest;
 
     var was_valid = true;
-    var valid = true;
-    var message: []const u8 = "";
-    var loc = Location.init_empty("", 0);
-    var parent_id: ?[]const u8 = null;
+    
+    var txn: Transaction = .{
+        .db = db,
+        .idx = null,
+    };
 
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
@@ -24,35 +25,25 @@ pub fn post(req: *http.Request, db: *const DB) !void {
             was_valid = false;
             continue;
         }
-        const str_value = try http.temp().dupe(u8, param.value orelse "");
-        const field = std.meta.stringToEnum(Validate_Mode, param.name) orelse return error.BadRequest;
-        switch (field) {
-            .add => return error.BadRequest,
-            .id => loc.id = try validate_name(str_value, db, null, .id, &valid, &message) orelse "",
-            .full_name => loc.full_name = try validate_name(str_value, db, null, .full_name, &valid, &message),
-            .notes => loc.notes = if (str_value.len > 0) str_value else null,
-            .parent => if (str_value.len > 0) {
-                const parent_idx = Location.maybe_lookup(db, str_value) orelse {
-                    log.debug("Invalid parent location: {s}", .{ str_value });
-                    valid = false;
-                    message = "invalid location";
-                    continue;
-                };
-                parent_id = Location.get_id(db, parent_idx);
-            },
-        }
+        try txn.process_param(param);
     }
 
-    if (mode != .add and was_valid != valid) {
+    try txn.validate();
+
+    if (mode != .add and was_valid != txn.valid) {
         try req.add_response_header("hx-trigger", "revalidate");
     }
 
+    var loc = Location.init_empty(txn.id orelse "", 0);
+    loc.full_name = txn.full_name;
+    loc.notes = txn.notes;
+
     const render_data = .{
         .validating = true,
-        .valid = valid,
-        .err = message,
+        .valid = txn.valid,
+        .err = txn.err,
         .obj = loc,
-        .parent_id = parent_id,
+        .parent_id = txn.parent,
         .parent_search_url = "/loc",
         .post_prefix = "/loc",
         .cancel_url = "/loc",
@@ -71,6 +62,7 @@ const log = std.log.scoped(.@"http.loc");
 
 const validate_name = @import("../../loc.zig").validate_name;
 
+const Transaction = @import("../Transaction.zig");
 const Location = DB.Location;
 const DB = @import("../../../DB.zig");
 const Session = @import("../../../Session.zig");

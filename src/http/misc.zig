@@ -66,10 +66,7 @@ pub const login = struct {
         }
 
         if (failed) {
-            var redirect_temp = try std.ArrayList(u8).initCapacity(http.temp(), 64 + redirect.len);
-            redirect_temp.appendSliceAssumeCapacity("/login?failed&redirect=");
-            _ = try http.percent_encoding.encode_append(&redirect_temp, redirect, .encode_other_and_reserved);
-            redirect = redirect_temp.items;
+            redirect = try http.tprint("/login?failed&redirect={}", .{ http.fmtForUrl(redirect) });
         }
         
         req.response_status = .see_other;

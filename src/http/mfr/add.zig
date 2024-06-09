@@ -200,9 +200,9 @@ pub fn post(req: *http.Request, db: *DB) !void {
             }
         }
         try req.see_other("/mfr/add");
+    } else {
+        try req.see_other(try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }));
     }
-
-    try req.see_other(try http.tprint("/mfr:{}", .{ http.percent_encoding.fmtEncoded(mfr.id) }));
 }
 
 const log = std.log.scoped(.@"http.mfr");
