@@ -3,6 +3,7 @@
    (parent SOT)
    (child SOT23-5)
    (child SOT23-6)
+   (child SOT23)
    (created "2024-06-09 22:30:27 +00:00")
-   (modified "2024-06-09 22:39:37 +00:00")
+   (modified "2024-06-10 01:54:46 +00:00")
 )

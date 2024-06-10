@@ -1,8 +1,8 @@
 \\@include "_top.zk"
 \\session?
 <aside class="flex">
-    <a href="/mfr:\\obj.id//?edit">Edit</a>
-    <a href="/pkg/add?mfr=\\obj.id//">Add Package</a>
+    <a href="/mfr:\\@url obj.id//?edit">Edit</a>
+    <a href="/pkg/add?mfr=\\@url obj.id//">Add Package</a>
 </aside>
 \\~
 <div>mfr:\\obj.id//</div>
@@ -27,14 +27,14 @@
     <h2>Relations</h2>
 \\  relations:
     <div>
-        \\kind_str|kind// <a href="/mfr:\\other//">\\other//</a>
+        \\kind_str|kind// <a href="/mfr:\\@url other//">\\other//</a>
         \\year?//(\\year//)\\~//
     </div>
 \\~~
 \\packages?
     <h2>Packages</h2>
 \\  packages:
-    <div><a href="/pkg:\\*//">\\*//</a></div>
+    <div><a href="/pkg:\\@url *//">\\*//</a></div>
 \\~~
 
 <hr>

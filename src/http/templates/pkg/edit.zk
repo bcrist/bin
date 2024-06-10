@@ -1,7 +1,7 @@
 \\@include "_top.zk"
 <aside class="flex">
-    <a href="/pkg:\\obj.id//">Done</a>
-    <button hx-delete="/pkg:\\obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?  Any child packages will also be deleted.">Delete</button>
+    <a href="/pkg:\\@url obj.id//">Done</a>
+    <button hx-delete="/pkg:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?  Any child packages will also be deleted.">Delete</button>
 </aside>
 <h1>Edit \\full_name//</h1>
 <table class="edit_properties">

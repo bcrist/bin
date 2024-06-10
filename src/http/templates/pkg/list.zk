@@ -7,13 +7,13 @@
 \\missing_pkg?
 <div class="error">
     No package named <b>\\missing_pkg//</b> was found!
-    Would you like to <a href="/pkg:\\missing_pkg//?edit">add it</a>?
+    Would you like to <a href="/pkg:\\@url missing_pkg//?edit">add it</a>?
 </div>
 \\~
 <h1>Top-Level Packages</h1>
 <div class="columns">
 \\pkg_list: *?
-    <a href="/pkg:\\*//">\\*//</a><br>
+    <a href="/pkg:\\@url *//">\\*//</a><br>
 \\~~
 </div>
 \\@include "_bottom.zk"

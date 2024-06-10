@@ -7,13 +7,13 @@
 \\missing_mfr?
 <div class="error">
     No manufacturer named <b>\\missing_mfr//</b> was found!
-    Would you like to <a href="/mfr:\\missing_mfr//?edit">add it</a>?
+    Would you like to <a href="/mfr:\\@url missing_mfr//?edit">add it</a>?
 </div>
 \\~
 <h1>All Manufacturers</h1>
 <div class="columns">
 \\mfr_list: *?
-    <a href="/mfr:\\*//">\\*//</a><br>
+    <a href="/mfr:\\@url *//">\\*//</a><br>
 \\~~
 </div>
 \\@include "_bottom.zk"

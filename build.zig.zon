@@ -5,15 +5,15 @@
     .paths = .{""},
     .dependencies = .{
         .Temp_Allocator = .{
-            .url = "git+https://github.com/bcrist/Zig-TempAllocator#169daa85a12283b027906d22a04e0c52960ca756",
+            .url = "git+https://github.com/bcrist/zig-tempallocator#169daa85a12283b027906d22a04e0c52960ca756",
             .hash = "12205fda9dd276abb11d2f2e45aed0b5149ce98b3cab0aa7e0b51ab68837f0ec5f6a",
         },
         .deep_hash_map = .{
-            .url = "git+https://github.com/bcrist/Zig-DeepHashMap#5ce7efd1785a5b3d3d5bb1f5842154c91eb7a74d",
+            .url = "git+https://github.com/bcrist/zig-deephashmap#5ce7efd1785a5b3d3d5bb1f5842154c91eb7a74d",
             .hash = "122002e8c38548e84577e11c487408d0962e0f8c05a6fbed3f8e1b1771426eddd865",
         },
         .sx = .{
-            .url = "git+https://github.com/bcrist/Zig-SX#671d0c6355b4f7eb395d1f4f853d844fd19bcf70",
+            .url = "git+https://github.com/bcrist/zig-sx#671d0c6355b4f7eb395d1f4f853d844fd19bcf70",
             .hash = "1220ff4c54d86f939850ad7da260992a2fd31a19bd0dad6f5028ad0bde9a33182c91",
         },
         .tempora = .{
@@ -25,12 +25,12 @@
             .hash = "1220aac52c4e9bba0baae290d4171bd3980c19d22d8709900da5a7dc8ce6486d7819",
         },
         .zkittle = .{
-            .url = "git+https://github.com/bcrist/zkittle#858dc502361ef2cd70ef79b0f837b889967a86d4",
-            .hash = "1220595b2a7eeb4b15d39fa78eaadb335c73f0f77dc1835efff554bdb741858c8a48",
+            .url = "git+https://github.com/bcrist/zkittle#194409afeb366abdaf4ed3acd82ffeec1255c25e",
+            .hash = "122011438f948a4f5d145d39d317d2f00bf73325aa368bf44c9b9ed1859888d18701",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#37f037f652120942f135369fa3a7d93a05359150",
-            .hash = "122075b421d671b8b606755153cab81f9839c945793b66d20a0c6d8c9ba7ff0a0d41",
+            .url = "git+https://github.com/bcrist/shittip#d439f45814016f3477ce2cfcbcc198935551aa2d",
+            .hash = "12205e896fe488b4d4db3e1013fc720d5990abf0036c6451cc5422857bbf5b2fea6d",
         },
     },
 }
