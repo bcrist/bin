@@ -6,7 +6,7 @@
 </aside>
 \\~
 <div>mfr:\\obj.id//</div>
-<h1>\\full_name//</h1>
+<h1>\\obj.full_name/obj.id//</h1>
 \\mfr:
 \\  country//
 \\  show_years?

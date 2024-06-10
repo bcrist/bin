@@ -97,7 +97,6 @@ pub fn render(loc: Location, info: Render_Info) !void {
         .post_prefix = post_prefix,
         .title = loc.full_name orelse loc.id,
         .obj = loc,
-        .full_name = loc.full_name orelse loc.id,
         .parent_id = info.parent_id,
         .parent_search_url = "/loc",
         .cancel_url = "/loc",

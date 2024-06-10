@@ -99,7 +99,6 @@ pub fn render(pkg: Package, info: Render_Info) !void {
         .post_prefix = post_prefix,
         .title = pkg.full_name orelse pkg.id,
         .obj = pkg,
-        .full_name = pkg.full_name orelse pkg.id,
         .parent_id = info.parent_id,
         .mfr_id = info.mfr_id,
         .parent_search_url = "/pkg",

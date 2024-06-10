@@ -3,7 +3,7 @@
     <a href="/mfr:\\@url obj.id//">Done</a>
     <button hx-delete="/mfr:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?">Delete</button>
 </aside>
-<h1>Edit \\full_name//</h1>
+<h1>Edit \\obj.full_name/obj.id//</h1>
 <table class="edit_properties">
 <tr>\\@include "common/post_id.zk"//</tr>
 <tr>\\@include "common/post_full_name.zk"//</tr>
