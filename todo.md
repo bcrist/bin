@@ -1,12 +1,24 @@
-* search for locations, packages
-* consolidate validation logic between add/edit pages
+* always include all submitted_fields when editing
+* consolidate validation logic between add/edit pages for mfrs
 * additional names for packages
-* allow ? in ids (need zkittle @url expressions)
+* search for locations, packages
+
+* slimselect: typing while focused should open, search
 
 * Parts
 * Inventory
 * Orders
 
-* Mfr merge function
+* Merging multiple mfrs/locations/etc?
 * Keyboard shortcuts
 * Automatically compute the end year for slimselects based on the current time
+
+
+* Deduplicate Mfr relations
+
+* When IDs change, any data files that reference the old ID need to be re-written, even if they're not modified
+
+
+* zkittle template fragments
+* zkittle separate steps for each resource dir
+* zkittle vscode fix expression syntax highlighting

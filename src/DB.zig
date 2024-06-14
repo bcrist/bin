@@ -105,14 +105,17 @@ fn get_list(self: *DB, comptime T: type) *std.MultiArrayList(T) {
 }
 
 pub const Import_Options = struct {
+    path: []const u8,
     loading: bool = false,
-    prefix: []const u8 = "",
 };
 
-pub fn import_data(self: *DB, dir: *std.fs.Dir, options: Import_Options) !void {
+pub fn import_data(self: *DB, options: Import_Options) !void {
     var temp_arena = try Temp_Allocator.init(500 * 1024 * 1024);
     defer temp_arena.deinit();
     
+    var dir = try std.fs.cwd().makeOpenPath(options.path, .{ .iterate = true });
+    defer dir.close();
+
     var walker = try dir.walk(temp_arena.allocator());
     defer walker.deinit();
 
@@ -130,14 +133,14 @@ pub fn import_data(self: *DB, dir: *std.fs.Dir, options: Import_Options) !void {
         if (options.loading) {
             log.debug("Loading {s}", .{
                 try std.fs.path.resolve(temp_arena.allocator(), &.{
-                    options.prefix,
+                    if (options.loading) "" else options.path,
                     entry.path,
                 }),
             });
         } else {
             log.info("Importing {s}", .{
                 try std.fs.path.resolve(temp_arena.allocator(), &.{
-                    options.prefix,
+                    if (options.loading) "" else options.path,
                     entry.path,
                 }),
             });
@@ -218,7 +221,7 @@ pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
 pub fn is_valid_id(id: []const u8) bool {
     if (id.len == 0) return false;
     if (std.mem.eql(u8, id, "_")) return false;
-    if (std.mem.indexOfScalar(u8, id, '/')) |_| return false;
+    if (std.mem.trim(u8, id, &std.ascii.whitespace).len < id.len) return false;
     return true;
 }
 

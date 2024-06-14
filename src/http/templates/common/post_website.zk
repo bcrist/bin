@@ -1,8 +1,9 @@
+<tr id="website"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="website">Website</label>
+    <label for="website_input">Website</label>
 </th>
 <td>
-    <input type="text" id="website" name="website"
+    <input type="text" id="website_input" name="website"
 \\err?
         class="submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -11,6 +12,9 @@
 \\~
         value="\\website|obj.website//"
         hx-post="\\post_prefix///website"
-        hx-target="closest tr">
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

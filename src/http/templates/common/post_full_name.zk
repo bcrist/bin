@@ -1,8 +1,9 @@
+<tr id="full_name"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="full_name">Full Name</label>
+    <label for="full_name_input">Full Name</label>
 </th>
 <td>
-    <input type="text" id="full_name" name="full_name"
+    <input type="text" id="full_name_input" name="full_name"
 \\err?
         class="submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -11,7 +12,9 @@
 \\~
         value="\\full_name|obj.full_name//"
         hx-post="\\post_prefix///full_name"
-        hx-include="#id"
-        hx-target="closest tr">
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

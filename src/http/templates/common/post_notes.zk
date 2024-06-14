@@ -1,8 +1,9 @@
+<tr id="notes"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th class="va_top">
-    <label for="notes">Notes</label>
+    <label for="notes_input">Notes</label>
 </th>
 <td>
-    <textarea id="notes" name="notes"
+    <textarea id="notes_input" name="notes"
 \\err?
         class="submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -10,6 +11,9 @@
         class="submitted_field"
 \\~
         hx-post="\\post_prefix///notes"
-        hx-target="closest tr">\\notes|obj.notes//</textarea>
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">\\notes|obj.notes//</textarea>
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

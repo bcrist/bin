@@ -54,14 +54,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try txn.apply_changes(db);
 
     if (another) {
-        if (req.get_header("hx-current-url")) |param| {
-            const url = param.value;
-            if (std.mem.indexOfScalar(u8, url, '?')) |query_start| {
-                try req.see_other(try http.tprint("/pkg/add{s}", .{ url[query_start..] }));
-                return;
-            }
-        }
-        try req.see_other("/pkg/add");
+        try req.see_other(try http.tprint("/pkg/add{s}", .{ req.hx_current_query() }));
     } else {
         try req.see_other(try http.tprint("/pkg:{}", .{ http.fmtForUrl(txn.id.?) }));
     }

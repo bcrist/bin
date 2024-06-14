@@ -7,7 +7,7 @@
 \\~
 <div>mfr:\\obj.id//</div>
 <h1>\\obj.full_name/obj.id//</h1>
-\\mfr:
+\\obj:
 \\  country//
 \\  show_years?
 <span class="separator"></span>

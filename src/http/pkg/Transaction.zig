@@ -29,11 +29,13 @@ pub fn process_param(self: *Transaction, param: Query_Param) !void {
 
 pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
-        inline else => |f| {
-            @field(self, @tagName(f)) = try http.temp().dupe(u8, param.value orelse "");
-        },
+        inline else => |f| @field(self, @tagName(f)) = try trim(param.value),
     }
     return true;
+}
+
+fn trim(value: ?[]const u8) ![]const u8 {
+    return try http.temp().dupe(u8, std.mem.trim(u8, value orelse "", &std.ascii.whitespace));
 }
 
 pub fn validate(self: *Transaction) !void {
@@ -44,7 +46,7 @@ pub fn validate(self: *Transaction) !void {
 }
 
 fn validate_id(self: *Transaction) !void {
-    const new_id = std.mem.trim(u8, self.id orelse return, &std.ascii.whitespace);
+    const new_id = self.id orelse return;
     self.id = new_id;
 
     if (!DB.is_valid_id(new_id)) {
@@ -74,7 +76,7 @@ fn validate_id(self: *Transaction) !void {
 }
 
 fn validate_full_name(self: *Transaction) !void {
-    var new_name = std.mem.trim(u8, self.full_name orelse return, &std.ascii.whitespace);
+    var new_name = self.full_name orelse return;
 
     if (self.id orelse if (self.idx) |idx| Package.get_id(self.db, idx) else null) |id| {
         if (std.mem.eql(u8, id, new_name)) new_name = "";

@@ -1,6 +1,8 @@
 pub const list = @import("mfr/list.zig");
 pub const add = @import("mfr/add.zig");
 pub const edit = @import("mfr/edit.zig");
+pub const reorder_additional_names = @import("mfr/reorder_additional_names.zig");
+pub const reorder_relations = @import("mfr/reorder_relations.zig");
 pub const countries = @import("mfr/countries.zig");
 
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
@@ -58,86 +60,7 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-pub const Field = enum {
-    id,
-    full_name,
-    country,
-    founded_year,
-    suspended_year,
-    notes,
-    website,
-    wiki,
-};
-
-const Name_Field = union (enum) {
-    id,
-    full_name,
-    additional_name: ?usize,
-};
-pub fn validate_name(name: []const u8, db: *const DB, for_mfr: ?Manufacturer.Index, for_field: Name_Field, valid: *bool, message: *[]const u8) !?[]const u8 {
-    const trimmed = std.mem.trim(u8, name, &std.ascii.whitespace);
-    if (for_field == .id and !DB.is_valid_id(trimmed)) {
-        log.debug("Invalid ID: {s}", .{ name });
-        valid.* = false;
-        message.* = "ID may not be empty or '_', or contain '/'";
-        return trimmed;
-    }
-
-    if (trimmed.len == 0) {
-        if (for_field == .additional_name) {
-            log.debug("Additional name cannot be empty", .{});
-            valid.* = false;
-            message.* = "Additional name must be provided";
-        }
-        return null;
-    }
-
-    if (Manufacturer.maybe_lookup(db, trimmed)) |idx| {
-        if (for_mfr) |for_mfr_idx| {
-            if (idx == for_mfr_idx) {
-                const maybe_current_name: ?[]const u8 = switch (for_field) {
-                    .id => Manufacturer.get_id(db, idx),
-                    .full_name => Manufacturer.get_full_name(db, idx),
-                    .additional_name => |maybe_additional_name_index| current: {
-                        if (maybe_additional_name_index) |n| {
-                            const additional_names = Manufacturer.get_additional_names(db, idx);
-                            if (n < additional_names.len) {
-                                break :current additional_names[n];
-                            }
-                        }
-                        break :current null;
-                    },
-                };
-                if (maybe_current_name) |current_name| {
-                    if (std.mem.eql(u8, trimmed, current_name)) {
-                        return trimmed;
-                    }
-                }
-            }
-        }
-
-        log.debug("Invalid name (in use): {s}", .{ name });
-        valid.* = false;
-        const id = Manufacturer.get_id(db, idx);
-        message.* = try http.tprint("In use by <a href=\"/mfr:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(id), id });
-    }
-
-    return trimmed;
-}
-
-pub fn validate_year(str_value: []const u8, valid: *bool, message: *[]const u8) !?u16 {
-    const trimmed = std.mem.trim(u8, str_value, &std.ascii.whitespace);
-    if (trimmed.len == 0) {
-        return null;
-    }
-    return std.fmt.parseInt(u16, str_value, 10) catch {
-        log.debug("Invalid Year: {s}", .{ str_value });
-        valid.* = false;
-        message.* = try http.tprint("'{s}' is not a valid year!", .{ str_value });
-        return null;
-    };
-}
-
+// TODO is this only used in 1 place?
 pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayList(Relation) {
     var relations = std.ArrayList(Relation).init(http.temp());
 

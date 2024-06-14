@@ -116,20 +116,20 @@ pub fn delete(db: *DB, idx: Index) !void {
     db.mark_dirty(now);
 }
 
-pub fn set_id(db: *DB, idx: Index, id: []const u8) !bool {
+pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
     const i = @intFromEnum(idx);
     const ids = db.mfrs.items(.id);
     const old_id = ids[i];
-    if (std.mem.eql(u8, id, old_id)) return false;
+    if (std.mem.eql(u8, id, old_id)) return;
 
     if (!DB.is_valid_id(id)) return error.Invalid_ID;
 
     const new_id = try db.intern(id);
+    log.debug("Changing {} ID from {s} to {s}", .{ idx, old_id, new_id });
     std.debug.assert(db.mfr_lookup.remove(old_id));
     try db.mfr_lookup.putNoClobber(db.container_alloc, new_id, idx);
     ids[i] = new_id;
     set_modified(db, idx);
-    return true;
 }
 
 pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
@@ -326,8 +326,6 @@ pub const Relation = struct {
             if (src == target and t == source and k == inverse_kind) return @enumFromInt(i);
         }
 
-        const idx: Relation.Index = @enumFromInt(db.mfr_relations.len);
-        const now = std.time.milliTimestamp();
         const rel: Relation = .{
             .source = source,
             .target = target,
@@ -337,9 +335,7 @@ pub const Relation = struct {
             .target_order_index = 0,
         };
         
-        try db.mfr_relations.append(db.container_alloc, rel.canonical());
-        db.mark_dirty(now);
-        return idx;
+        return try rel.create(db);
     }
 
     pub fn inverse(self: Relation) Relation {
@@ -357,10 +353,12 @@ pub const Relation = struct {
         return if (self.kind.is_canonical()) self else self.inverse();
     }
 
-    pub fn create(self: Relation, db: *DB) !void {
+    pub fn create(self: Relation, db: *DB) !Relation.Index {
+        const i: Relation.Index = @enumFromInt(db.mfr_relations.len);
         try db.mfr_relations.append(db.container_alloc, self.canonical());
         set_modified(db, self.source);
         set_modified(db, self.target);
+        return i;
     }
 
     pub fn remove(db: *DB, idx: Relation.Index) !void {
@@ -369,7 +367,29 @@ pub const Relation = struct {
         db.mfr_relations.swapRemove(i);
     }
 
-    pub fn set_kind(db: *DB, idx: Relation.Index, kind: Kind) !bool {
+    pub fn maybe_remove(db: *DB, source: Manufacturer.Index, target: Manufacturer.Index, kind: Kind, year: ?u16) !void {
+        const s = db.mfr_relations.slice();
+        const inverse_kind = kind.inverse();
+        for (0.., s.items(.source), s.items(.target), s.items(.kind), s.items(.year)) |i, src, t, k, y| {
+            if (!std.meta.eql(y, year)) continue;
+            if (src == source and t == target and k == kind) {
+                return try remove(db, @enumFromInt(i));
+            }
+            if (src == target and t == source and k == inverse_kind) {
+                return try remove(db, @enumFromInt(i));
+            }
+        }
+    }
+
+    pub inline fn get_source(db: *DB, idx: Relation.Index) Manufacturer.Index {
+        return db.mfr_relations.items(.source)[@intFromEnum(idx)];
+    }
+
+    pub inline fn get_target(db: *DB, idx: Relation.Index) Manufacturer.Index {
+        return db.mfr_relations.items(.target)[@intFromEnum(idx)];
+    }
+
+    pub fn set_kind(db: *DB, idx: Relation.Index, kind: Kind) !void {
         const i = @intFromEnum(idx);
         const kinds = db.mfr_relations.items(.kind);
         const current = kinds[i];
@@ -377,12 +397,10 @@ pub const Relation = struct {
             kinds[i] = kind;
             log.debug("Changed kind for {} from {s} to {s}", .{ idx, @tagName(current), @tagName(kind) });
             set_modified_relation(db, idx);
-            return true;
         }
-        return false;
     }
 
-    pub fn set_source(db: *DB, idx: Relation.Index, source: Manufacturer.Index) !bool {
+    pub fn set_source(db: *DB, idx: Relation.Index, source: Manufacturer.Index) !void {
         const i = @intFromEnum(idx);
         const sources = db.mfr_relations.items(.source);
         const current = sources[i];
@@ -391,12 +409,10 @@ pub const Relation = struct {
             log.debug("Changed source for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(source) });
             set_modified_relation(db, idx);
             set_modified(db, current);
-            return true;
         }
-        return false;
     }
 
-    pub fn set_target(db: *DB, idx: Relation.Index, target: Manufacturer.Index) !bool {
+    pub fn set_target(db: *DB, idx: Relation.Index, target: Manufacturer.Index) !void {
         const i = @intFromEnum(idx);
         const targets = db.mfr_relations.items(.target);
         const current = targets[i];
@@ -405,12 +421,10 @@ pub const Relation = struct {
             log.debug("Changed target for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(target) });
             set_modified_relation(db, idx);
             set_modified(db, current);
-            return true;
         }
-        return false;
     }
 
-    pub fn set_year(db: *DB, idx: Relation.Index, year: ?u16) !bool {
+    pub fn set_year(db: *DB, idx: Relation.Index, year: ?u16) !void {
         const i = @intFromEnum(idx);
         const years = db.mfr_relations.items(.year);
         if (years[i]) |current| {
@@ -419,23 +433,19 @@ pub const Relation = struct {
                     years[i] = new;
                     log.debug("Changed year for {} from {} to {}", .{ idx, current, new });
                     set_modified_relation(db, idx);
-                    return true;
                 }
             } else {
                 years[i] = null;
                 log.debug("Removed year from {}", .{ idx });
                 set_modified_relation(db, idx);
-                return true;
             }
         } else {
             if (year) |new| {
                 years[i] = new;
                 log.debug("Assigned year for {} to {}", .{ idx, new });
                 set_modified_relation(db, idx);
-                return true;
             }
         }
-        return false;
     }
 
     pub fn set_order_index(db: *DB, mfr_idx: Manufacturer.Index, idx: Relation.Index, order_index: u16) !void {

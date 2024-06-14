@@ -1,8 +1,9 @@
+<tr id="suspended_year"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="suspended_year">Suspended Year</label>
+    <label for="suspended_year_input">Suspended Year</label>
 </th>
 <td>
-    <select id="suspended_year" name="suspended_year"
+    <select id="suspended_year_input" name="suspended_year"
 \\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -10,8 +11,10 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///suspended_year"
-        hx-target="closest tr"
         hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
         data-deselectable
         data-addable
         data-options="2024-1900?">
@@ -22,3 +25,4 @@
     </select>
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

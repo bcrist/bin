@@ -1,8 +1,9 @@
+<tr id="wiki"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="wiki">Wikipedia</label>
+    <label for="wiki_input">Wikipedia</label>
 </th>
 <td>
-    <input type="text" id="wiki" name="wiki"
+    <input type="text" id="wiki_input" name="wiki"
 \\err?
         class="submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -11,6 +12,9 @@
 \\~
         value="\\wiki|obj.wiki//"
         hx-post="\\post_prefix///wiki"
-        hx-target="closest tr">
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

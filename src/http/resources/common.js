@@ -188,7 +188,6 @@ htmx.onLoad(content => {
 document.addEventListener('htmx:beforeCleanupElement', evt => {
     const el = evt.detail.elt;
     if (el.tagName == 'SELECT' && el.classList.contains('slimselect') && el.slim) {
-        console.log(el);
         el.slim.destroy();
         el.slim = undefined;
     }

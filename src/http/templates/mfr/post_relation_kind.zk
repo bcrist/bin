@@ -7,9 +7,10 @@
 \\;
         class="slimselect submitted_field"
 \\~
-        hx-post="\\post_prefix///relation"
-        hx-target="closest form.sortable_row"
+        hx-post="\\post_prefix///relation\\@index.@exists/index?//:\\@index|index ~//"
         hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest div.sortable_row"
         hx-swap="outerHTML"
         data-options="/mfr/relation/kinds">
         <option data-placeholder="true" value="">Select...</option>

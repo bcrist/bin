@@ -1,8 +1,9 @@
+<tr id="parent"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="parent">Parent</label>
+    <label for="parent_input">Parent</label>
 </th>
 <td>
-    <select id="parent" name="parent"
+    <select id="parent_input" name="parent"
 \\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -10,8 +11,10 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///parent"
-        hx-target="closest tr"
         hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
         data-deselectable
         data-addable
         data-search-url="\\parent_search_url//">
@@ -22,3 +25,4 @@
     </select>
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

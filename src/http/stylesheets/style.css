@@ -240,10 +240,10 @@ select.slimselect {
     flex: 0 0 2em;
 }
 
-.sortable_row div.mfr_additional_name {
+.sortable_row div.additional_name {
     flex: 2 1 100%;
 }
-.sortable_row div.mfr_additional_name_validation {
+.sortable_row div.additional_name_validation {
     flex: 1 2 100%;
 }
 

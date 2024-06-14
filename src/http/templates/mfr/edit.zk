@@ -5,21 +5,21 @@
 </aside>
 <h1>Edit \\obj.full_name/obj.id//</h1>
 <table class="edit_properties">
-<tr>\\@include "common/post_id.zk"//</tr>
-<tr>\\@include "common/post_full_name.zk"//</tr>
-<tr>\\@include "common/post_country.zk"//</tr>
-<tr>\\@include "common/post_founded_year.zk"//</tr>
-<tr>\\@include "common/post_suspended_year.zk"//</tr>
-<tr>\\@include "common/post_website.zk"//</tr>
-<tr>\\@include "common/post_wiki.zk"//</tr>
-<tr>\\@include "common/post_notes.zk"//</tr>
+\\@include "common/post_id.zk"//
+\\@include "common/post_full_name.zk"//
+\\@include "common/post_country.zk"//
+\\@include "common/post_founded_year.zk"//
+\\@include "common/post_suspended_year.zk"//
+\\@include "common/post_website.zk"//
+\\@include "common/post_wiki.zk"//
+\\@include "common/post_notes.zk"//
 </table>
 <h2>Additional Names</h2>
-<div class="sortable" hx-post="/mfr:\\@url obj.id///additional_names" hx-trigger="end" hx-include=".mfr_additional_name">
+<div class="sortable" hx-post="/mfr:\\@url obj.id///additional_names" hx-trigger="end" hx-include=".additional_name_ordering">
 \\obj.additional_names.items:
-\\  @include "mfr/post_additional_name.zk"
+\\  @include "common/post_additional_name.zk"
 \\~
-\\@include "mfr/post_additional_name_placeholder.zk"
+\\@include "common/post_additional_name_placeholder.zk"
 </div>
 <h2>Relations</h2>
 <div class="sortable" hx-post="/mfr:\\@url obj.id///relations" hx-trigger="end" hx-include=".relation_ordering">

@@ -1,10 +1,10 @@
-<form class="sortable_row unsortable">
+<div class="sortable_row unsortable" id="mfr_relation"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
     <span class="icon"></span>
-    <input type="hidden" name="relation" class="relation_ordering">
+    <input type="hidden" name="relation_order" class="relation_ordering">
 \\@include "mfr/post_relation_kind.zk"
 \\@include "mfr/post_relation_other.zk"
 \\@include "mfr/post_relation_year.zk"
     <div class="mfr_relation_validation">
 \\@include "_validation.zk"
     </div>
-</form>
+</div>

@@ -1,8 +1,9 @@
+<tr id="country"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="country">Country</label>
+    <label for="country_input">Country</label>
 </th>
 <td>
-    <select id="country" name="country"
+    <select id="country_input" name="country"
 \\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -10,8 +11,10 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///country"
-        hx-target="closest tr"
         hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
         data-deselectable
         data-addable
         data-options="\\country_search_url//">
@@ -22,3 +25,4 @@
     </select>
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

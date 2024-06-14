@@ -1,8 +1,9 @@
+<tr id="mfr"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
 <th>
-    <label for="mfr">Manufacturer</label>
+    <label for="mfr_input">Manufacturer</label>
 </th>
 <td>
-    <select id="mfr" name="mfr"
+    <select id="mfr_input" name="mfr"
 \\err?
         class="slimselect submitted_field invalid"
         hx-vals='{"invalid":true}'
@@ -10,8 +11,10 @@
         class="slimselect submitted_field"
 \\~
         hx-post="\\post_prefix///mfr"
-        hx-target="closest tr"
         hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
         data-deselectable
         data-addable
         data-search-url="/mfr">
@@ -22,3 +25,4 @@
     </select>
 </td>
 <td>\\@include "_validation.zk"//</td>
+</tr>

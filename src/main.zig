@@ -17,16 +17,13 @@ pub fn main() !void {
     };
     defer db.deinit();
 
-    {
-        var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{ .iterate = true });
-        defer db_dir.close();
-        try db.import_data(&db_dir, .{ .loading = true, });
-    }
+    try db.import_data(.{
+        .path = config.db,
+        .loading = true,
+    });
 
     if (config.import) |import_path| {
-        var import_dir = try std.fs.cwd().makeOpenPath(import_path, .{ .iterate = true });
-        defer import_dir.close();
-        try db.import_data(&import_dir, .{ .prefix = import_path });
+        try db.import_data(.{ .path = import_path });
     }
 
     try persist();
@@ -76,7 +73,9 @@ pub fn main() !void {
         .{ "/mfr/wiki",                 r.module(Injector, mfr.add.validate) },
         .{ "/mfr/notes",                r.module(Injector, mfr.add.validate) },
         .{ "/mfr/additional_name",      r.module(Injector, mfr.add.validate_additional_name) },
+        .{ "/mfr/additional_name:*",    r.module(Injector, mfr.add.validate_additional_name) },
         .{ "/mfr/relation",             r.module(Injector, mfr.add.validate_relation) },
+        .{ "/mfr/relation:*",           r.module(Injector, mfr.add.validate_relation) },
         .{ "/mfr/relation/kinds",       r.module(Injector, mfr.relation_kinds) },
         .{ "/mfr:*",                    r.module(Injector, mfr) },
         .{ "/mfr:*/id",                 r.module(Injector, mfr.edit) },
@@ -88,9 +87,11 @@ pub fn main() !void {
         .{ "/mfr:*/wiki",               r.module(Injector, mfr.edit) },
         .{ "/mfr:*/notes",              r.module(Injector, mfr.edit) },
         .{ "/mfr:*/additional_name",    r.module(Injector, mfr.edit.additional_name) },
-        .{ "/mfr:*/additional_names",   r.module(Injector, mfr.edit.additional_names) },
+        .{ "/mfr:*/additional_name:*",  r.module(Injector, mfr.edit.additional_name) },
+        .{ "/mfr:*/additional_names",   r.module(Injector, mfr.reorder_additional_names) },
         .{ "/mfr:*/relation",           r.module(Injector, mfr.edit.relation) },
-        .{ "/mfr:*/relations",          r.module(Injector, mfr.edit.relations) },
+        .{ "/mfr:*/relation:*",         r.module(Injector, mfr.edit.relation) },
+        .{ "/mfr:*/relations",          r.module(Injector, mfr.reorder_relations) },
 
         .{ "/loc",              r.module(Injector, loc.list) },
         .{ "/loc/add",          r.module(Injector, loc.add) },
@@ -120,20 +121,21 @@ pub fn main() !void {
         .{ "/pkg:*/parent",     r.module(Injector, pkg.edit) },
         .{ "/pkg:*/mfr",        r.module(Injector, pkg.edit) },
 
-        .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
-        .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
-        .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
-        .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
-        .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
-        .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
-        .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
+        // .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
+        // .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
+        // .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
+        // .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
+        // .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
+        // .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
+        // .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 
         .{ "/favicon.ico", r.resource("favicon.png")[1] },
 
         r.resource("style.css"),
         r.resource("fonts.css"),
         r.resource("common.js"),
-        r.resource("htmx.1.9.10.min.js"),
+        r.resource("htmx.1.9.12.min.js"),
+        r.resource("htmx.1.9.12.js"),
         r.resource("Sortable.1.15.2.min.js"),
         r.resource("slimselect.2.7.0.min.js"),
         r.resource("slimselect.2.7.0.mod.css"),
