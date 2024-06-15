@@ -1,14 +1,22 @@
-pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone) !void {
-    const id = (try req.get_path_param("mfr")) orelse "";
-    const now = std.time.milliTimestamp();
-    const mfr = Manufacturer.init_empty(id, now);
-    try render(mfr, .{
-        .session = session,
-        .req = req,
-        .tz = tz,
-        .relations = &.{},
-        .packages = &.{},
-        .mode = .add,
+pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
+    try Session.redirect_if_missing(req, session);
+    var txn = Transaction.init_empty(db);
+
+    if (try req.get_path_param("mfr")) |id| {
+        try txn.process_param(.{ .name = "id", .value = id });
+    }
+
+    var iter = req.query_iterator();
+    while (try iter.next()) |param| {
+        if (std.mem.eql(u8, param.name, "edit")) continue;
+        try txn.process_param(param);
+    }
+
+    try txn.validate();
+    try txn.render_results(session, req, .{
+        .target = .add,
+        .post_prefix = "/mfr",
+        .rnd = null,
     });
 }
 
@@ -37,7 +45,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
 }
 
 pub const validate = struct {
-    pub fn post(req: *http.Request, db: *const DB) !void {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB) !void {
         var txn = Transaction.init_empty(db);
         try txn.process_all_params(req);
         try txn.validate();
@@ -52,7 +60,7 @@ pub const validate = struct {
             }, .{});
         } else {
             const field = std.meta.stringToEnum(Transaction.Field, target_str) orelse return error.BadRequest;
-            try txn.render_results(req, .{
+            try txn.render_results(session, req, .{
                 .target = .{ .field = field },
                 .post_prefix = "/mfr",
                 .rnd = null,
@@ -62,12 +70,12 @@ pub const validate = struct {
 };
 
 pub const validate_additional_name = struct {
-    pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
         var txn = Transaction.init_empty(db);
         try txn.process_all_params(req);
         try txn.validate();
 
-        try txn.render_results(req, .{
+        try txn.render_results(session, req, .{
             .target = .{
                 .additional_name = try req.get_path_param("additional_name") orelse "",
             },
@@ -78,12 +86,12 @@ pub const validate_additional_name = struct {
 };
 
 pub const validate_relation = struct {
-    pub fn post(req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
         var txn = Transaction.init_empty(db);
         try txn.process_all_params(req);
         try txn.validate();
 
-        try txn.render_results(req, .{
+        try txn.render_results(session, req, .{
             .target = .{
                 .relation = try req.get_path_param("relation") orelse "",
             },
@@ -93,18 +101,10 @@ pub const validate_relation = struct {
     }
 };
 
-
-const log = std.log.scoped(.@"http.mfr");
-
-const render = @import("../mfr.zig").render;
+const log = std.log.scoped(.http);
 
 const Transaction = @import("Transaction.zig");
-const Relation = Manufacturer.Relation;
-const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
-const sort = @import("../../sort.zig");
-const slimselect = @import("../slimselect.zig");
 const http = @import("http");
-const tempora = @import("tempora");
 const std = @import("std");

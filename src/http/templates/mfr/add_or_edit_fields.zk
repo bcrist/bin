@@ -1,0 +1,11 @@
+<table class="edit_properties">
+\\@include "common/post_id.zk"//
+\\@include "common/post_full_name.zk"//
+\\@include "common/post_country.zk"//
+\\@include "common/post_founded_year.zk"//
+\\@include "common/post_suspended_year.zk"//
+\\@include "common/post_website.zk"//
+\\@include "common/post_wiki.zk"//
+\\@include "common/post_notes.zk"//
+</table>
+

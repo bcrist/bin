@@ -6,7 +6,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const requested_loc_name = try req.get_path_param("loc");
     const idx = Location.maybe_lookup(db, requested_loc_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req, tz, db);
+            try add.get(session, req, db);
         } else {
             try list.get(session, req, db);
         }
@@ -21,6 +21,17 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
+    if (try req.has_query_param("edit")) {
+        try Session.redirect_if_missing(req, session);
+        var txn = try Transaction.init_idx(db, idx);
+        try txn.render_results(session, req, .{
+            .target = .edit,
+            .post_prefix = try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }),
+            .rnd = null,
+        });
+        return;
+    }
+
     const parent_id = if (loc.parent) |parent_idx| Location.get_id(db, parent_idx) else null;
 
     var children = std.ArrayList([]const u8).init(http.temp());
@@ -31,21 +42,30 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(children.items);
 
-    try render(loc, .{
+    const DTO = tempora.Date_Time.With_Offset;
+
+    const created_dto = DTO.from_timestamp_ms(loc.created_timestamp_ms, tz);
+    const modified_dto = DTO.from_timestamp_ms(loc.modified_timestamp_ms, tz);
+
+    const Context = struct {
+        pub const created = DTO.fmt_sql;
+        pub const modified = DTO.fmt_sql;
+    };
+
+    try req.render("loc/info.zk", .{
         .session = session,
-        .req = req,
-        .tz = tz,
+        .title = loc.full_name orelse loc.id,
+        .obj = loc,
         .parent_id = parent_id,
         .children = children.items,
-        .mode = if (try req.has_query_param("edit")) .edit else .info,
-    });
+        .created = created_dto,
+        .modified = modified_dto,
+    }, .{ .Context = Context });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
     const requested_loc_name = try req.get_path_param("loc");
     const idx = Location.maybe_lookup(db, requested_loc_name) orelse return;
-
-    // TODO if there are any parts/etc referencing this loc, redirect to /loc:*?error#parts
 
     try Location.delete(db, idx, true);
 
@@ -59,61 +79,9 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-const Render_Info = struct {
-    session: ?Session,
-    req: *http.Request,
-    tz: ?*const tempora.Timezone,
-    parent_id: ?[]const u8,
-    children: []const []const u8,
-    mode: enum {
-        info,
-        add,
-        edit,
-    },
-};
-
-pub fn render(loc: Location, info: Render_Info) !void {
-    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
-
-    const DTO = tempora.Date_Time.With_Offset;
-
-    const created_dto = DTO.from_timestamp_ms(loc.created_timestamp_ms, info.tz);
-    const modified_dto = DTO.from_timestamp_ms(loc.modified_timestamp_ms, info.tz);
-
-    const Context = struct {
-        pub const created = DTO.fmt_sql;
-        pub const modified = DTO.fmt_sql;
-    };
-
-    const post_prefix = switch (info.mode) {
-        .info => "",
-        .edit => try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }),
-        .add => "/loc",
-    };
-
-    const data = .{
-        .session = info.session,
-        .mode = info.mode,
-        .post_prefix = post_prefix,
-        .title = loc.full_name orelse loc.id,
-        .obj = loc,
-        .parent_id = info.parent_id,
-        .parent_search_url = "/loc",
-        .cancel_url = "/loc",
-        .children = info.children,
-        .created = created_dto,
-        .modified = modified_dto,
-    };
-
-    switch (info.mode) {
-        .info => try info.req.render("loc/info.zk", data, .{ .Context = Context }),
-        .edit => try info.req.render("loc/edit.zk", data, .{ .Context = Context }),
-        .add => try info.req.render("loc/add.zk", data, .{ .Context = Context }),
-    }
-}
-
 const log = std.log.scoped(.@"http.loc");
 
+const Transaction = @import("loc/Transaction.zig");
 const Location = DB.Location;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");

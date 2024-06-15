@@ -4,23 +4,16 @@
     <button hx-delete="/mfr:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?">Delete</button>
 </aside>
 <h1>Edit \\obj.full_name/obj.id//</h1>
-<table class="edit_properties">
-\\@include "common/post_id.zk"//
-\\@include "common/post_full_name.zk"//
-\\@include "common/post_country.zk"//
-\\@include "common/post_founded_year.zk"//
-\\@include "common/post_suspended_year.zk"//
-\\@include "common/post_website.zk"//
-\\@include "common/post_wiki.zk"//
-\\@include "common/post_notes.zk"//
-</table>
+\\@include "mfr/add_or_edit_fields.zk"
+
 <h2>Additional Names</h2>
 <div class="sortable" hx-post="/mfr:\\@url obj.id///additional_names" hx-trigger="end" hx-include=".additional_name_ordering">
-\\obj.additional_names.items:
+\\additional_names:
 \\  @include "common/post_additional_name.zk"
 \\~
 \\@include "common/post_additional_name_placeholder.zk"
 </div>
+
 <h2>Relations</h2>
 <div class="sortable" hx-post="/mfr:\\@url obj.id///relations" hx-trigger="end" hx-include=".relation_ordering">
 \\relations:
@@ -28,4 +21,5 @@
 \\~
 \\@include "mfr/post_relation_placeholder.zk"
 </div>
+
 \\@include "_bottom.zk" 

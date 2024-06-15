@@ -7,10 +7,5 @@
 \\@include "common/add_cancel.zk"//
 </form>
 <h1>Add Location</h1>
-<table class="edit_properties">
-<tr>\\@include "common/post_id.zk"//</tr>
-<tr>\\@include "common/post_full_name.zk"//</tr>
-<tr>\\@include "common/post_parent.zk"//</tr>
-<tr>\\@include "common/post_notes.zk"//</tr>
-</table>
+\\@include "loc/add_or_edit_fields.zk"
 \\@include "_bottom.zk" 

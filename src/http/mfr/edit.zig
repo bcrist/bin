@@ -1,4 +1,4 @@
-pub fn post(req: *http.Request, db: *DB) !void {
+pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
 
@@ -11,7 +11,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try txn.process_all_params(req);
     try txn.validate();
     try txn.apply_changes(db);
-    try txn.render_results(req, .{
+    try txn.render_results(session, req, .{
         .target = .{ .field = field },
         .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(Manufacturer.get_id(db, idx)) }),
         .rnd = null,
@@ -19,13 +19,13 @@ pub fn post(req: *http.Request, db: *DB) !void {
 }
 
 pub const additional_name = struct {
-    pub fn post(req: *http.Request, db: *DB) !void {
+    pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
         const idx = Manufacturer.maybe_lookup(db, try req.get_path_param("mfr")) orelse return;
         var txn = try Transaction.init_idx(db, idx);
         try txn.process_all_params(req);
         try txn.validate();
         try txn.apply_changes(db);
-        try txn.render_results(req, .{
+        try txn.render_results(session, req, .{
             .target = .{
                 .additional_name = try req.get_path_param("additional_name") orelse "",
             },
@@ -36,13 +36,13 @@ pub const additional_name = struct {
 };
 
 pub const relation = struct {
-    pub fn post(req: *http.Request, db: *DB) !void {
+    pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
         const idx = Manufacturer.maybe_lookup(db, try req.get_path_param("mfr")) orelse return;
         var txn = try Transaction.init_idx(db, idx);
         try txn.process_all_params(req);
         try txn.validate();
         try txn.apply_changes(db);
-        try txn.render_results(req, .{
+        try txn.render_results(session, req, .{
             .target = .{
                 .relation = try req.get_path_param("relation") orelse "",
             },
@@ -57,5 +57,6 @@ const log = std.log.scoped(.@"http.mfr");
 const Transaction = @import("Transaction.zig");
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
+const Session = @import("../../Session.zig");
 const http = @import("http");
 const std = @import("std");

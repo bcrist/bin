@@ -91,15 +91,15 @@ pub fn recompute_last_modification_time(self: *DB) void {
     self.last_modification_timestamp_ms = last_mod;
 }
 
-fn get_list(self: *DB, comptime T: type) *std.MultiArrayList(T) {
+fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
     return switch (T) {
-        Manufacturer => &self.mfrs,
+        Manufacturer => self.mfrs,
         //Distributor => &self.mfrs,
         //Part => &self.mfrs,
         //Order => &self.mfrs,
         //Project => &self.mfrs,
-        Package => &self.pkgs,
-        Location => &self.locs,
+        Package => self.pkgs,
+        Location => self.locs,
         else => unreachable,
     };
 }
@@ -288,6 +288,10 @@ pub fn maybe_set_modified(self: *DB, idx: anytype) void {
         list.items(.modified_timestamp_ms)[i] = now;
         self.mark_dirty(now);
     }
+}
+
+pub fn get_id(self: *const DB, idx: anytype) []const u8 {
+    return self.get_list(@TypeOf(idx).Type).items(.id)[@intFromEnum(idx)];
 }
 
 pub fn String_Hash_Map_Ignore_Case(comptime V: type) type {

@@ -66,7 +66,7 @@ pub fn init_idx(db: *const DB, idx: Manufacturer.Index) !Transaction {
 
     for (0.., mfr.additional_names.items) |i, name| {
         const key = try http.tprint("{d}", .{ i });
-        additional_names.putAssumeCapacity(key, try Field_Data.init(name));
+        additional_names.putAssumeCapacity(key, try Field_Data.init(db, name));
     }
 
     const sorted_relations = try common.get_sorted_relations(db, idx);
@@ -76,16 +76,16 @@ pub fn init_idx(db: *const DB, idx: Manufacturer.Index) !Transaction {
     for (0.., sorted_relations.items) |i, relation| {
         const key = try http.tprint("{d}", .{ i });
         relations.putAssumeCapacity(key, .{
-            .other = try Field_Data.init(relation.other),
-            .kind = try Field_Data.init(relation.kind),
-            .year = try Field_Data.init(relation.year),
+            .other = try Field_Data.init(db, relation.other),
+            .kind = try Field_Data.init(db, relation.kind),
+            .year = try Field_Data.init(db, relation.year),
         });
     }
 
     return .{
         .db = db,
         .idx = idx,
-        .fields = try Field_Data.init_fields(Field, mfr),
+        .fields = try Field_Data.init_fields(Field, db, mfr),
         .additional_names = additional_names,
         .relations = relations,
     };
@@ -122,15 +122,9 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         const gop = try self.additional_names.getOrPut(http.temp(), index_str);
         if (!gop.found_existing) {
             gop.key_ptr.* = try http.temp().dupe(u8, index_str);
-            gop.value_ptr.* = .{
-                .current = "",
-                .future = value,
-                .processed = true,
-            };
-        } else {
-            gop.value_ptr.set_processed(value);
+            gop.value_ptr.* = .{};
         }
-        if (self.idx == null) gop.value_ptr.current = value;
+        gop.value_ptr.set_processed(value, self.idx == null);
         return true;
     }
 
@@ -145,15 +139,9 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         const gop = try self.relations.getOrPut(http.temp(), index_str);
         if (!gop.found_existing) {
             gop.key_ptr.* = try http.temp().dupe(u8, index_str);
-            gop.value_ptr.* = .{ .kind = .{
-                .current = "",
-                .future = value,
-                .processed = true,
-            }};
-        } else {
-            gop.value_ptr.kind.set_processed(value);
+            gop.value_ptr.* = .{};
         }
-        if (self.idx == null) gop.value_ptr.kind.current = value;
+        gop.value_ptr.kind.set_processed(value, self.idx == null);
         return true;
     }
 
@@ -164,15 +152,9 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         const gop = try self.relations.getOrPut(http.temp(), index_str);
         if (!gop.found_existing) {
             gop.key_ptr.* = try http.temp().dupe(u8, index_str);
-            gop.value_ptr.* = .{ .other = .{
-                .current = "",
-                .future = value,
-                .processed = true,
-            }};
-        } else {
-            gop.value_ptr.other.set_processed(value);
+            gop.value_ptr.* = .{};
         }
-        if (self.idx == null) gop.value_ptr.other.current = value;
+        gop.value_ptr.other.set_processed(value, self.idx == null);
         return true;
     }
 
@@ -183,24 +165,16 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         const gop = try self.relations.getOrPut(http.temp(), index_str);
         if (!gop.found_existing) {
             gop.key_ptr.* = try http.temp().dupe(u8, index_str);
-            gop.value_ptr.* = .{ .year = .{
-                .current = "",
-                .future = value,
-                .processed = true,
-            }};
-        } else {
-            gop.value_ptr.year.set_processed(value);
+            gop.value_ptr.* = .{};
         }
-        if (self.idx == null) gop.value_ptr.year.current = value;
+        gop.value_ptr.year.set_processed(value, self.idx == null);
         return true;
     }
 
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
             const value = try trim(param.value);
-            const field_name = @tagName(field);
-            @field(self.fields, field_name).set_processed(value);
-            if (self.idx == null) @field(self.fields, field_name).current = value;
+            @field(self.fields, @tagName(field)).set_processed(value, self.idx == null);
             return true;
         }
     }
@@ -329,16 +303,39 @@ fn validate_relation(self: *Transaction, index_str: []const u8, relation: *Relat
 pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (!self.valid) return;
 
-    const idx = idx: {
-        if (self.idx) |idx| {
-            break :idx idx;
-        } else if (self.fields.id.future_opt()) |id_str| {
-            self.changes_applied = true;
-            break :idx try Manufacturer.lookup_or_create(db, id_str);
-        } else {
+    const idx = self.idx orelse {
+        const id_str = self.fields.id.future_opt() orelse {
             log.warn("ID not specified", .{});
             return error.BadRequest;
+        };
+        
+        const idx = try Manufacturer.lookup_or_create(db, id_str);
+        try Manufacturer.set_full_name(db, idx, self.fields.full_name.future_opt());
+        try Manufacturer.set_country(db, idx, self.fields.country.future_opt());
+        try Manufacturer.set_founded_year(db, idx, self.fields.founded_year.future_opt_int(u16));
+        try Manufacturer.set_suspended_year(db, idx, self.fields.suspended_year.future_opt_int(u16));
+        try Manufacturer.set_notes(db, idx, self.fields.notes.future_opt());
+        try Manufacturer.set_website(db, idx, self.fields.website.future_opt());
+        try Manufacturer.set_wiki(db, idx, self.fields.wiki.future_opt());
+
+        for (self.additional_names.values()) |name_data| {
+            if (name_data.future_opt()) |name| {
+                try Manufacturer.add_additional_names(db, idx, &.{ name });
+            }
         }
+
+        for (self.relations.values()) |relation| {
+            if (relation.other.future_opt()) |other| {
+                const other_idx = Manufacturer.maybe_lookup(db, other).?;
+                const kind = relation.kind.future_enum(Kind);
+                const year = relation.year.future_opt_int(u16);
+                const relation_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
+                try Manufacturer.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
+            }
+        }
+
+        self.changes_applied = true;
+        return;
     };
 
     if (self.names_changed) {
@@ -441,19 +438,10 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     }
 }
 
-const Field_Render_Data = struct {
-    validating: bool = true,
-    saved: bool,
-    valid: bool,
-    err: []const u8,
-    obj: std.enums.EnumFieldStruct(Field, []const u8, null),
-    country_search_url: []const u8 = "/mfr/countries",
-    post_prefix: []const u8,
-    swap_oob: bool,
-};
-
 const Render_Options = struct {
     target: union (enum) {
+        add,
+        edit,
         field: Field,
         additional_name: []const u8,
         relation: []const u8,
@@ -462,7 +450,7 @@ const Render_Options = struct {
     rnd: ?*std.rand.Xoshiro256,
 };
 
-pub fn render_results(self: Transaction, req: *http.Request, options: Render_Options) !void {
+pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, options: Render_Options) !void {
     if (self.changes_applied) if (self.fields.id.edited()) |id| {
         try req.see_other(try http.tprint("/mfr:{}?edit", .{ http.fmtForUrl(id.future) }));
         return;
@@ -472,23 +460,60 @@ pub fn render_results(self: Transaction, req: *http.Request, options: Render_Opt
         try req.add_response_header("hx-trigger", "revalidate");
     }
 
-    var field_render_data: Field_Render_Data = .{
-        .saved = self.changes_applied,
-        .valid = undefined,
-        .err = undefined,
-        .swap_oob = undefined,
-        .obj = .{
-            .id = self.fields.id.future,
-            .full_name = self.fields.full_name.future,
-            .country = self.fields.country.future,
-            .website = self.fields.website.future,
-            .wiki = self.fields.wiki.future,
-            .notes = self.fields.notes.future,
-            .founded_year = self.fields.founded_year.future,
-            .suspended_year = self.fields.suspended_year.future,
-        },
-        .post_prefix = options.post_prefix,
+    const obj: std.enums.EnumFieldStruct(Field, []const u8, null) = .{
+        .id = self.fields.id.future,
+        .full_name = self.fields.full_name.future,
+        .country = self.fields.country.future,
+        .website = self.fields.website.future,
+        .wiki = self.fields.wiki.future,
+        .notes = self.fields.notes.future,
+        .founded_year = self.fields.founded_year.future,
+        .suspended_year = self.fields.suspended_year.future,
     };
+
+    switch (options.target) {
+        .add, .edit => {
+            const additional_names = try http.temp().alloc([]const u8, self.additional_names.count());
+            for (additional_names, self.additional_names.values()) |*rel, data| {
+                rel.* = data.future;
+            }
+
+            const relations = try http.temp().alloc(common.Relation, self.relations.count());
+            for (relations, self.relations.values()) |*rel, data| {
+                const kind = data.kind.current_enum(Kind);
+                rel.* = .{
+                    .db_index = null,
+                    .is_inverted = false,
+                    .kind = kind,
+                    .kind_str = kind.display(),
+                    .other = data.other.future,
+                    .year = data.year.future_opt_int(u16),
+                    .order_index = 0,
+                };
+            }
+
+            const render_data = .{
+                .session = session,
+                .validating = true,
+                .valid = self.valid,
+                .obj = obj,
+                .show_years = obj.founded_year.len > 0 or obj.suspended_year.len > 0,
+                .title = self.fields.full_name.future_opt() orelse self.fields.id.future,
+                .additional_names = additional_names,
+                .relations = relations,
+                .post_prefix = options.post_prefix,
+                .cancel_url = "/mfr",
+                .country_search_url = "/mfr/countries",
+            };
+
+            return switch (options.target) {
+                .add => try req.render("mfr/add.zk", render_data, .{}),
+                .edit => try req.render("mfr/edit.zk", render_data, .{}),
+                else => unreachable,
+            };
+        },
+        else => {},
+    }
 
     inline for (comptime std.enums.values(Field)) |field| {
         const is_target = switch (options.target) {
@@ -498,19 +523,25 @@ pub fn render_results(self: Transaction, req: *http.Request, options: Render_Opt
 
         const data = @field(self.fields, @tagName(field));
         if (is_target or data.is_changed()) {
-            field_render_data.valid = data.valid;
-            field_render_data.err = data.err;
-            field_render_data.swap_oob = !is_target;
-
+            const render_data = .{
+                .validating = true,
+                .saved = self.changes_applied,
+                .valid = data.valid,
+                .err = data.err,
+                .swap_oob = !is_target,
+                .obj = obj,
+                .post_prefix = options.post_prefix,
+                .country_search_url = "/mfr/countries",
+            };
             switch (field) {
-                .id => try req.render("common/post_id.zk", field_render_data, .{}),
-                .full_name => try req.render("common/post_full_name.zk", field_render_data, .{}),
-                .country => try req.render("common/post_country.zk", field_render_data, .{}),
-                .founded_year => try req.render("common/post_founded_year.zk", field_render_data, .{}),
-                .suspended_year => try req.render("common/post_suspended_year.zk", field_render_data, .{}),
-                .notes => try req.render("common/post_notes.zk", field_render_data, .{}),
-                .website => try req.render("common/post_website.zk", field_render_data, .{}),
-                .wiki => try req.render("common/post_wiki.zk", field_render_data, .{}),
+                .id => try req.render("common/post_id.zk", render_data, .{}),
+                .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
+                .country => try req.render("common/post_country.zk", render_data, .{}),
+                .founded_year => try req.render("common/post_founded_year.zk", render_data, .{}),
+                .suspended_year => try req.render("common/post_suspended_year.zk", render_data, .{}),
+                .notes => try req.render("common/post_notes.zk", render_data, .{}),
+                .website => try req.render("common/post_website.zk", render_data, .{}),
+                .wiki => try req.render("common/post_wiki.zk", render_data, .{}),
             }
         }
     }
@@ -612,6 +643,7 @@ const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const common = @import("../mfr.zig");
 const Field_Data = @import("../Field_Data.zig");
+const Session = @import("../../Session.zig");
 const Query_Param = http.Query_Iterator.Query_Param;
 const http = @import("http");
 const std = @import("std");

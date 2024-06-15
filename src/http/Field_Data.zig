@@ -7,37 +7,42 @@ processed: bool = false,
 valid: bool = true,
 err: []const u8 = "",
 
-pub fn init(val: anytype) !Field_Data {
-    const str = try value_to_str(val);
+pub fn init(db: *const DB, val: anytype) !Field_Data {
+    const str = try value_to_str(db, val);
     return .{
         .current = str,
         .future = str,
     };
 }
 
-fn value_to_str(val: anytype) ![]const u8 {
-    return switch (@typeInfo(@TypeOf(val))) {
-        .Enum, .EnumLiteral => @tagName(val),
+fn value_to_str(db: *const DB, val: anytype) ![]const u8 {
+    const T = @TypeOf(val);
+    return switch (@typeInfo(T)) {
+        .Enum => if (comptime @hasDecl(T, "Type") and std.mem.endsWith(u8, @typeName(T), ".Index")) db.get_id(val) else @tagName(val),
+        .EnumLiteral => @tagName(val),
         .Float, .Int => try http.tprint("{d}", .{ val }),
         .ComptimeFloat, .ComptimeInt => std.fmt.comptimePrint("{d}", .{ val }),
         .Null => "",
-        .Optional => if (val) |v| value_to_str(v) else "",
-        .Pointer => |info| if (info.size == .Slice) val else value_to_str(val.*),
-        else => @compileError("Invalid data type for Field_Data: " ++ @typeName(@TypeOf(val))),
+        .Optional => if (val) |v| value_to_str(db, v) else "",
+        .Pointer => |info| if (info.size == .Slice) val else value_to_str(db, val.*),
+        else => @compileError("Invalid data type for Field_Data: " ++ @typeName(T)),
     };
 }
 
-pub fn init_fields(comptime F: type, data: anytype) !std.enums.EnumFieldStruct(F, Field_Data, null) {
+pub fn init_fields(comptime F: type, db: *const DB, data: anytype) !std.enums.EnumFieldStruct(F, Field_Data, null) {
     @setEvalBranchQuota(2 * @typeInfo(F).Enum.fields.len);
     var result: std.enums.EnumFieldStruct(F, Field_Data, null) = undefined;
     inline for (@typeInfo(F).Enum.fields) |field| {
-        @field(result, field.name) = try init(@field(data, field.name));
+        @field(result, field.name) = try init(db, @field(data, field.name));
     }
     return result;
 }
 
-pub fn set_processed(self: *Field_Data, value: []const u8) void {
+pub fn set_processed(self: *Field_Data, value: []const u8, also_set_current: bool) void {
     self.future = value;
+    if (also_set_current) {
+        self.current = value;
+    }
     self.processed = true;
 }
 
@@ -110,5 +115,6 @@ pub fn future_opt_enum(self: Field_Data, comptime T: type) ?T {
     return self.future_enum(T);
 }
 
+const DB = @import("../DB.zig");
 const http = @import("http");
 const std = @import("std");

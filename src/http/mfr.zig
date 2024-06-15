@@ -9,7 +9,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req, tz);
+            try add.get(session, req, db);
         } else {
             try list.get(session, req, db);
         }
@@ -24,6 +24,17 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
+    if (try req.has_query_param("edit")) {
+        try Session.redirect_if_missing(req, session);
+        var txn = try Transaction.init_idx(db, idx);
+        try txn.render_results(session, req, .{
+            .target = .edit,
+            .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }),
+            .rnd = null,
+        });
+        return;
+    }
+
     const relations = try get_sorted_relations(db, idx);
 
     var packages = std.ArrayList([]const u8).init(http.temp());
@@ -34,14 +45,26 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(packages.items);
 
-    try render(mfr, .{
+    const DTO = tempora.Date_Time.With_Offset;
+
+    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, tz);
+    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, tz);
+
+    const Context = struct {
+        pub const created = DTO.fmt_sql;
+        pub const modified = DTO.fmt_sql;
+    };
+
+    try req.render("mfr/info.zk", .{
         .session = session,
-        .req = req,
-        .tz = tz,
+        .title = mfr.full_name orelse mfr.id,
+        .obj = mfr,
+        .show_years = mfr.founded_year != null or mfr.suspended_year != null,
+        .created = created_dto,
+        .modified = modified_dto,
         .relations = relations.items,
         .packages = packages.items,
-        .mode = if (try req.has_query_param("edit")) .edit else .info,
-    });
+    }, .{ .Context = Context });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
@@ -60,7 +83,6 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-// TODO is this only used in 1 place?
 pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayList(Relation) {
     var relations = std.ArrayList(Relation).init(http.temp());
 
@@ -118,61 +140,9 @@ pub const Relation = struct {
     }
 };
 
-const Render_Info = struct {
-    session: ?Session,
-    req: *http.Request,
-    tz: ?*const tempora.Timezone,
-    relations: []const Relation,
-    packages: []const []const u8,
-    mode: enum {
-        info,
-        add,
-        edit,
-    },
-};
-pub fn render(mfr: Manufacturer, info: Render_Info) !void {
-    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
-
-    const DTO = tempora.Date_Time.With_Offset;
-
-    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, info.tz);
-    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, info.tz);
-
-    const Context = struct {
-        pub const created = DTO.fmt_sql;
-        pub const modified = DTO.fmt_sql;
-    };
-
-    const post_prefix = switch (info.mode) {
-        .info => "",
-        .edit => try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }),
-        .add => "/mfr",
-    };
-
-    const data = .{
-        .session = info.session,
-        .mode = info.mode,
-        .post_prefix = post_prefix,
-        .title = mfr.full_name orelse mfr.id,
-        .obj = mfr,
-        .show_years = mfr.founded_year != null or mfr.suspended_year != null,
-        .country_search_url = "/mfr/countries",
-        .cancel_url = "/mfr",
-        .created = created_dto,
-        .modified = modified_dto,
-        .relations = info.relations,
-        .packages = info.packages,
-    };
-
-    switch (info.mode) {
-        .info => try info.req.render("mfr/info.zk", data, .{ .Context = Context }),
-        .edit => try info.req.render("mfr/edit.zk", data, .{ .Context = Context }),
-        .add => try info.req.render("mfr/add.zk", data, .{ .Context = Context }),
-    }
-}
-
 const log = std.log.scoped(.@"http.mfr");
 
+const Transaction = @import("mfr/Transaction.zig");
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
