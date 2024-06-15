@@ -19,8 +19,8 @@
         data-addable
         data-search-url="\\parent_search_url//">
         <option data-placeholder="true" value> </option>
-\\parent_id?
-        <option selected value="\\parent_id//">\\parent_id//</option>
+\\parent_id|obj.parent?
+        <option selected value="\\parent_id|obj.parent//">\\parent_id|obj.parent//</option>
 \\~
     </select>
 </td>

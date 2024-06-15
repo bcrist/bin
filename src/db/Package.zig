@@ -2,7 +2,7 @@
 id: []const u8,
 full_name: ?[]const u8,
 parent: ?Index,
-manufacturer: ?Manufacturer.Index,
+mfr: ?Manufacturer.Index,
 notes: ?[]const u8,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
@@ -28,7 +28,7 @@ pub fn init_empty(id: []const u8, timestamp_ms: i64) Package {
         .id = id,
         .full_name = null,
         .parent = null,
-        .manufacturer = null,
+        .mfr = null,
         .notes = null,
         .created_timestamp_ms = timestamp_ms,
         .modified_timestamp_ms = timestamp_ms,
@@ -169,7 +169,7 @@ pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
 }
 
 pub fn set_mfr(db: *DB, idx: Index, mfr_idx: ?Manufacturer.Index) !void {
-    return set_optional(Manufacturer.Index, db, idx, .manufacturer, mfr_idx);
+    return set_optional(Manufacturer.Index, db, idx, .mfr, mfr_idx);
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {

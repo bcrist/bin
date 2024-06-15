@@ -18,8 +18,6 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     });
 }
 
-const log = std.log.scoped(.@"http.loc");
-
 const Transaction = @import("Transaction.zig");
 const Location = DB.Location;
 const DB = @import("../../DB.zig");

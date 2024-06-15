@@ -6,7 +6,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse {
         if (try req.has_query_param("edit")) {
-            try add.get(session, req, tz, db);
+            try add.get(session, req, db);
         } else {
             try list.get(session, req, db);
         }
@@ -21,8 +21,19 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
+    if (try req.has_query_param("edit")) {
+        try Session.redirect_if_missing(req, session);
+        var txn = try Transaction.init_idx(db, idx);
+        try txn.render_results(session, req, .{
+            .target = .edit,
+            .post_prefix = try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }),
+            .rnd = null,
+        });
+        return;
+    }
+
     const parent_id = if (pkg.parent) |parent_idx| Package.get_id(db, parent_idx) else null;
-    const mfr_id = if (pkg.manufacturer) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
+    const mfr_id = if (pkg.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
 
     var children = std.ArrayList([]const u8).init(http.temp());
     for (db.pkgs.items(.parent), db.pkgs.items(.id)) |parent_idx, id| {
@@ -32,22 +43,31 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(children.items);
 
-    try render(pkg, .{
+     const DTO = tempora.Date_Time.With_Offset;
+
+    const created_dto = DTO.from_timestamp_ms(pkg.created_timestamp_ms, tz);
+    const modified_dto = DTO.from_timestamp_ms(pkg.modified_timestamp_ms, tz);
+
+    const Context = struct {
+        pub const created = DTO.fmt_sql;
+        pub const modified = DTO.fmt_sql;
+    };
+
+    try req.render("pkg/info.zk", .{
         .session = session,
-        .req = req,
-        .tz = tz,
+        .title = pkg.full_name orelse pkg.id,
+        .obj = pkg,
         .parent_id = parent_id,
-        .children = children.items,
         .mfr_id = mfr_id,
-        .mode = if (try req.has_query_param("edit")) .edit else .info,
-    });
+        .children = children.items,
+        .created = created_dto,
+        .modified = modified_dto,
+    }, .{ .Context = Context });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse return;
-
-    // TODO if there are any parts/etc referencing this pkg, redirect to /pkg:*?error#parts
 
     try Package.delete(db, idx, true);
 
@@ -61,68 +81,14 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.respond("");
 }
 
-const Render_Info = struct {
-    session: ?Session,
-    req: *http.Request,
-    tz: ?*const tempora.Timezone,
-    parent_id: ?[]const u8,
-    children: []const []const u8,
-    mfr_id: ?[]const u8,
-    mode: enum {
-        info,
-        add,
-        edit,
-    },
-};
-pub fn render(pkg: Package, info: Render_Info) !void {
-    if (info.mode != .info) try Session.redirect_if_missing(info.req, info.session);
-
-    const DTO = tempora.Date_Time.With_Offset;
-
-    const created_dto = DTO.from_timestamp_ms(pkg.created_timestamp_ms, info.tz);
-    const modified_dto = DTO.from_timestamp_ms(pkg.modified_timestamp_ms, info.tz);
-
-    const Context = struct {
-        pub const created = DTO.fmt_sql;
-        pub const modified = DTO.fmt_sql;
-    };
-
-    const post_prefix = switch (info.mode) {
-        .info => "",
-        .edit => try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }),
-        .add => "/pkg",
-    };
-
-    const data = .{
-        .session = info.session,
-        .mode = info.mode,
-        .post_prefix = post_prefix,
-        .title = pkg.full_name orelse pkg.id,
-        .obj = pkg,
-        .parent_id = info.parent_id,
-        .mfr_id = info.mfr_id,
-        .parent_search_url = "/pkg",
-        .cancel_url = "/pkg",
-        .children = info.children,
-        .created = created_dto,
-        .modified = modified_dto,
-    };
-
-    switch (info.mode) {
-        .info => try info.req.render("pkg/info.zk", data, .{ .Context = Context }),
-        .edit => try info.req.render("pkg/edit.zk", data, .{ .Context = Context }),
-        .add => try info.req.render("pkg/add.zk", data, .{ .Context = Context }),
-    }
-}
-
 const log = std.log.scoped(.@"http.pkg");
 
+const Transaction = @import("pkg/Transaction.zig");
 const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");
-const slimselect = @import("slimselect.zig");
 const http = @import("http");
 const tempora = @import("tempora");
 const std = @import("std");

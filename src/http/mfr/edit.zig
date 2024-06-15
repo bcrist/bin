@@ -52,8 +52,6 @@ pub const relation = struct {
     }
 };
 
-const log = std.log.scoped(.@"http.mfr");
-
 const Transaction = @import("Transaction.zig");
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");

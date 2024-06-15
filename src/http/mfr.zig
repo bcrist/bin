@@ -5,6 +5,16 @@ pub const reorder_additional_names = @import("mfr/reorder_additional_names.zig")
 pub const reorder_relations = @import("mfr/reorder_relations.zig");
 pub const countries = @import("mfr/countries.zig");
 
+pub const relation_kinds = struct {
+    pub fn get(req: *http.Request) !void {
+        const Kind = Manufacturer.Relation.Kind;
+        try slimselect.respond_with_enum_options(req, Kind, .{
+            .placeholder = "Select...",
+            .display_fn = Kind.display,
+        });
+    }
+};
+
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
@@ -38,7 +48,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const relations = try get_sorted_relations(db, idx);
 
     var packages = std.ArrayList([]const u8).init(http.temp());
-    for (db.pkgs.items(.id), db.pkgs.items(.manufacturer)) |id, mfr_idx| {
+    for (db.pkgs.items(.id), db.pkgs.items(.mfr)) |id, mfr_idx| {
         if (mfr_idx == idx) {
             try packages.append(id);
         }
@@ -115,16 +125,6 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
     std.sort.block(Relation, relations.items, {}, Relation.less_than);
     return relations;
 }
-
-pub const relation_kinds = struct {
-    pub fn get(req: *http.Request) !void {
-        const Kind = Manufacturer.Relation.Kind;
-        try slimselect.respond_with_enum_options(req, Kind, .{
-            .placeholder = "Select...",
-            .display_fn = Kind.display,
-        });
-    }
-};
 
 pub const Relation = struct {
     db_index: ?Manufacturer.Relation.Index,

@@ -27,7 +27,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Package.Index) !SX_Pack
     const data = Package.get(db, idx);
 
     const parent_id = if (data.parent) |parent_idx| Package.get_id(db, parent_idx) else null;
-    const mfr_id = if (data.manufacturer) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
+    const mfr_id = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
     return .{
         .id = data.id,
         .full_name = data.full_name,

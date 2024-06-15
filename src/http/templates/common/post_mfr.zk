@@ -19,8 +19,8 @@
         data-addable
         data-search-url="/mfr">
         <option data-placeholder="true" value> </option>
-\\mfr_id?
-        <option selected value="\\mfr_id//">\\mfr_id//</option>
+\\mfr_id|obj.mfr?
+        <option selected value="\\mfr_id|obj.mfr//">\\mfr_id|obj.mfr//</option>
 \\~
     </select>
 </td>

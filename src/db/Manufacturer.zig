@@ -80,7 +80,7 @@ pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
-    for (0.., db.pkgs.items(.manufacturer)) |pkg_idx, maybe_mfr_idx| {
+    for (0.., db.pkgs.items(.mfr)) |pkg_idx, maybe_mfr_idx| {
         if (maybe_mfr_idx == idx) {
             try Package.set_mfr(db, @enumFromInt(pkg_idx), null);
         }

@@ -1,5 +1,3 @@
-* always include all submitted_fields when editing
-* consolidate validation logic between add/edit pages for mfrs
 * additional names for packages
 * search for locations, packages
 

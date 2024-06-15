@@ -4,11 +4,5 @@
     <button hx-delete="/pkg:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?  Any child packages will also be deleted.">Delete</button>
 </aside>
 <h1>Edit \\obj.full_name/obj.id//</h1>
-<table class="edit_properties">
-<tr>\\@include "common/post_id.zk"//</tr>
-<tr>\\@include "common/post_full_name.zk"//</tr>
-<tr>\\@include "common/post_parent.zk"//</tr>
-<tr>\\@include "common/post_mfr.zk"//</tr>
-<tr>\\@include "common/post_notes.zk"//</tr>
-</table>
+\\@include "pkg/add_or_edit_fields.zk"
 \\@include "_bottom.zk" 

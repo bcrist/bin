@@ -86,7 +86,6 @@ const Location = DB.Location;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");
-const slimselect = @import("slimselect.zig");
 const http = @import("http");
 const tempora = @import("tempora");
 const std = @import("std");
