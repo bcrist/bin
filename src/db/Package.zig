@@ -6,6 +6,7 @@ mfr: ?Manufacturer.Index,
 notes: ?[]const u8,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
+additional_names: std.ArrayListUnmanaged([]const u8),
 
 // ancestors
 // children
@@ -32,6 +33,7 @@ pub fn init_empty(id: []const u8, timestamp_ms: i64) Package {
         .notes = null,
         .created_timestamp_ms = timestamp_ms,
         .modified_timestamp_ms = timestamp_ms,
+        .additional_names = .{},
     };
 }
 
@@ -77,8 +79,12 @@ pub inline fn get_parent(db: *const DB, idx: Index) ?Index {
     return db.pkgs.items(.parent)[@intFromEnum(idx)];
 }
 
+pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8 {
+    return db.pkgs.items(.additional_names)[@intFromEnum(idx)].items;
+}
+
 pub inline fn get_mfr(db: *const DB, idx: Index) ?Manufacturer.Index {
-    return db.pkgs.items(.manufacturer)[@intFromEnum(idx)];
+    return db.pkgs.items(.mfr)[@intFromEnum(idx)];
 }
 
 pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
@@ -123,6 +129,12 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     if (db.pkgs.items(.full_name)[i]) |full_name| {
         std.debug.assert(db.pkg_lookup.remove(full_name));
     }
+
+    const additional_names: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
+    for (additional_names.items) |name| {
+        std.debug.assert(db.pkg_lookup.remove(name));
+    }
+    additional_names.deinit(db.container_alloc);
 
     if (parents[@intFromEnum(idx)]) |parent_idx| {
         set_modified(db, parent_idx);
@@ -190,6 +202,77 @@ pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
     if (timestamp_ms == modified_timestamps[i]) return;
     modified_timestamps[i] = timestamp_ms;
     db.mark_dirty(timestamp_ms);
+}
+
+pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []const u8) !void {
+    if (additional_names.len == 0) return;
+
+    const i = @intFromEnum(idx);
+    const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
+    try list.ensureUnusedCapacity(db.container_alloc, additional_names.len);
+
+    var added_name = false;
+
+    for (additional_names) |raw_name| {
+        const gop = try db.pkg_lookup.getOrPut(db.container_alloc, raw_name);
+        if (gop.found_existing) {
+            if (idx != gop.value_ptr.*) {
+                const ids = db.pkgs.items(.id);
+                log.err("Ignoring additional name \"{}\" for package \"{}\" because it is already associated with \"{}\"", .{
+                    std.zig.fmtEscapes(raw_name),
+                    std.zig.fmtEscapes(ids[@intFromEnum(idx)]),
+                    std.zig.fmtEscapes(ids[@intFromEnum(gop.value_ptr.*)]),
+                });
+            }
+        } else {
+            const name = try db.intern(raw_name);
+            gop.key_ptr.* = name;
+            gop.value_ptr.* = idx;
+            list.appendAssumeCapacity(name);
+            added_name = true;
+        }
+    }
+
+    if (added_name) {
+        set_modified(db, idx);
+    }
+}
+
+pub fn remove_additional_name(db: *DB, idx: Index, additional_name: []const u8) !void {
+    const i = @intFromEnum(idx);
+    const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
+    
+    for (0.., list.items) |list_index, name| {
+        if (std.mem.eql(u8, name, additional_name)) {
+            std.debug.assert(db.pkg_lookup.remove(name));
+            _ = list.orderedRemove(list_index);
+            break;
+        }
+    } else return;
+
+    set_modified(db, idx);
+}
+
+pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_name: []const u8) !void {
+    if (std.mem.eql(u8, old_name, new_name)) return;
+
+    const interned = try db.intern(new_name);
+    try db.pkg_lookup.putNoClobber(db.container_alloc, interned, idx);
+
+    const i = @intFromEnum(idx);
+    const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
+    
+    for (0.., list.items) |list_index, name| {
+        if (std.mem.eql(u8, name, old_name)) {
+            std.debug.assert(db.pkg_lookup.remove(old_name));
+            list.items[list_index] = interned;
+            break;
+        }
+    } else {
+        try list.append(db.container_alloc, interned);
+    }
+
+    set_modified(db, idx);
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {

@@ -2,6 +2,7 @@ db: *const DB,
 idx: ?Package.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
+additional_names: std.StringArrayHashMapUnmanaged(Field_Data),
 
 was_valid: bool = true,
 valid: bool = true,
@@ -29,15 +30,26 @@ pub fn init_empty(db: *const DB) Transaction {
             .mfr = .{},
             .notes = .{},
         },
+        .additional_names = .{},
     };
 }
 
 pub fn init_idx(db: *const DB, idx: Package.Index) !Transaction {
     const pkg = Package.get(db, idx);
+
+    var additional_names: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
+    try additional_names.ensureTotalCapacity(http.temp(), pkg.additional_names.items.len);
+
+    for (0.., pkg.additional_names.items) |i, name| {
+        const key = try http.tprint("{d}", .{ i });
+        additional_names.putAssumeCapacity(key, try Field_Data.init(db, name));
+    }
+
     return .{
         .db = db,
         .idx = idx,
         .fields = try Field_Data.init_fields(Field, db, pkg),
+        .additional_names = additional_names,
     };
 }
 
@@ -60,6 +72,23 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         self.was_valid = false;
         return true;
     }
+    
+    if (std.mem.startsWith(u8, param.name, "additional_name_order")) {
+        return true;
+    }
+
+    if (std.mem.startsWith(u8, param.name, "additional_name")) {
+        const index_str = param.name["additional_name".len..];
+        const value = try trim(param.value);
+
+        const gop = try self.additional_names.getOrPut(http.temp(), index_str);
+        if (!gop.found_existing) {
+            gop.key_ptr.* = try http.temp().dupe(u8, index_str);
+            gop.value_ptr.* = .{};
+        }
+        gop.value_ptr.set_processed(value, self.idx == null);
+        return true;
+    }
 
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
@@ -75,13 +104,18 @@ fn trim(value: ?[]const u8) ![]const u8 {
 }
 
 pub fn validate(self: *Transaction) !void {
-    try self.validate_name(&self.fields.id, .id);
-    try self.validate_name(&self.fields.full_name, .full_name);
+    const additional_names = self.additional_names.values();
+    try self.validate_name(&self.fields.id, .id, additional_names);
+    try self.validate_name(&self.fields.full_name, .full_name, additional_names);
+    for (1.., additional_names) |i, *data| {
+        try self.validate_name(data, null, additional_names[i..]);
+    }
+
     try self.validate_parent();
     try self.validate_mfr();
 }
 
-fn validate_name(self: *Transaction, data: *Field_Data, field: Field) !void {
+fn validate_name(self: *Transaction, data: *Field_Data, field: ?Field, additional_names: []Field_Data) !void {
     if (data.is_changed()) {
         self.names_changed = true;
     }
@@ -110,6 +144,14 @@ fn validate_name(self: *Transaction, data: *Field_Data, field: Field) !void {
             data.valid = false;
             self.valid = false;
             return;
+        }
+    }
+
+    // check and remove duplicates in additional_names
+    for (additional_names) |*additional_name| {
+        if (std.ascii.eqlIgnoreCase(data.future, additional_name.future)) {
+            additional_name.future = "";
+            self.names_changed = true;
         }
     }
 }
@@ -175,14 +217,31 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
             try Package.set_mfr(db, idx, mfr_idx);
         }
 
+        for (self.additional_names.values()) |name_data| {
+            if (name_data.future_opt()) |name| {
+                try Package.add_additional_names(db, idx, &.{ name });
+            }
+        }
+
         self.changes_applied = true;
         return;
     };
 
     if (self.names_changed) {
         try Package.set_full_name(db, idx, null);
+        for (self.additional_names.values()) |name_data| {
+            if (name_data.current_opt()) |name| {
+                try Package.remove_additional_name(db, idx, name);
+            }
+        }
+
         try Package.set_id(db, idx, self.fields.id.future);
         try Package.set_full_name(db, idx, self.fields.full_name.future_opt());
+        for (self.additional_names.values()) |name_data| {
+            if (name_data.future_opt()) |name| {
+                try Package.add_additional_names(db, idx, &.{ name });
+            }
+        }
         self.changes_applied = true;
     }
 
@@ -215,6 +274,7 @@ const Render_Options = struct {
         add,
         edit,
         field: Field,
+        additional_name: []const u8,
     },
     post_prefix: []const u8,
     rnd: ?*std.rand.Xoshiro256,
@@ -256,34 +316,50 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 else => unreachable,
             };
         },
-        .field => |target_field| inline for (comptime std.enums.values(Field)) |field| {
-            const is_target = field == target_field;
-            const data = @field(self.fields, @tagName(field));
-            if (is_target or data.is_changed()) {
-                const render_data = .{
-                    .validating = true,
-                    .saved = self.changes_applied,
-                    .valid = data.valid,
-                    .err = data.err,
-                    .swap_oob = !is_target,
-                    .obj = obj,
-                    .post_prefix = options.post_prefix,
-                    .parent_search_url = "/pkg",
-                };
-                switch (field) {
-                    .id => try req.render("common/post_id.zk", render_data, .{}),
-                    .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
-                    .notes => try req.render("common/post_notes.zk", render_data, .{}),
-                    .parent => try req.render("common/post_parent.zk", render_data, .{}),
-                    .mfr => try req.render("common/post_mfr.zk", render_data, .{}),
-                }
-            }
-        },
+        else => {},
     }
+
+    inline for (comptime std.enums.values(Field)) |field| {
+        const is_target = switch (options.target) {
+            .field => |target_field| field == target_field,
+            else => false,
+        };
+
+        const data = @field(self.fields, @tagName(field));
+        if (is_target or data.is_changed()) {
+            const render_data = .{
+                .validating = true,
+                .saved = self.changes_applied,
+                .valid = data.valid,
+                .err = data.err,
+                .swap_oob = !is_target,
+                .obj = obj,
+                .post_prefix = options.post_prefix,
+                .parent_search_url = "/pkg",
+            };
+            switch (field) {
+                .id => try req.render("common/post_id.zk", render_data, .{}),
+                .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
+                .notes => try req.render("common/post_notes.zk", render_data, .{}),
+                .parent => try req.render("common/post_parent.zk", render_data, .{}),
+                .mfr => try req.render("common/post_mfr.zk", render_data, .{}),
+            }
+        }
+    }
+
+    try additional_names_util.render_results(req, self, .{
+        .rnd = options.rnd,
+        .target_index = switch (options.target) {
+            .additional_name => |target_index| target_index,
+            else => null,
+        },
+        .post_prefix = options.post_prefix,
+    });
 }
 
 const log = std.log.scoped(.@"http.pkg");
 
+const additional_names_util = @import("../additional_names_util.zig");
 const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");

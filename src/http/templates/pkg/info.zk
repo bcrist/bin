@@ -7,6 +7,11 @@
 \\~
 <div>pkg:\\obj.id//</div>
 <h1>\\obj.full_name/obj.id//</h1>
+
+\\obj.additional_names.items:
+<div>a.k.a. \\*//</div>
+\\~
+
 \\parent_id?
 Parent: <a href="/pkg:\\@url parent_id//">\\parent_id//</a>
 \\~

@@ -5,4 +5,13 @@
 </aside>
 <h1>Edit \\obj.full_name/obj.id//</h1>
 \\@include "pkg/add_or_edit_fields.zk"
+
+<h2>Additional Names</h2>
+<div class="sortable" hx-post="/pkg:\\@url obj.id///additional_names" hx-trigger="end" hx-include=".additional_name_ordering">
+\\additional_names:
+\\  @include "common/post_additional_name.zk"
+\\~
+\\@include "common/post_additional_name_placeholder.zk"
+</div>
+
 \\@include "_bottom.zk" 

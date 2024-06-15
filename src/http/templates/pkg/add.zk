@@ -8,4 +8,13 @@
 </form>
 <h1>Add Package</h1>
 \\@include "pkg/add_or_edit_fields.zk"
+
+<h2>Additional Names</h2>
+<div class="sortable">
+\\additional_names:
+\\  @include "common/post_additional_name.zk"
+\\~
+\\@include "common/post_additional_name_placeholder.zk"
+</div>
+
 \\@include "_bottom.zk" 

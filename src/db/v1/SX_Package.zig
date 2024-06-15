@@ -1,5 +1,6 @@
 id: []const u8 = "",
 full_name: ?[]const u8 = null,
+additional_names: []const []const u8 = &.{},
 parent: ?[]const u8 = null,
 child: []const []const u8 = &.{},
 mfr: ?[]const u8 = null,
@@ -10,7 +11,7 @@ modified: ?Date_Time.With_Offset = null,
 const SX_Package = @This();
 
 pub const context = struct {
-    pub const inline_fields = &.{ "id", "full_name" };
+    pub const inline_fields = &.{ "id", "full_name", "additional_names" };
     pub const created = Date_Time.With_Offset.fmt_sql;
     pub const modified = Date_Time.With_Offset.fmt_sql;
 };
@@ -25,12 +26,17 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Package.Index) !SX_Pack
     }
 
     const data = Package.get(db, idx);
+    var full_name = data.full_name;
+    if (data.additional_names.items.len > 0 and full_name == null) {
+        full_name = data.id;
+    }
 
     const parent_id = if (data.parent) |parent_idx| Package.get_id(db, parent_idx) else null;
     const mfr_id = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
     return .{
         .id = data.id,
         .full_name = data.full_name,
+        .additional_names = data.additional_names.items,
         .parent = parent_id,
         .child = children.items,
         .mfr = mfr_id,
@@ -55,7 +61,10 @@ pub fn read(self: SX_Package, db: *DB) !void {
         }
     }
 
-    const idx = Package.maybe_lookup(db, full_name) orelse try Package.lookup_or_create(db, id);
+    const idx = Package.maybe_lookup(db, full_name)
+        orelse Package.lookup_multiple(db, self.additional_names)
+        orelse try Package.lookup_or_create(db, id);
+
     _ = try Package.set_id(db, idx, id);
 
     if (self.parent) |parent_id| {
@@ -70,6 +79,8 @@ pub fn read(self: SX_Package, db: *DB) !void {
 
     if (full_name) |name| try Package.set_full_name(db, idx, name);
     if (self.notes) |notes| try Package.set_notes(db, idx, notes);
+    try Package.add_additional_names(db, idx, self.additional_names);
+
     if (self.created) |dto| try Package.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Package.set_modified_time(db, idx, dto.timestamp_ms());
 }

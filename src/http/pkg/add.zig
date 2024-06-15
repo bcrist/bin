@@ -69,6 +69,22 @@ pub const validate = struct {
     }
 };
 
+pub const validate_additional_name = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+        var txn = Transaction.init_empty(db);
+        try txn.process_all_params(req);
+        try txn.validate();
+
+        try txn.render_results(session, req, .{
+            .target = .{
+                .additional_name = try req.get_path_param("additional_name") orelse "",
+            },
+            .post_prefix = "/pkg",
+            .rnd = rnd,
+        });
+    }
+};
+
 const log = std.log.scoped(.http);
 
 const Transaction = @import("Transaction.zig");

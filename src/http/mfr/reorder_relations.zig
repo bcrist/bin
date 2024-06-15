@@ -61,7 +61,5 @@ const get_sorted_relations = @import("../mfr.zig").get_sorted_relations;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
-const sort = @import("../../sort.zig");
-const slimselect = @import("../slimselect.zig");
 const http = @import("http");
 const std = @import("std");

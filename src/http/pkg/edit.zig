@@ -18,6 +18,24 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     });
 }
 
+pub const additional_name = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
+        const idx = Package.maybe_lookup(db, try req.get_path_param("pkg")) orelse return;
+        var txn = try Transaction.init_idx(db, idx);
+        try txn.process_all_params(req);
+        try txn.validate();
+        try txn.apply_changes(db);
+        try txn.render_results(session, req, .{
+            .target = .{
+                .additional_name = try req.get_path_param("additional_name") orelse "",
+            },
+            .post_prefix = try http.tprint("/pkg:{}", .{ http.fmtForUrl(Package.get_id(db, idx)) }),
+            .rnd = null,
+        });
+    }
+};
+
+
 const Transaction = @import("Transaction.zig");
 const Package = DB.Package;
 const DB = @import("../../DB.zig");

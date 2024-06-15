@@ -15,7 +15,6 @@ additional_names: std.ArrayListUnmanaged([]const u8),
 
 const Manufacturer = @This();
 pub const Index = enum (u32) {
-    unknown = std.math.maxInt(u32),
     _,
 
     pub const Type = Manufacturer;

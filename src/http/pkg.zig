@@ -1,6 +1,7 @@
 pub const list = @import("pkg/list.zig");
 pub const add = @import("pkg/add.zig");
 pub const edit = @import("pkg/edit.zig");
+pub const reorder_additional_names = @import("pkg/reorder_additional_names.zig");
 
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_pkg_name = try req.get_path_param("pkg");
