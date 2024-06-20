@@ -26,13 +26,11 @@ pub fn build(b: *std.Build) void {
     exe.root_module.addImport("tempora", ext.tempora);
     exe.root_module.addImport("dizzy", ext.dizzy);
     exe.root_module.addImport("http", ext.http);
-    exe.root_module.addImport("http_resources", shittip.resources(b, .{
-        .paths = &.{
-            b.path("src/http/resources"),
-            b.path("src/http/stylesheets"),
-            b.path("src/http/templates"),
-        },
-    }));
+    exe.root_module.addImport("http_resources", shittip.resources(b, &.{
+        .{ .path = "src/http/resources" },
+        .{ .path = "src/http/stylesheets" },
+        .{ .path = "src/http/templates" },
+    }, .{}));
 
     b.installArtifact(exe);
     var run = b.addRunArtifact(exe);

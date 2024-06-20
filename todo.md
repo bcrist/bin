@@ -18,6 +18,5 @@
 
 * When IDs change, any data files that reference the old ID need to be re-written, even if they're not modified
 
-* shittip resources separate steps for each dir
 * zkittle template fragments
 * zkittle vscode fix expression syntax highlighting
