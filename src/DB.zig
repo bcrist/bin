@@ -11,6 +11,10 @@ mfr_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
 mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
+dist_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Distributor.Index) = .{},
+dists: std.MultiArrayList(Distributor) = .{},
+dist_relations: std.MultiArrayList(Distributor.Relation) = .{},
+
 loc_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
 locs: std.MultiArrayList(Location) = .{},
 
@@ -34,6 +38,13 @@ pub fn deinit(self: *DB) void {
 
     self.locs.deinit(gpa);
     self.loc_lookup.deinit(gpa);
+
+    for (self.dists.items(.additional_names)) |*list| {
+        list.deinit(gpa);
+    }
+    self.dist_relations.deinit(gpa);
+    self.dists.deinit(gpa);
+    self.dist_lookup.deinit(gpa);
 
     for (self.mfrs.items(.additional_names)) |*list| {
         list.deinit(gpa);
@@ -59,6 +70,13 @@ pub fn reset(self: *DB) void {
     self.locs.len = 0;
     self.loc_lookup.clearRetainingCapacity();
 
+    for (self.dists.items(.additional_names)) |*list| {
+        list.deinit(gpa);
+    }
+    self.dists.len = 0;
+    self.dist_relations.len = 0;
+    self.dist_lookup.clearRetainingCapacity();
+
     for (self.mfrs.items(.additional_names)) |*list| {
         list.deinit(gpa);
     }
@@ -81,6 +99,9 @@ pub fn recompute_last_modification_time(self: *DB) void {
     for (self.mfrs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
+    for (self.dists.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
     for (self.locs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
@@ -94,10 +115,10 @@ pub fn recompute_last_modification_time(self: *DB) void {
 fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
     return switch (T) {
         Manufacturer => self.mfrs,
-        //Distributor => &self.mfrs,
-        //Part => &self.mfrs,
-        //Order => &self.mfrs,
-        //Project => &self.mfrs,
+        Distributor => self.dists,
+        //Part => self.mfrs,
+        //Order => self.mfrs,
+        //Project => self.mfrs,
         Package => self.pkgs,
         Location => self.locs,
         else => unreachable,
