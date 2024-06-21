@@ -1,5 +1,5 @@
 db: *const DB,
-idx: ?Manufacturer.Index,
+idx: ?Distributor.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
 additional_names: std.StringArrayHashMapUnmanaged(Field_Data),
@@ -58,13 +58,13 @@ pub fn init_empty(db: *const DB) Transaction {
     };
 }
 
-pub fn init_idx(db: *const DB, idx: Manufacturer.Index) !Transaction {
-    const mfr = Manufacturer.get(db, idx);
+pub fn init_idx(db: *const DB, idx: Distributor.Index) !Transaction {
+    const dist = Distributor.get(db, idx);
 
     var additional_names: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
-    try additional_names.ensureTotalCapacity(http.temp(), mfr.additional_names.items.len);
+    try additional_names.ensureTotalCapacity(http.temp(), dist.additional_names.items.len);
 
-    for (0.., mfr.additional_names.items) |i, name| {
+    for (0.., dist.additional_names.items) |i, name| {
         const key = try http.tprint("{d}", .{ i });
         additional_names.putAssumeCapacity(key, try Field_Data.init(db, name));
     }
@@ -85,7 +85,7 @@ pub fn init_idx(db: *const DB, idx: Manufacturer.Index) !Transaction {
     return .{
         .db = db,
         .idx = idx,
-        .fields = try Field_Data.init_fields(Field, db, mfr),
+        .fields = try Field_Data.init_fields(Field, db, dist),
         .additional_names = additional_names,
         .relations = relations,
     };
@@ -232,11 +232,11 @@ fn validate_name(self: *Transaction, data: *Field_Data, field: ?Field, additiona
         }
     } else if (data.future.len == 0) return;
 
-    if (Manufacturer.maybe_lookup(self.db, data.future)) |existing_idx| {
+    if (Distributor.maybe_lookup(self.db, data.future)) |existing_idx| {
         if (self.idx == null or existing_idx != self.idx) {
             log.debug("Invalid ID (in use): {s}", .{ data.future });
-            const existing_id = Manufacturer.get_id(self.db, existing_idx);
-            data.err = try http.tprint("In use by <a href=\"/mfr:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(existing_id), existing_id });
+            const existing_id = Distributor.get_id(self.db, existing_idx);
+            data.err = try http.tprint("In use by <a href=\"/dist:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(existing_id), existing_id });
             data.valid = false;
             self.valid = false;
             return;
@@ -264,19 +264,19 @@ fn validate_relation(self: *Transaction, index_str: []const u8, relation: *Relat
 
     if (relation.other.future.len == 0) return;
 
-    if (Manufacturer.maybe_lookup(self.db, relation.other.future)) |other_idx| {
-        relation.other.future = Manufacturer.get_id(self.db, other_idx);
+    if (Distributor.maybe_lookup(self.db, relation.other.future)) |other_idx| {
+        relation.other.future = Distributor.get_id(self.db, other_idx);
         if (self.idx == other_idx) {
-            log.debug("Mfr can't have a relation with itself: {s}", .{ relation.other.future });
-            relation.other.err = "Select a different manufacturer";
+            log.debug("Distributor can't have a relation with itself: {s}", .{ relation.other.future });
+            relation.other.err = "Select a different distributor";
             relation.other.valid = false;
             relation.err = relation.other.err;
             relation.valid = false;
             self.valid = false;
         }
     } else {
-        log.debug("Mfr can't have a relation with itself: {s}", .{ relation.other.future });
-        relation.other.err = "Manufacturer not found";
+        log.debug("Distributor can't have a relation with itself: {s}", .{ relation.other.future });
+        relation.other.err = "Distributor not found";
         relation.other.valid = false;
         relation.err = relation.other.err;
         relation.valid = false;
@@ -309,28 +309,28 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
             return error.BadRequest;
         };
         
-        const idx = try Manufacturer.lookup_or_create(db, id_str);
-        try Manufacturer.set_full_name(db, idx, self.fields.full_name.future_opt());
-        try Manufacturer.set_country(db, idx, self.fields.country.future_opt());
-        try Manufacturer.set_founded_year(db, idx, self.fields.founded_year.future_opt_int(u16));
-        try Manufacturer.set_suspended_year(db, idx, self.fields.suspended_year.future_opt_int(u16));
-        try Manufacturer.set_notes(db, idx, self.fields.notes.future_opt());
-        try Manufacturer.set_website(db, idx, self.fields.website.future_opt());
-        try Manufacturer.set_wiki(db, idx, self.fields.wiki.future_opt());
+        const idx = try Distributor.lookup_or_create(db, id_str);
+        try Distributor.set_full_name(db, idx, self.fields.full_name.future_opt());
+        try Distributor.set_country(db, idx, self.fields.country.future_opt());
+        try Distributor.set_founded_year(db, idx, self.fields.founded_year.future_opt_int(u16));
+        try Distributor.set_suspended_year(db, idx, self.fields.suspended_year.future_opt_int(u16));
+        try Distributor.set_notes(db, idx, self.fields.notes.future_opt());
+        try Distributor.set_website(db, idx, self.fields.website.future_opt());
+        try Distributor.set_wiki(db, idx, self.fields.wiki.future_opt());
 
         for (self.additional_names.values()) |name_data| {
             if (name_data.future_opt()) |name| {
-                try Manufacturer.add_additional_names(db, idx, &.{ name });
+                try Distributor.add_additional_names(db, idx, &.{ name });
             }
         }
 
         for (self.relations.values()) |relation| {
             if (relation.other.future_opt()) |other| {
-                const other_idx = Manufacturer.maybe_lookup(db, other).?;
+                const other_idx = Distributor.maybe_lookup(db, other).?;
                 const kind = relation.kind.future_enum(Kind);
                 const year = relation.year.future_opt_int(u16);
-                const relation_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
-                try Manufacturer.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
+                const relation_idx = try Distributor.Relation.lookup_or_create(db, idx, other_idx, kind, year);
+                try Distributor.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
             }
         }
 
@@ -339,99 +339,99 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     };
 
     if (self.names_changed) {
-        try Manufacturer.set_full_name(db, idx, null);
+        try Distributor.set_full_name(db, idx, null);
         for (self.additional_names.values()) |name_data| {
             if (name_data.current_opt()) |name| {
-                try Manufacturer.remove_additional_name(db, idx, name);
+                try Distributor.remove_additional_name(db, idx, name);
             }
         }
 
-        try Manufacturer.set_id(db, idx, self.fields.id.future);
-        try Manufacturer.set_full_name(db, idx, self.fields.full_name.future_opt());
+        try Distributor.set_id(db, idx, self.fields.id.future);
+        try Distributor.set_full_name(db, idx, self.fields.full_name.future_opt());
         for (self.additional_names.values()) |name_data| {
             if (name_data.future_opt()) |name| {
-                try Manufacturer.add_additional_names(db, idx, &.{ name });
+                try Distributor.add_additional_names(db, idx, &.{ name });
             }
         }
         self.changes_applied = true;
     }
 
     if (self.fields.country.changed()) |country| {
-        try Manufacturer.set_country(db, idx, country.future_opt());
+        try Distributor.set_country(db, idx, country.future_opt());
         self.changes_applied = true;
     }
     if (self.fields.founded_year.changed()) |year| {
-        try Manufacturer.set_founded_year(db, idx, year.future_opt_int(u16));
+        try Distributor.set_founded_year(db, idx, year.future_opt_int(u16));
         self.changes_applied = true;
     }
     if (self.fields.suspended_year.changed()) |year| {
-        try Manufacturer.set_suspended_year(db, idx, year.future_opt_int(u16));
+        try Distributor.set_suspended_year(db, idx, year.future_opt_int(u16));
         self.changes_applied = true;
     }
     if (self.fields.notes.changed()) |notes| {
-        try Manufacturer.set_notes(db, idx, notes.future_opt());
+        try Distributor.set_notes(db, idx, notes.future_opt());
         self.changes_applied = true;
     }
     if (self.fields.website.changed()) |website| {
-        try Manufacturer.set_website(db, idx, website.future_opt());
+        try Distributor.set_website(db, idx, website.future_opt());
         self.changes_applied = true;
     }
     if (self.fields.wiki.changed()) |wiki| {
-        try Manufacturer.set_wiki(db, idx, wiki.future_opt());
+        try Distributor.set_wiki(db, idx, wiki.future_opt());
         self.changes_applied = true;
     }
 
     for (self.relations.values()) |relation| {
         if (relation.other.is_removed()) {
-            const other_idx = Manufacturer.maybe_lookup(db, relation.other.current).?;
+            const other_idx = Distributor.maybe_lookup(db, relation.other.current).?;
             const kind = relation.kind.current_enum(Kind);
             const year = relation.year.current_opt_int(u16);
-            try Manufacturer.Relation.maybe_remove(db, idx, other_idx, kind, year);
+            try Distributor.Relation.maybe_remove(db, idx, other_idx, kind, year);
             self.changes_applied = true;
         } else if (relation.other.future.len > 0) {
             const relation_idx = if (relation.other.current.len > 0) relation_idx: {
-                const other_idx = Manufacturer.maybe_lookup(db, relation.other.current).?;
+                const other_idx = Distributor.maybe_lookup(db, relation.other.current).?;
                 const kind = relation.kind.current_enum(Kind);
                 const year = relation.year.current_opt_int(u16);
-                break :relation_idx try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
+                break :relation_idx try Distributor.Relation.lookup_or_create(db, idx, other_idx, kind, year);
             } else relation_idx: {
                 self.changes_applied = true;
-                const other_idx = Manufacturer.maybe_lookup(db, relation.other.future).?;
+                const other_idx = Distributor.maybe_lookup(db, relation.other.future).?;
                 const kind = relation.kind.future_enum(Kind);
                 const year = relation.year.future_opt_int(u16);
-                const relation_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
-                try Manufacturer.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
+                const relation_idx = try Distributor.Relation.lookup_or_create(db, idx, other_idx, kind, year);
+                try Distributor.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
                 break :relation_idx relation_idx;
             };
 
-            if (Manufacturer.Relation.get_source(db, relation_idx) == idx) {
+            if (Distributor.Relation.get_source(db, relation_idx) == idx) {
                 if (relation.other.changed()) |other| {
-                    const other_idx = Manufacturer.maybe_lookup(db, other.future).?;
-                    try Manufacturer.Relation.set_target(db, relation_idx, other_idx);
+                    const other_idx = Distributor.maybe_lookup(db, other.future).?;
+                    try Distributor.Relation.set_target(db, relation_idx, other_idx);
                     self.changes_applied = true;
                 }
 
                 if (relation.kind.changed()) |kind| {
-                    try Manufacturer.Relation.set_kind(db, relation_idx, kind.future_enum(Kind));
+                    try Distributor.Relation.set_kind(db, relation_idx, kind.future_enum(Kind));
                     self.changes_applied = true;
                 }
 
-            } else if (Manufacturer.Relation.get_target(db, relation_idx) == idx) {
+            } else if (Distributor.Relation.get_target(db, relation_idx) == idx) {
                 if (relation.other.changed()) |other| {
-                    const other_idx = Manufacturer.maybe_lookup(db, other.future).?;
-                    try Manufacturer.Relation.set_source(db, relation_idx, other_idx);
+                    const other_idx = Distributor.maybe_lookup(db, other.future).?;
+                    try Distributor.Relation.set_source(db, relation_idx, other_idx);
                     self.changes_applied = true;
                 }
                 
                 if (relation.kind.changed()) |kind| {
-                    try Manufacturer.Relation.set_kind(db, relation_idx, kind.future_enum(Kind).inverse());
+                    try Distributor.Relation.set_kind(db, relation_idx, kind.future_enum(Kind).inverse());
                     self.changes_applied = true;
                 }
 
             } else unreachable;
 
             if (relation.year.changed()) |year| {
-                try Manufacturer.Relation.set_year(db, relation_idx, year.future_opt_int(u16));
+                try Distributor.Relation.set_year(db, relation_idx, year.future_opt_int(u16));
                 self.changes_applied = true;
             }
         }
@@ -452,7 +452,7 @@ const Render_Options = struct {
 
 pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, options: Render_Options) !void {
     if (self.changes_applied) if (self.fields.id.edited()) |id| {
-        try req.redirect(try http.tprint("/mfr:{}?edit", .{ http.fmtForUrl(id.future) }), .see_other);
+        try req.redirect(try http.tprint("/dist:{}?edit", .{ http.fmtForUrl(id.future) }), .see_other);
         return;
     };
 
@@ -502,13 +502,13 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .additional_names = additional_names,
                 .relations = relations,
                 .post_prefix = options.post_prefix,
-                .cancel_url = "/mfr",
-                .country_search_url = "/mfr/countries",
+                .cancel_url = "/dist",
+                .country_search_url = "/dist/countries",
             };
 
             return switch (options.target) {
-                .add => try req.render("mfr/add.zk", render_data, .{}),
-                .edit => try req.render("mfr/edit.zk", render_data, .{}),
+                .add => try req.render("dist/add.zk", render_data, .{}),
+                .edit => try req.render("dist/edit.zk", render_data, .{}),
                 else => unreachable,
             };
         },
@@ -531,7 +531,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .swap_oob = !is_target,
                 .obj = obj,
                 .post_prefix = options.post_prefix,
-                .country_search_url = "/mfr/countries",
+                .country_search_url = "/dist/countries",
             };
             switch (field) {
                 .id => try req.render("common/post_id.zk", render_data, .{}),
@@ -582,7 +582,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 if (is_target) {
                     _ = try req.response();
                 } else {
-                    try req.render("mfr/post_relation.zk", .{
+                    try req.render("dist/post_relation.zk", .{
                         .index = index_str,
                         .swap_oob = "delete",
                     }, .{});
@@ -623,11 +623,11 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         };
 
         if (is_placeholder) {
-            try req.render("mfr/post_relation_placeholder.zk", render_data, .{});
+            try req.render("dist/post_relation_placeholder.zk", render_data, .{});
         } else {
-            try req.render("mfr/post_relation.zk", render_data, .{});
+            try req.render("dist/post_relation.zk", render_data, .{});
             if (index_str.len == 0) {
-                try req.render("mfr/post_relation_placeholder.zk", .{
+                try req.render("dist/post_relation_placeholder.zk", .{
                     .post_prefix = options.post_prefix,
                 }, .{});
             }
@@ -635,13 +635,13 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
     }
 }
 
-const log = std.log.scoped(.@"http.mfr");
+const log = std.log.scoped(.@"http.dist");
 
 const additional_names_util = @import("../additional_names_util.zig");
-const Kind = Manufacturer.Relation.Kind;
-const Manufacturer = DB.Manufacturer;
+const Kind = Distributor.Relation.Kind;
+const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
-const common = @import("../mfr.zig");
+const common = @import("../dist.zig");
 const Field_Data = @import("../Field_Data.zig");
 const Session = @import("../../Session.zig");
 const Query_Param = http.Query_Iterator.Query_Param;

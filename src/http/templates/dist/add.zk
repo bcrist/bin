@@ -1,0 +1,28 @@
+\\@include "_top.zk"
+<div class="hidden" hx-post="/dist/add/validate" hx-trigger="revalidate from:body"
+    hx-include=".submitted_field"
+    hx-target="#add_cancel_aside"
+    hx-swap="outerHTML"></div>
+<form hx-post="/dist/add" hx-include=".submitted_field">
+\\@include "common/add_cancel.zk"//
+</form>
+<h1>Add Distributor</h1>
+\\@include "dist/add_or_edit_fields.zk"
+
+<h2>Additional Names</h2>
+<div class="sortable">
+\\additional_names:
+\\  @include "common/post_additional_name.zk"
+\\~
+\\@include "common/post_additional_name_placeholder.zk"
+</div>
+
+<h2>Relations</h2>
+<div class="sortable">
+\\relations:
+\\  @include "dist/post_relation.zk"
+\\~
+\\@include "dist/post_relation_placeholder.zk"
+</div>
+
+\\@include "_bottom.zk" 

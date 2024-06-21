@@ -38,9 +38,9 @@ pub fn post(req: *http.Request, db: *DB) !void {
         log.warn("Could not add mfr; parameters not valid", .{});
         return error.BadRequest;
     } else if (another) {
-        try req.see_other(try http.tprint("/mfr/add{s}", .{ req.hx_current_query() }));
+        try req.redirect(try http.tprint("/mfr/add{s}", .{ req.hx_current_query() }), .see_other);
     } else {
-        try req.see_other(try http.tprint("/mfr:{}", .{ http.fmtForUrl(txn.fields.id.future) }));
+        try req.redirect(try http.tprint("/mfr:{}", .{ http.fmtForUrl(txn.fields.id.future) }), .see_other);
     }
 }
 

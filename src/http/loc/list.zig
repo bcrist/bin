@@ -1,6 +1,11 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const missing_loc = try req.get_path_param("loc");
 
+    if (missing_loc) |name| if (name.len == 0) {
+        try req.redirect("/loc", .moved_permanently);
+        return;
+    };
+
     var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.locs.len);
     for (db.locs.items(.id), db.locs.items(.parent)) |id, parent| {
         if (parent == null) {

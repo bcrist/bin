@@ -1,0 +1,23 @@
+<div class="dist_relation_year">
+    <select id="relation_year\\@index|index//" name="relation_year\\@index|index//"
+\\err_year?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///relation\\@index.@exists/index?//:\\@index|index ~//"
+        hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest div.sortable_row"
+        hx-swap="outerHTML"
+        data-deselectable
+        data-addable
+        data-options="2024-1900?">
+\\year?
+        <option selected value="\\year//">\\year//</option>
+\\;
+        <option selected></option>
+\\~
+    </select>
+</div>

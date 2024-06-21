@@ -2,7 +2,7 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     try Session.redirect_if_missing(req, session);
     var txn = Transaction.init_empty(db);
 
-    if (try req.get_path_param("loc")) |id| {
+    if (try req.get_path_param("dist")) |id| {
         try txn.process_param(.{ .name = "id", .value = id });
     }
 
@@ -15,7 +15,7 @@ pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     try txn.validate();
     try txn.render_results(session, req, .{
         .target = .add,
-        .post_prefix = "/loc",
+        .post_prefix = "/dist",
         .rnd = null,
     });
 }
@@ -35,12 +35,12 @@ pub fn post(req: *http.Request, db: *DB) !void {
     try txn.apply_changes(db);
 
     if (!txn.changes_applied) {
-        log.warn("Could not add location; parameters not valid", .{});
+        log.warn("Could not add distributor; parameters not valid", .{});
         return error.BadRequest;
     } else if (another) {
-        try req.redirect(try http.tprint("/loc/add{s}", .{ req.hx_current_query() }), .see_other);
+        try req.redirect(try http.tprint("/dist/add{s}", .{ req.hx_current_query() }), .see_other);
     } else {
-        try req.redirect(try http.tprint("/loc:{}", .{ http.fmtForUrl(txn.fields.id.future) }), .see_other);
+        try req.redirect(try http.tprint("/dist:{}", .{ http.fmtForUrl(txn.fields.id.future) }), .see_other);
     }
 }
 
@@ -51,21 +51,53 @@ pub const validate = struct {
         try txn.validate();
 
         var path_iter = req.path_iterator();
-        _ = path_iter.next(); // /loc
+        _ = path_iter.next(); // /dist
         const target_str = path_iter.next() orelse return error.BadRequest;
         if (std.mem.eql(u8, target_str, "add")) {
             try req.render("common/add_cancel.zk", .{
                 .valid = txn.valid,
-                .cancel_url = "/loc",
+                .cancel_url = "/dist",
             }, .{});
         } else {
             const field = std.meta.stringToEnum(Transaction.Field, target_str) orelse return error.BadRequest;
             try txn.render_results(session, req, .{
                 .target = .{ .field = field },
-                .post_prefix = "/loc",
+                .post_prefix = "/dist",
                 .rnd = null,
             });
         }
+    }
+};
+
+pub const validate_additional_name = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+        var txn = Transaction.init_empty(db);
+        try txn.process_all_params(req);
+        try txn.validate();
+
+        try txn.render_results(session, req, .{
+            .target = .{
+                .additional_name = try req.get_path_param("additional_name") orelse "",
+            },
+            .post_prefix = "/dist",
+            .rnd = rnd,
+        });
+    }
+};
+
+pub const validate_relation = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+        var txn = Transaction.init_empty(db);
+        try txn.process_all_params(req);
+        try txn.validate();
+
+        try txn.render_results(session, req, .{
+            .target = .{
+                .relation = try req.get_path_param("relation") orelse "",
+            },
+            .post_prefix = "/dist",
+            .rnd = rnd,
+        });
     }
 };
 

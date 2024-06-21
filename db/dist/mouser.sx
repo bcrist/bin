@@ -1,0 +1,7 @@
+(version 1)
+(dist Mouser "Mouser Electronics"
+   (url https://www.mouser.com/)
+   (country USA)
+   (created "2024-06-21 00:33:34 +00:00")
+   (modified "2024-06-21 00:33:34 +00:00")
+)

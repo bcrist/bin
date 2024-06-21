@@ -1,0 +1,19 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/dist/add">Add</a>
+</aside>
+\\~
+\\missing_dist?
+<div class="error">
+    No distributor named <b>\\missing_dist//</b> was found!
+    Would you like to <a href="/dist:\\@url missing_dist//?edit">add it</a>?
+</div>
+\\~
+<h1>All Distributors</h1>
+<div class="columns">
+\\dist_list: *?
+    <a href="/dist:\\@url *//">\\*//</a><br>
+\\~~
+</div>
+\\@include "_bottom.zk"

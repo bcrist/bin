@@ -1,0 +1,10 @@
+<div class="sortable_row unsortable" id="dist_relation"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+    <span class="icon"></span>
+    <input type="hidden" name="relation_order" class="relation_ordering">
+\\@include "dist/post_relation_kind.zk"
+\\@include "dist/post_relation_other.zk"
+\\@include "dist/post_relation_year.zk"
+    <div class="dist_relation_validation">
+\\@include "_validation.zk"
+    </div>
+</div>

@@ -1,0 +1,7 @@
+(version 1)
+(dist DK DigiKey
+   (url https://www.digikey.com/)
+   (country USA)
+   (created "2024-06-21 00:31:43 +00:00")
+   (modified "2024-06-21 00:34:15 +00:00")
+)

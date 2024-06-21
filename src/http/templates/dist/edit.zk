@@ -1,0 +1,25 @@
+\\@include "_top.zk"
+<aside class="flex">
+    <a href="/dist:\\@url obj.id//">Done</a>
+    <button hx-delete="/dist:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?">Delete</button>
+</aside>
+<h1>Edit \\obj.full_name/obj.id//</h1>
+\\@include "dist/add_or_edit_fields.zk"
+
+<h2>Additional Names</h2>
+<div class="sortable" hx-post="/dist:\\@url obj.id///additional_names" hx-trigger="end" hx-include=".additional_name_ordering">
+\\additional_names:
+\\  @include "common/post_additional_name.zk"
+\\~
+\\@include "common/post_additional_name_placeholder.zk"
+</div>
+
+<h2>Relations</h2>
+<div class="sortable" hx-post="/dist:\\@url obj.id///relations" hx-trigger="end" hx-include=".relation_ordering">
+\\relations:
+\\  @include "dist/post_relation.zk"
+\\~
+\\@include "dist/post_relation_placeholder.zk"
+</div>
+
+\\@include "_bottom.zk" 

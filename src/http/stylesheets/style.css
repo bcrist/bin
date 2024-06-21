@@ -259,3 +259,17 @@ select.slimselect {
 .sortable_row div.mfr_relation_validation {
     flex: 1 1 100%;
 }
+
+
+.sortable_row div.dist_relation_kind {
+    flex: 0 0 12em;
+}
+.sortable_row div.dist_relation_other {
+    flex: 1 1 100%;
+}
+.sortable_row div.dist_relation_year {
+    flex: 0 0 6em;
+}
+.sortable_row div.dist_relation_validation {
+    flex: 1 1 100%;
+}

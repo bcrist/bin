@@ -15,9 +15,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const loc = Location.get(db, idx);
 
     if (!std.mem.eql(u8, requested_loc_name.?, loc.id)) {
-        req.response_status = .moved_permanently;
-        try req.add_response_header("Location", try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }));
-        try req.respond("");
+        try req.redirect(try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }), .moved_permanently);
         return;
     }
 
@@ -69,14 +67,7 @@ pub fn delete(req: *http.Request, db: *DB) !void {
 
     try Location.delete(db, idx, true);
 
-    if (req.get_header("HX-Request")) |_| {
-        req.response_status = .no_content;
-        try req.add_response_header("HX-Location", "/loc");
-    } else {
-        req.response_status = .see_other;
-        try req.add_response_header("Location", "/loc");
-    }
-    try req.respond("");
+    try req.redirect("/loc", .see_other);
 }
 
 const log = std.log.scoped(.@"http.loc");

@@ -282,7 +282,7 @@ const Render_Options = struct {
 
 pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, options: Render_Options) !void {
     if (self.changes_applied) if (self.fields.id.edited()) |id| {
-        try req.see_other(try http.tprint("/pkg:{}?edit", .{ http.fmtForUrl(id.future) }));
+        try req.redirect(try http.tprint("/pkg:{}?edit", .{ http.fmtForUrl(id.future) }), .see_other);
         return;
     };
 

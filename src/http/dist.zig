@@ -1,13 +1,13 @@
-pub const list = @import("mfr/list.zig");
-pub const add = @import("mfr/add.zig");
-pub const edit = @import("mfr/edit.zig");
-pub const reorder_additional_names = @import("mfr/reorder_additional_names.zig");
-pub const reorder_relations = @import("mfr/reorder_relations.zig");
-pub const countries = @import("mfr/countries.zig");
+pub const list = @import("dist/list.zig");
+pub const add = @import("dist/add.zig");
+pub const edit = @import("dist/edit.zig");
+pub const reorder_additional_names = @import("dist/reorder_additional_names.zig");
+pub const reorder_relations = @import("dist/reorder_relations.zig");
+pub const countries = @import("dist/countries.zig");
 
 pub const relation_kinds = struct {
     pub fn get(req: *http.Request) !void {
-        const Kind = Manufacturer.Relation.Kind;
+        const Kind = Distributor.Relation.Kind;
         try slimselect.respond_with_enum_options(req, Kind, .{
             .placeholder = "Select...",
             .display_fn = Kind.display,
@@ -16,8 +16,8 @@ pub const relation_kinds = struct {
 };
 
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
-    const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
+    const requested_dist_name = try req.get_path_param("dist");
+    const idx = Distributor.maybe_lookup(db, requested_dist_name) orelse {
         if (try req.has_query_param("edit")) {
             try add.get(session, req, db);
         } else {
@@ -25,10 +25,10 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
         return;
     };
-    const mfr = Manufacturer.get(db, idx);
+    const dist = Distributor.get(db, idx);
 
-    if (!std.mem.eql(u8, requested_mfr_name.?, mfr.id)) {
-        try req.redirect(try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }), .moved_permanently);
+    if (!std.mem.eql(u8, requested_dist_name.?, dist.id)) {
+        try req.redirect(try http.tprint("/dist:{}", .{ http.fmtForUrl(dist.id) }), .moved_permanently);
         return;
     }
 
@@ -37,7 +37,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         var txn = try Transaction.init_idx(db, idx);
         try txn.render_results(session, req, .{
             .target = .edit,
-            .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }),
+            .post_prefix = try http.tprint("/dist:{}", .{ http.fmtForUrl(dist.id) }),
             .rnd = null,
         });
         return;
@@ -45,68 +45,59 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     const relations = try get_sorted_relations(db, idx);
 
-    var packages = std.ArrayList([]const u8).init(http.temp());
-    for (db.pkgs.items(.id), db.pkgs.items(.mfr)) |id, mfr_idx| {
-        if (mfr_idx == idx) {
-            try packages.append(id);
-        }
-    }
-    sort.natural(packages.items);
-
     const DTO = tempora.Date_Time.With_Offset;
 
-    const created_dto = DTO.from_timestamp_ms(mfr.created_timestamp_ms, tz);
-    const modified_dto = DTO.from_timestamp_ms(mfr.modified_timestamp_ms, tz);
+    const created_dto = DTO.from_timestamp_ms(dist.created_timestamp_ms, tz);
+    const modified_dto = DTO.from_timestamp_ms(dist.modified_timestamp_ms, tz);
 
     const Context = struct {
         pub const created = DTO.fmt_sql;
         pub const modified = DTO.fmt_sql;
     };
 
-    try req.render("mfr/info.zk", .{
+    try req.render("dist/info.zk", .{
         .session = session,
-        .title = mfr.full_name orelse mfr.id,
-        .obj = mfr,
-        .show_years = mfr.founded_year != null or mfr.suspended_year != null,
+        .title = dist.full_name orelse dist.id,
+        .obj = dist,
+        .show_years = dist.founded_year != null or dist.suspended_year != null,
         .created = created_dto,
         .modified = modified_dto,
         .relations = relations.items,
-        .packages = packages.items,
     }, .{ .Context = Context });
 }
 
 pub fn delete(req: *http.Request, db: *DB) !void {
-    const requested_mfr_name = try req.get_path_param("mfr");
-    const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
+    const requested_dist_name = try req.get_path_param("dist");
+    const idx = Distributor.maybe_lookup(db, requested_dist_name) orelse return;
 
-    try Manufacturer.delete(db, idx);
+    try Distributor.delete(db, idx);
 
-    try req.redirect("/mfr", .see_other);
+    try req.redirect("/dist", .see_other);
 }
 
-pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayList(Relation) {
+pub fn get_sorted_relations(db: *const DB, idx: Distributor.Index) !std.ArrayList(Relation) {
     var relations = std.ArrayList(Relation).init(http.temp());
 
-    for (0.., db.mfr_relations.items(.source), db.mfr_relations.items(.target)) |i, src, target| {
+    for (0.., db.dist_relations.items(.source), db.dist_relations.items(.target)) |i, src, target| {
         if (src == idx) {
-            const rel = db.mfr_relations.get(i);
+            const rel = db.dist_relations.get(i);
             try relations.append(.{
                 .db_index = @enumFromInt(i),
                 .is_inverted = false,
                 .kind = rel.kind,
                 .kind_str = rel.kind.display(),
-                .other = Manufacturer.get_id(db, rel.target),
+                .other = Distributor.get_id(db, rel.target),
                 .year = rel.year,
                 .order_index = rel.source_order_index,
             });
         } else if (target == idx) {
-            const rel = db.mfr_relations.get(i);
+            const rel = db.dist_relations.get(i);
             try relations.append(.{
                 .db_index = @enumFromInt(i),
                 .is_inverted = true,
                 .kind = rel.kind.inverse(),
                 .kind_str = rel.kind.inverse().display(),
-                .other = Manufacturer.get_id(db, rel.source),
+                .other = Distributor.get_id(db, rel.source),
                 .year = rel.year,
                 .order_index = rel.target_order_index,
             });
@@ -118,9 +109,9 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
 }
 
 pub const Relation = struct {
-    db_index: ?Manufacturer.Relation.Index,
+    db_index: ?Distributor.Relation.Index,
     is_inverted: bool,
-    kind: Manufacturer.Relation.Kind,
+    kind: Distributor.Relation.Kind,
     kind_str: []const u8,
     other: []const u8,
     year: ?u16,
@@ -131,10 +122,10 @@ pub const Relation = struct {
     }
 };
 
-const log = std.log.scoped(.@"http.mfr");
+const log = std.log.scoped(.@"http.dist");
 
-const Transaction = @import("mfr/Transaction.zig");
-const Manufacturer = DB.Manufacturer;
+const Transaction = @import("dist/Transaction.zig");
+const Distributor = DB.Distributor;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");

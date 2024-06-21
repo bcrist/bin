@@ -1,23 +1,18 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
-    const missing_pkg = try req.get_path_param("pkg");
+    const missing_dist = try req.get_path_param("dist");
 
-    if (missing_pkg) |name| if (name.len == 0) {
-        try req.redirect("/pkg", .moved_permanently);
+    if (missing_dist) |name| if (name.len == 0) {
+        try req.redirect("/dist", .moved_permanently);
         return;
     };
 
-    var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.pkgs.len);
-    for (db.pkgs.items(.id), db.pkgs.items(.parent)) |id, parent| {
-        if (parent == null) {
-            list.appendAssumeCapacity(id);
-        }
-    }
-    sort.natural(list.items);
+    const dist_list = try http.temp().dupe([]const u8, db.dists.items(.id));
+    sort.natural(dist_list);
 
-    try req.render("pkg/list.zk", .{
-        .pkg_list = list.items,
+    try req.render("dist/list.zk", .{
+        .dist_list = dist_list,
         .session = session,
-        .missing_pkg = missing_pkg,
+        .missing_dist = missing_dist,
     }, .{});
 }
 
@@ -33,7 +28,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         }
     }
 
-    var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.pkg_lookup.size + 1);
+    var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.dist_lookup.size + 1);
 
     try options.append(.{
         .placeholder = true,
@@ -41,12 +36,12 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         .text = "Select...",
     });
 
-    var name_iter = db.pkg_lookup.iterator();
+    var name_iter = db.dist_lookup.iterator();
     while (name_iter.next()) |entry| {
         const name = entry.key_ptr.*;
         if (name_filter.len == 0 or std.ascii.indexOfIgnoreCase(name, name_filter) != null) {
             options.appendAssumeCapacity(.{
-                .value = Package.get_id(db, entry.value_ptr.*),
+                .value = Distributor.get_id(db, entry.value_ptr.*),
                 .text = entry.key_ptr.*,
             });
         }
@@ -56,9 +51,9 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     try slimselect.respond_with_options(req, options.items);
 }
 
-const log = std.log.scoped(.@"http.pkg");
+const log = std.log.scoped(.@"http.dist");
 
-const Package = DB.Package;
+const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
 const sort = @import("../../sort.zig");

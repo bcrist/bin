@@ -1,6 +1,11 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const missing_mfr = try req.get_path_param("mfr");
 
+    if (missing_mfr) |name| if (name.len == 0) {
+        try req.redirect("/mfr", .moved_permanently);
+        return;
+    };
+
     const mfr_list = try http.temp().dupe([]const u8, db.mfrs.items(.id));
     sort.natural(mfr_list);
 

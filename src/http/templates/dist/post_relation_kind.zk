@@ -1,0 +1,21 @@
+
+<div class="dist_relation_kind">
+    <select id="relation_kind\\@index|index//" name="relation_kind\\@index|index//"
+\\err_kind?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///relation\\@index.@exists/index?//:\\@index|index ~//"
+        hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest div.sortable_row"
+        hx-swap="outerHTML"
+        data-options="/dist/relation/kinds">
+        <option data-placeholder="true" value="">Select...</option>
+\\kind.@exists?
+        <option selected value="\\kind//">\\kind_str|kind//</option>
+\\~
+    </select>
+</div>

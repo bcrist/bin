@@ -41,6 +41,7 @@ pub fn main() !void {
     const misc = @import("http/misc.zig");
     const search = @import("http/search.zig");
     const mfr = @import("http/mfr.zig");
+    const dist = @import("http/dist.zig");
     const loc = @import("http/loc.zig");
     const pkg = @import("http/pkg.zig");
 
@@ -93,6 +94,39 @@ pub fn main() !void {
         .{ "/mfr:*/relation:*",         r.module(Injector, mfr.edit.relation) },
         .{ "/mfr:*/relations",          r.module(Injector, mfr.reorder_relations) },
 
+        .{ "/dist",                      r.module(Injector, dist.list) },
+        .{ "/dist/add",                  r.module(Injector, dist.add) },
+        .{ "/dist/add/validate",         r.module(Injector, dist.add.validate) },
+        .{ "/dist/id",                   r.module(Injector, dist.add.validate) },
+        .{ "/dist/full_name",            r.module(Injector, dist.add.validate) },
+        .{ "/dist/country",              r.module(Injector, dist.add.validate) },
+        .{ "/dist/countries",            r.module(Injector, dist.countries) },
+        .{ "/dist/founded_year",         r.module(Injector, dist.add.validate) },
+        .{ "/dist/suspended_year",       r.module(Injector, dist.add.validate) },
+        .{ "/dist/website",              r.module(Injector, dist.add.validate) },
+        .{ "/dist/wiki",                 r.module(Injector, dist.add.validate) },
+        .{ "/dist/notes",                r.module(Injector, dist.add.validate) },
+        .{ "/dist/additional_name",      r.module(Injector, dist.add.validate_additional_name) },
+        .{ "/dist/additional_name:*",    r.module(Injector, dist.add.validate_additional_name) },
+        .{ "/dist/relation",             r.module(Injector, dist.add.validate_relation) },
+        .{ "/dist/relation:*",           r.module(Injector, dist.add.validate_relation) },
+        .{ "/dist/relation/kinds",       r.module(Injector, dist.relation_kinds) },
+        .{ "/dist:*",                    r.module(Injector, dist) },
+        .{ "/dist:*/id",                 r.module(Injector, dist.edit) },
+        .{ "/dist:*/full_name",          r.module(Injector, dist.edit) },
+        .{ "/dist:*/country",            r.module(Injector, dist.edit) },
+        .{ "/dist:*/founded_year",       r.module(Injector, dist.edit) },
+        .{ "/dist:*/suspended_year",     r.module(Injector, dist.edit) },
+        .{ "/dist:*/website",            r.module(Injector, dist.edit) },
+        .{ "/dist:*/wiki",               r.module(Injector, dist.edit) },
+        .{ "/dist:*/notes",              r.module(Injector, dist.edit) },
+        .{ "/dist:*/additional_name",    r.module(Injector, dist.edit.additional_name) },
+        .{ "/dist:*/additional_name:*",  r.module(Injector, dist.edit.additional_name) },
+        .{ "/dist:*/additional_names",   r.module(Injector, dist.reorder_additional_names) },
+        .{ "/dist:*/relation",           r.module(Injector, dist.edit.relation) },
+        .{ "/dist:*/relation:*",         r.module(Injector, dist.edit.relation) },
+        .{ "/dist:*/relations",          r.module(Injector, dist.reorder_relations) },
+
         .{ "/loc",              r.module(Injector, loc.list) },
         .{ "/loc/add",          r.module(Injector, loc.add) },
         .{ "/loc/add/validate", r.module(Injector, loc.add.validate) },
@@ -130,7 +164,6 @@ pub fn main() !void {
         // .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
         // .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
         // .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
-        // .{ "/dist:*",   r.module(Injector, @import("http/distributor.zig")) },
         // .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
         // .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 

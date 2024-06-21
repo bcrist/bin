@@ -16,9 +16,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const pkg = Package.get(db, idx);
 
     if (!std.mem.eql(u8, requested_pkg_name.?, pkg.id)) {
-        req.response_status = .moved_permanently;
-        try req.add_response_header("Location", try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }));
-        try req.respond("");
+        try req.redirect(try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }), .moved_permanently);
         return;
     }
 
@@ -72,14 +70,7 @@ pub fn delete(req: *http.Request, db: *DB) !void {
 
     try Package.delete(db, idx, true);
 
-    if (req.get_header("HX-Request")) |_| {
-        req.response_status = .no_content;
-        try req.add_response_header("HX-Location", "/pkg");
-    } else {
-        req.response_status = .see_other;
-        try req.add_response_header("Location", "/pkg");
-    }
-    try req.respond("");
+    try req.redirect("/pkg", .see_other);
 }
 
 const log = std.log.scoped(.@"http.pkg");
