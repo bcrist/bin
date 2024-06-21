@@ -79,6 +79,19 @@ pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
+    // @Speed: this is pretty slow, but deleting distributors isn't something that needs to be done often,
+    // so probably not worth adding an acceleration structure for looking up part numbers by distributor.
+    for (0.., db.parts.items(.dist_pns)) |part_idx, dist_pns| {
+        var i = dist_pns.items.len;
+        while (i > 0) {
+            i -= 1;
+            const pn = dist_pns.items[i];
+            if (pn.dist == idx) {
+                try Part.remove_dist_pn(db, @enumFromInt(part_idx), pn);
+            }
+        }
+    }
+
     const i = @intFromEnum(idx);
     std.debug.assert(db.dist_lookup.remove(db.dists.items(.id)[i]));
 
@@ -471,6 +484,7 @@ pub const Relation = struct {
 
 const log = std.log.scoped(.db);
 
+const Part = DB.Part;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");

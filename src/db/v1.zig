@@ -4,6 +4,7 @@ pub fn parse_data(db: *DB, reader: *sx.Reader) !void {
     for (parsed.dist) |item| try item.read(db);
     for (parsed.loc) |item| try item.read(db);
     for (parsed.pkg) |item| try item.read(db);
+    for (parsed.part) |item| try item.read(db);
 }
 
 pub fn write_data(db: *DB, root: *std.fs.Dir) !void {
@@ -18,6 +19,8 @@ pub fn write_data(db: *DB, root: *std.fs.Dir) !void {
     try SX_Location.write_dirty(arena.allocator(), db, root, &filenames);
     filenames.clearRetainingCapacity();
     try SX_Package.write_dirty(arena.allocator(), db, root, &filenames);
+    filenames.clearRetainingCapacity();
+    try SX_Part.write_dirty(arena.allocator(), db, root, &filenames);
 }
 
 const SX_Data = struct {
@@ -25,12 +28,14 @@ const SX_Data = struct {
     dist: []SX_Distributor = &.{},
     loc: []SX_Location = &.{},
     pkg: []SX_Package = &.{},
+    part: []SX_Part = &.{},
 
     pub const context = struct {
         pub const mfr = SX_Manufacturer.context;
         pub const dist = SX_Distributor.context;
         pub const loc = SX_Location.context;
         pub const pkg = SX_Package.context;
+        pub const part = SX_Part.context;
     };
 };
 
@@ -38,6 +43,7 @@ const SX_Manufacturer = @import("v1/SX_Manufacturer.zig");
 const SX_Distributor = @import("v1/SX_Distributor.zig");
 const SX_Location = @import("v1/SX_Location.zig");
 const SX_Package = @import("v1/SX_Package.zig");
+const SX_Part = @import("v1/SX_Part.zig");
 
 const log = std.log.scoped(.db);
 

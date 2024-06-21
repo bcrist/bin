@@ -21,6 +21,9 @@ locs: std.MultiArrayList(Location) = .{},
 pkg_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Package.Index) = .{},
 pkgs: std.MultiArrayList(Package) = .{},
 
+part_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Part.Index) = .{},
+parts: std.MultiArrayList(Part) = .{},
+
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
@@ -32,6 +35,9 @@ pub const Location = @import("db/Location.zig");
 
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.parts.deinit(gpa);
+    self.part_lookup.deinit(gpa);
 
     self.pkgs.deinit(gpa);
     self.pkg_lookup.deinit(gpa);
@@ -63,6 +69,9 @@ pub fn deinit(self: *DB) void {
 
 pub fn reset(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.parts.len = 0;
+    self.part_lookup.clearRetainingCapacity();
 
     self.pkgs.len = 0;
     self.pkg_lookup.clearRetainingCapacity();
@@ -108,6 +117,9 @@ pub fn recompute_last_modification_time(self: *DB) void {
     for (self.pkgs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
+    for (self.parts.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
     log.debug("Updated last modification time to {}", .{ last_mod });
     self.last_modification_timestamp_ms = last_mod;
 }
@@ -116,9 +128,9 @@ fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
     return switch (T) {
         Manufacturer => self.mfrs,
         Distributor => self.dists,
-        //Part => self.mfrs,
-        //Order => self.mfrs,
-        //Project => self.mfrs,
+        Part => self.parts,
+        //Order => self.orders,
+        //Project => self.projects,
         Package => self.pkgs,
         Location => self.locs,
         else => unreachable,

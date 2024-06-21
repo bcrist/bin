@@ -160,10 +160,10 @@ pub fn main() !void {
         .{ "/pkg:*/additional_name:*", r.module(Injector, pkg.edit.additional_name) },
         .{ "/pkg:*/additional_names",  r.module(Injector, pkg.reorder_additional_names) },
 
+        // .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
+
         // .{ "/o:*",      r.module(Injector, @import("http/order.zig")) },
         // .{ "/prj:*",    r.module(Injector, @import("http/project.zig")) },
-        // .{ "/s:*",      r.module(Injector, @import("http/stock.zig")) },
-        // .{ "/p:*",      r.module(Injector, @import("http/part.zig")) },
         // .{ "/param:*",  r.module(Injector, @import("http/parameter.zig")) },
         // .{ "/f:*",      r.module(Injector, @import("http/file.zig")) },
 

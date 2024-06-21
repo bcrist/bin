@@ -109,6 +109,12 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
 }
 
 pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
+    for (0.., db.parts.items(.pkg)) |part_idx, maybe_pkg_idx| {
+        if (maybe_pkg_idx == idx) {
+            try Part.set_pkg(db, @enumFromInt(part_idx), null);
+        }
+    }
+
     const i = @intFromEnum(idx);
 
     const parents = db.pkgs.items(.parent);
@@ -285,7 +291,8 @@ inline fn set_modified(db: *DB, idx: Index) void {
 
 const log = std.log.scoped(.db);
 
-const Manufacturer = @import("Manufacturer.zig");
+const Manufacturer = DB.Manufacturer;
+const Part = DB.Part;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");
