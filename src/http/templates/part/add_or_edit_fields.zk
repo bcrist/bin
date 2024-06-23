@@ -1,0 +1,6 @@
+<table class="edit_properties">
+\\@include "common/post_qualified_id.zk"//
+\\@include "common/post_qualified_parent.zk"//
+\\@include "part/post_pkg.zk"//
+\\@include "common/post_notes.zk"//
+</table>

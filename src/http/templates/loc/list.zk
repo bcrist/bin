@@ -7,7 +7,7 @@
 \\missing_loc?
 <div class="error">
     No location named <b>\\missing_loc//</b> was found!
-    Would you like to <a href="/loc:\\@url missing_loc//?edit">add it</a>?
+    Would you like to <a href="/loc/add?id=\\@url missing_loc//">add it</a>?
 </div>
 \\~
 <h1>All Locations</h1>

@@ -7,21 +7,22 @@ last_modification_timestamp_ms: ?i64 = null,
 
 strings: std.StringHashMapUnmanaged(void) = .{},
 
-mfr_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Manufacturer.Index) = .{},
+mfr_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Manufacturer.Index) = .{},
 mfrs: std.MultiArrayList(Manufacturer) = .{},
 mfr_relations: std.MultiArrayList(Manufacturer.Relation) = .{},
 
-dist_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Distributor.Index) = .{},
+dist_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Distributor.Index) = .{},
 dists: std.MultiArrayList(Distributor) = .{},
 dist_relations: std.MultiArrayList(Distributor.Relation) = .{},
 
-loc_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
+loc_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
 locs: std.MultiArrayList(Location) = .{},
 
-pkg_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Package.Index) = .{},
+pkg_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Package.Index) = .{},
 pkgs: std.MultiArrayList(Package) = .{},
 
-part_lookup: String_Hash_Map_Ignore_Case_Unmanaged(Part.Index) = .{},
+dist_part_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(Distributor.Index, Part.Index) = .{},
+part_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(?Manufacturer.Index, Part.Index) = .{},
 parts: std.MultiArrayList(Part) = .{},
 
 const DB = @This();
@@ -38,6 +39,7 @@ pub fn deinit(self: *DB) void {
 
     self.parts.deinit(gpa);
     self.part_lookup.deinit(gpa);
+    self.dist_part_lookup.deinit(gpa);
 
     self.pkgs.deinit(gpa);
     self.pkg_lookup.deinit(gpa);
@@ -72,6 +74,7 @@ pub fn reset(self: *DB) void {
 
     self.parts.len = 0;
     self.part_lookup.clearRetainingCapacity();
+    self.dist_part_lookup.clearRetainingCapacity();
 
     self.pkgs.len = 0;
     self.pkg_lookup.clearRetainingCapacity();
@@ -327,42 +330,12 @@ pub fn get_id(self: *const DB, idx: anytype) []const u8 {
     return self.get_list(@TypeOf(idx).Type).items(.id)[@intFromEnum(idx)];
 }
 
-pub fn String_Hash_Map_Ignore_Case(comptime V: type) type {
-    return std.HashMap([]const u8, V, String_Context_Ignore_Case, std.hash_map.default_max_load_percentage);
-}
-
-pub fn String_Hash_Map_Ignore_Case_Unmanaged(comptime V: type) type {
-    return std.HashMapUnmanaged([]const u8, V, String_Context_Ignore_Case, std.hash_map.default_max_load_percentage);
-}
-
-pub const String_Context_Ignore_Case = struct {
-    pub fn hash(self: @This(), s: []const u8) u64 {
-        _ = self;
-        return hash_string_ignore_case(s);
-    }
-    pub fn eql(self: @This(), a: []const u8, b: []const u8) bool {
-        _ = self;
-        return std.ascii.eqlIgnoreCase(a, b);
-    }
-};
-
-pub fn hash_string_ignore_case(s: []const u8) u64 {
-    var hash = std.hash.Wyhash.init(0);
-    var buf: [64]u8 = undefined;
-    var remaining = s;
-    while (remaining.len > buf.len) {
-        hash.update(std.ascii.lowerString(&buf, remaining[0..buf.len]));
-        remaining = remaining[buf.len..];
-    }
-    hash.update(std.ascii.lowerString(&buf, remaining));
-    return hash.final();
-}
-
 const log = std.log.scoped(.db);
 const intern_log = std.log.scoped(.@"db.intern");
     
 const v1 = @import("db/v1.zig");
 
+const maps = @import("maps.zig");
 const Temp_Allocator = @import("Temp_Allocator");
 const tempora = @import("tempora");
 const sx = @import("sx");

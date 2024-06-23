@@ -1,42 +1,60 @@
-id: []const u8 = "",
-full_name: ?[]const u8 = null,
-parent: ?[]const u8 = null,
-child: []const []const u8 = &.{},
-mfr: ?[]const u8 = null,
+id: Manufacturer_And_Part = .{},
+parent: ?Manufacturer_And_Part = null,
+child: []const Manufacturer_And_Part = &.{},
 pkg: ?[]const u8 = null,
 notes: ?[]const u8 = null,
 dist_pn: []const Distributor_Part_Number = &.{},
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
 
+const Manufacturer_And_Part = struct {
+    mfr: ?[]const u8 = "",
+    id: []const u8 = "",
+
+    pub const context = struct {
+        pub const inline_fields = &.{ "mfr", "id" };
+    };
+};
+
 const Distributor_Part_Number = struct {
     dist: []const u8 = "",
     pn: []const u8 = "",
+
+    pub const context = struct {
+        pub const inline_fields = &.{ "dist", "pn" };
+    };
 };
 
 const SX_Part = @This();
 
 pub const context = struct {
-    pub const inline_fields = &.{ "id", "full_name" };
-    pub const dist_pn = struct {
-        pub const inline_fields = &.{ "dist", "pn" };
-    };
+    pub const inline_fields = &.{ "id" };
+    pub const id = Manufacturer_And_Part.context;
+    pub const parent = Manufacturer_And_Part.context;
+    pub const child = Manufacturer_And_Part.context;
+    pub const dist_pn = Distributor_Part_Number.context;
     pub const created = Date_Time.With_Offset.fmt_sql;
     pub const modified = Date_Time.With_Offset.fmt_sql;
 };
 
 pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
-    var children = std.ArrayList([]const u8).init(temp);
     const ids = db.parts.items(.id);
+    const mfrs = db.parts.items(.mfr);
+    const mfr_ids = db.mfrs.items(.id);
+    const dist_ids = db.dists.items(.id);
+    
+    var children = std.ArrayList(Manufacturer_And_Part).init(temp);
     for (0.., db.parts.items(.parent)) |child_i, parent_idx| {
         if (parent_idx == idx) {
-            try children.append(ids[child_i]);
+            try children.append(.{
+                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[@intFromEnum(mfr_idx)] else null,
+                .id = ids[child_i],
+            });
         }
     }
 
     const data = Part.get(db, idx);
 
-    const dist_ids = db.dists.items(.id);
     const dist_pns = try temp.alloc(Distributor_Part_Number, data.dist_pns.items.len);
     for (data.dist_pns.items, dist_pns) |src, *dest| {
         dest.* = .{
@@ -45,15 +63,21 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
         };
     }
 
-    const parent_id = if (data.parent) |parent_idx| Part.get_id(db, parent_idx) else null;
-    const mfr_id = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
+    const id: Manufacturer_And_Part = .{
+        .mfr = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .id = data.id,
+    };
+
+    const parent: ?Manufacturer_And_Part = if (data.parent) |parent_idx| .{
+        .mfr = if (Part.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .id = Part.get_id(db, parent_idx),
+    } else null;
+
     const pkg_id = if (data.pkg) |pkg_idx| Package.get_id(db, pkg_idx) else null;
     return .{
-        .id = data.id,
-        .full_name = data.full_name,
-        .parent = parent_id,
+        .id = id,
+        .parent = parent,
         .child = children.items,
-        .mfr = mfr_id,
         .pkg = pkg_id,
         .notes = data.notes,
         .dist_pn = dist_pns,
@@ -63,33 +87,24 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
 }
 
 pub fn read(self: SX_Part, db: *DB) !void {
-    const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
+    const id = std.mem.trim(u8, self.id.id, &std.ascii.whitespace);
 
     if (!DB.is_valid_id(id)) {
         log.warn("Skipping Part {s} (invalid ID)", .{ id });
         return;
     }
 
-    var full_name = self.full_name;
-    if (self.full_name) |name| {
-        if (std.mem.eql(u8, id, name)) {
-            full_name = null;
-        }
+    var mfr_idx: ?Manufacturer.Index = null;
+    if (self.id.mfr) |mfr_id| {
+        mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
     }
 
-    const idx = Part.maybe_lookup(db, full_name)
-        orelse try Part.lookup_or_create(db, id);
+    const idx = try Part.lookup_or_create(db, mfr_idx, id);
 
-    _ = try Part.set_id(db, idx, id);
-
-    if (self.parent) |parent_id| {
-        const parent_idx = try Part.lookup_or_create(db, parent_id);
+    if (self.parent) |parent| {
+        const parent_mfr_idx = if (parent.mfr) |mfr_id| try Manufacturer.lookup_or_create(db, mfr_id) else null;
+        const parent_idx = try Part.lookup_or_create(db, parent_mfr_idx, parent.id);
         _ = try Part.set_parent(db, idx, parent_idx);
-    }
-
-    if (self.mfr) |mfr_id| {
-        const mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
-        _ = try Part.set_mfr(db, idx, mfr_idx);
     }
 
     if (self.pkg) |pkg_id| {
@@ -104,7 +119,6 @@ pub fn read(self: SX_Part, db: *DB) !void {
         });
     }
 
-    if (full_name) |name| try Part.set_full_name(db, idx, name);
     if (self.notes) |notes| try Part.set_notes(db, idx, notes);
 
     if (self.created) |dto| try Part.set_created_time(db, idx, dto.timestamp_ms());

@@ -1,7 +1,7 @@
 <table class="edit_properties">
-<tr>\\@include "common/post_id.zk"//</tr>
-<tr>\\@include "common/post_full_name.zk"//</tr>
-<tr>\\@include "common/post_parent.zk"//</tr>
-<tr>\\@include "common/post_mfr.zk"//</tr>
-<tr>\\@include "common/post_notes.zk"//</tr>
+\\@include "common/post_id.zk"//
+\\@include "common/post_full_name.zk"//
+\\@include "common/post_parent.zk"//
+\\@include "common/post_mfr.zk"//
+\\@include "common/post_notes.zk"//
 </table>

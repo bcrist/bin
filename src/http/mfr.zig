@@ -18,11 +18,7 @@ pub const relation_kinds = struct {
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse {
-        if (try req.has_query_param("edit")) {
-            try add.get(session, req, db);
-        } else {
-            try list.get(session, req, db);
-        }
+        try list.get(session, req, db);
         return;
     };
     const mfr = Manufacturer.get(db, idx);
@@ -37,7 +33,6 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         var txn = try Transaction.init_idx(db, idx);
         try txn.render_results(session, req, .{
             .target = .edit,
-            .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr.id) }),
             .rnd = null,
         });
         return;
@@ -52,6 +47,14 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
     }
     sort.natural(packages.items);
+
+    var parts = std.ArrayList([]const u8).init(http.temp());
+    for (db.parts.items(.mfr), db.parts.items(.id)) |mfr_idx, id| {
+        if (mfr_idx == idx) {
+            try parts.append(id);
+        }
+    }
+    sort.natural(parts.items);
 
     const DTO = tempora.Date_Time.With_Offset;
 
@@ -68,6 +71,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .title = mfr.full_name orelse mfr.id,
         .obj = mfr,
         .show_years = mfr.founded_year != null or mfr.suspended_year != null,
+        .parts = parts.items,
         .created = created_dto,
         .modified = modified_dto,
         .relations = relations.items,

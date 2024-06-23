@@ -1,0 +1,27 @@
+<tr id="pkg"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="pkg_input">Package</label>
+</th>
+<td>
+    <select id="pkg_input" name="pkg"
+\\err?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///pkg"
+        hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
+        data-deselectable
+        data-search-url="/pkg">
+        <option data-placeholder="true" value> </option>
+\\pkg_id|obj.pkg?
+        <option selected value="\\pkg_id|obj.pkg//">\\pkg_id|obj.pkg//</option>
+\\~
+    </select>
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

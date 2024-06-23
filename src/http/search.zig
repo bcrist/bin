@@ -1,12 +1,6 @@
 pub const Option = struct {
     value: []const u8,
-    text: []const u8 = "",
-    relevance: f64 = 0,
-    url: []const u8,
-
-    pub fn order(_: void, a: Option, b: Option) bool {
-        return a.relevance > b.relevance;
-    }
+    text: []const u8,
 };
 
 pub fn post(req: *http.Request, db: *const DB) !void {
@@ -27,48 +21,48 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         }
     }
 
-    var options = try std.ArrayList(Option).initCapacity(http.temp(), 100);
-
-    if (std.mem.startsWith(u8, q, "mfr:")) {
-        q = q["mfr:".len..];
-    }
-
-    if (q.len > 0) {
-        var name_iter = db.mfr_lookup.iterator();
-        while (name_iter.next()) |entry| {
-            const name = entry.key_ptr.*;
-            if (std.ascii.indexOfIgnoreCase(name, q)) |start_of_match| {
-                const url = try http.tprint("/mfr:{s}", .{ Manufacturer.get_id(db, entry.value_ptr.*) });
-
-                var relevance: f64 = @floatFromInt(q.len);
-                relevance /= @floatFromInt(1 + name.len - q.len);
-                if (start_of_match == 0) {
-                    relevance *= 2;
-                }
-
-                try options.append(.{
-                    .value = url[1..],
-                    .text = name,
-                    .relevance = relevance,
-                    .url = url,
-                });
+    if (go) {
+        if (std.mem.startsWith(u8, q, "/")) {
+            try req.redirect(q, .see_other);
+            return;
+        } else {
+            const results = try search.query(db, http.temp(), q, .{ .max_results = 1 });
+            if (results.len > 0) {
+                try req.redirect(try results[0].item.url(db, http.temp()), .see_other);
+                return;
             }
         }
-        std.sort.block(Option, options.items, {}, Option.order);
     }
 
-    if (go and options.items.len > 0) {
-        try req.set_response_header("HX-Location", options.items[0].url);
-        req.response_status = .no_content;
-        try req.respond("");
-        return;
-    }
+    const results = try search.query(db, http.temp(), q, .{ .max_results = 200 });
 
-    try req.render("search_options.zk", options.items, .{});
+    if (req.get_header("hx-request") != null) {
+        var options = try std.ArrayList(Option).initCapacity(http.temp(), results.len);
+        for (results) |result| {
+            options.appendAssumeCapacity(.{
+                .value = try result.item.url(db, http.temp()),
+                .text = try result.item.name(db, http.temp()),
+            });
+        }
+
+        try req.render("search_options.zk", options.items, .{});
+    } else {
+        var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), results.len);
+        for (results) |result| {
+            options.appendAssumeCapacity(.{
+                .value = try result.item.url(db, http.temp()),
+                .text = try result.item.name(db, http.temp()),
+            });
+        }
+
+        try slimselect.respond_with_options(req, options.items);
+    }
 }
 
 const log = std.log.scoped(.@"http.search");
 
+const slimselect = @import("slimselect.zig");
+const search = @import("../search.zig");
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");

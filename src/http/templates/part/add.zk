@@ -1,0 +1,20 @@
+\\@include "_top.zk"
+<div class="hidden" hx-post="/p/add/validate" hx-trigger="revalidate from:body"
+    hx-include=".submitted_field"
+    hx-target="#add_cancel_aside"
+    hx-swap="outerHTML"></div>
+<form hx-post="/p/add" hx-include=".submitted_field">
+\\@include "common/add_cancel.zk"//
+</form>
+<h1>Add Part</h1>
+\\@include "part/add_or_edit_fields.zk"
+
+<h2>Distributor Part Numbers</h2>
+<div class="sortable">
+\\dist_pns:
+\\  @include "part/post_dist_pn.zk"
+\\~
+\\@include "part/post_dist_pn_placeholder.zk"
+</div>
+
+\\@include "_bottom.zk" 

@@ -1,9 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_mfr_name = try req.get_path_param("mfr");
     const idx = Manufacturer.maybe_lookup(db, requested_mfr_name) orelse return;
-    const mfr_id = Manufacturer.get_id(db, idx);
     const relation_list = try get_sorted_relations(db, idx);
-    const post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(mfr_id) });
 
     var new_list = try std.ArrayList(Relation).initCapacity(http.temp(), relation_list.items.len);
     var apply_changes = true;
@@ -39,6 +37,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         }
     }
 
+    const post_prefix = try Transaction.get_post_prefix(db, idx);
     for (0.., new_list.items) |i, relation| {
         try req.render("mfr/post_relation.zk", .{
             .valid = true,
@@ -58,6 +57,7 @@ const log = std.log.scoped(.@"http.mfr");
 const Relation = @import("../mfr.zig").Relation;
 const get_sorted_relations = @import("../mfr.zig").get_sorted_relations;
 
+const Transaction = @import("Transaction.zig");
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");

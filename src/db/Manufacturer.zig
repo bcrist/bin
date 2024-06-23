@@ -85,9 +85,10 @@ pub fn delete(db: *DB, idx: Index) !void {
         }
     }
 
-    for (0.., db.parts.items(.mfr)) |part_idx, maybe_mfr_idx| {
+    for (0.., db.parts.items(.mfr)) |part_i, maybe_mfr_idx| {
         if (maybe_mfr_idx == idx) {
-            try Part.set_mfr(db, @enumFromInt(part_idx), null);
+            const part_idx: Part.Index = @enumFromInt(part_i);
+            try Part.set_id(db, part_idx, null, Part.get_id(db, part_idx));
         }
     }
 

@@ -7,7 +7,7 @@
 \\missing_dist?
 <div class="error">
     No distributor named <b>\\missing_dist//</b> was found!
-    Would you like to <a href="/dist:\\@url missing_dist//?edit">add it</a>?
+    Would you like to <a href="/dist/add?id=\\@url missing_dist//">add it</a>?
 </div>
 \\~
 <h1>All Distributors</h1>

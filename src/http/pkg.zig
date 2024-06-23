@@ -6,11 +6,7 @@ pub const reorder_additional_names = @import("pkg/reorder_additional_names.zig")
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_pkg_name = try req.get_path_param("pkg");
     const idx = Package.maybe_lookup(db, requested_pkg_name) orelse {
-        if (try req.has_query_param("edit")) {
-            try add.get(session, req, db);
-        } else {
-            try list.get(session, req, db);
-        }
+        try list.get(session, req, db);
         return;
     };
     const pkg = Package.get(db, idx);
@@ -25,7 +21,6 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         var txn = try Transaction.init_idx(db, idx);
         try txn.render_results(session, req, .{
             .target = .edit,
-            .post_prefix = try http.tprint("/pkg:{}", .{ http.fmtForUrl(pkg.id) }),
             .rnd = null,
         });
         return;
@@ -41,6 +36,14 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         }
     }
     sort.natural(children.items);
+
+    var parts = std.ArrayList([]const u8).init(http.temp());
+    for (db.parts.items(.pkg), db.parts.items(.id)) |pkg_idx, id| {
+        if (pkg_idx == idx) {
+            try parts.append(id);
+        }
+    }
+    sort.natural(parts.items);
 
      const DTO = tempora.Date_Time.With_Offset;
 
@@ -59,6 +62,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .parent_id = parent_id,
         .mfr_id = mfr_id,
         .children = children.items,
+        .parts = parts.items,
         .created = created_dto,
         .modified = modified_dto,
     }, .{ .Context = Context });

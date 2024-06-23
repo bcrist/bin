@@ -148,8 +148,9 @@ textarea, input[type=text], input[type=search], input[type=number] {
     padding: 0;
     padding-block: 0.1em;
     padding-inline: 0.2em;
+    box-sizing: border-box;
     min-width: 25em;
-    width: calc(100% - 0.6em);
+    width: 100%;
 }
 textarea {
     min-height: 8em;

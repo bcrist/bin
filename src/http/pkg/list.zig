@@ -22,38 +22,48 @@
 }
 
 pub fn post(req: *http.Request, db: *const DB) !void {
-    var name_filter: []const u8 = "";
+    var q: []const u8 = "";
 
     var param_iter = try req.form_iterator();
     while (try param_iter.next()) |param| {
-        if (std.mem.eql(u8, param.name, "name")) {
-            name_filter = try http.temp().dupe(u8, param.value orelse "");
-        } else {
-            log.warn("Unrecognized search filter: {s}={s}", .{ param.name, param.value orelse "" });
-        }
+        q = try http.temp().dupe(u8, param.value orelse "");
     }
 
-    var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), db.pkg_lookup.size + 1);
-
-    try options.append(.{
-        .placeholder = true,
-        .value = "",
-        .text = "Select...",
+    const results = try search.query(db, http.temp(), q, .{
+        .enable_by_kind = .{ .pkgs = true },
+        .max_results = 200,
     });
 
-    var name_iter = db.pkg_lookup.iterator();
-    while (name_iter.next()) |entry| {
-        const name = entry.key_ptr.*;
-        if (name_filter.len == 0 or std.ascii.indexOfIgnoreCase(name, name_filter) != null) {
+    if (req.get_header("hx-request") != null) {
+        const Option = struct {
+            value: []const u8,
+            text: []const u8,
+        };
+        var options = try std.ArrayList(Option).initCapacity(http.temp(), results.len);
+        for (results) |result| {
             options.appendAssumeCapacity(.{
-                .value = Package.get_id(db, entry.value_ptr.*),
-                .text = entry.key_ptr.*,
+                .value = try result.item.name(db, http.temp()),
+                .text = try result.item.name(db, http.temp()),
             });
         }
-    }
 
-    std.sort.block(slimselect.Option, options.items, {}, slimselect.Option.less_than);
-    try slimselect.respond_with_options(req, options.items);
+        try req.render("search_options.zk", options.items, .{});
+    } else {
+        var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), results.len + 1);
+        try options.append(.{
+            .placeholder = true,
+            .value = "",
+            .text = "Select...",
+        });
+        for (results) |result| {
+            options.appendAssumeCapacity(.{
+                .value = try result.item.name(db, http.temp()),
+                .text = try result.item.name(db, http.temp()),
+            });
+        }
+
+        try slimselect.respond_with_options(req, options.items);
+    }
 }
 
 const log = std.log.scoped(.@"http.pkg");
@@ -61,6 +71,7 @@ const log = std.log.scoped(.@"http.pkg");
 const Package = DB.Package;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
+const search = @import("../../search.zig");
 const sort = @import("../../sort.zig");
 const slimselect = @import("../slimselect.zig");
 const http = @import("http");

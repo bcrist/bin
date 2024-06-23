@@ -8,12 +8,11 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     const field = std.meta.stringToEnum(Transaction.Field, field_str) orelse return error.BadRequest;    
 
     var txn = try Transaction.init_idx(db, idx);
-    try txn.process_all_params(req);
+    try txn.process_form_params(req);
     try txn.validate();
     try txn.apply_changes(db);
     try txn.render_results(session, req, .{
         .target = .{ .field = field },
-        .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(Manufacturer.get_id(db, idx)) }),
         .rnd = null,
     });
 }
@@ -22,14 +21,13 @@ pub const additional_name = struct {
     pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
         const idx = Manufacturer.maybe_lookup(db, try req.get_path_param("mfr")) orelse return;
         var txn = try Transaction.init_idx(db, idx);
-        try txn.process_all_params(req);
+        try txn.process_form_params(req);
         try txn.validate();
         try txn.apply_changes(db);
         try txn.render_results(session, req, .{
             .target = .{
                 .additional_name = try req.get_path_param("additional_name") orelse "",
             },
-            .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(Manufacturer.get_id(db, idx)) }),
             .rnd = null,
         });
     }
@@ -39,14 +37,13 @@ pub const relation = struct {
     pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
         const idx = Manufacturer.maybe_lookup(db, try req.get_path_param("mfr")) orelse return;
         var txn = try Transaction.init_idx(db, idx);
-        try txn.process_all_params(req);
+        try txn.process_form_params(req);
         try txn.validate();
         try txn.apply_changes(db);
         try txn.render_results(session, req, .{
             .target = .{
                 .relation = try req.get_path_param("relation") orelse "",
             },
-            .post_prefix = try http.tprint("/mfr:{}", .{ http.fmtForUrl(Manufacturer.get_id(db, idx)) }),
             .rnd = null,
         });
     }

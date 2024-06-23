@@ -37,6 +37,12 @@
     <div><a href="/pkg:\\@url *//">\\*//</a></div>
 \\~~
 
+\\parts?
+    <h2>Parts</h2>
+\\  parts:
+    <div><a href="/p:\\@url *//">\\*//</a></div>
+\\~~
+
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>

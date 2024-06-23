@@ -7,7 +7,7 @@
 \\missing_mfr?
 <div class="error">
     No manufacturer named <b>\\missing_mfr//</b> was found!
-    Would you like to <a href="/mfr:\\@url missing_mfr//?edit">add it</a>?
+    Would you like to <a href="/mfr/add?id=\\@url missing_mfr//">add it</a>?
 </div>
 \\~
 <h1>All Manufacturers</h1>

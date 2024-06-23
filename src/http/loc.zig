@@ -5,11 +5,7 @@ pub const edit = @import("loc/edit.zig");
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_loc_name = try req.get_path_param("loc");
     const idx = Location.maybe_lookup(db, requested_loc_name) orelse {
-        if (try req.has_query_param("edit")) {
-            try add.get(session, req, db);
-        } else {
-            try list.get(session, req, db);
-        }
+        try list.get(session, req, db);
         return;
     };
     const loc = Location.get(db, idx);
@@ -24,7 +20,6 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         var txn = try Transaction.init_idx(db, idx);
         try txn.render_results(session, req, .{
             .target = .edit,
-            .post_prefix = try http.tprint("/loc:{}", .{ http.fmtForUrl(loc.id) }),
             .rnd = null,
         });
         return;

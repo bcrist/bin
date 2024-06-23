@@ -18,11 +18,7 @@ pub const relation_kinds = struct {
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_dist_name = try req.get_path_param("dist");
     const idx = Distributor.maybe_lookup(db, requested_dist_name) orelse {
-        if (try req.has_query_param("edit")) {
-            try add.get(session, req, db);
-        } else {
-            try list.get(session, req, db);
-        }
+        try list.get(session, req, db);
         return;
     };
     const dist = Distributor.get(db, idx);
@@ -37,7 +33,6 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         var txn = try Transaction.init_idx(db, idx);
         try txn.render_results(session, req, .{
             .target = .edit,
-            .post_prefix = try http.tprint("/dist:{}", .{ http.fmtForUrl(dist.id) }),
             .rnd = null,
         });
         return;

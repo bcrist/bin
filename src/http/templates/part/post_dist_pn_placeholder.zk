@@ -1,0 +1,9 @@
+<div class="sortable_row unsortable" id="part_dist_pn"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+    <span class="icon"></span>
+    <input type="hidden" name="dist_pn_order" class="dist_pn_ordering">
+\\@include "part/post_dist.zk"
+\\@include "part/post_pn.zk"
+    <div class="part_dist_pn_validation">
+\\@include "_validation.zk"
+    </div>
+</div>

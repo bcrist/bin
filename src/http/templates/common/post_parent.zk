@@ -16,7 +16,6 @@
         hx-target="closest tr"
         hx-swap="outerHTML"
         data-deselectable
-        data-addable
         data-search-url="\\parent_search_url//">
         <option data-placeholder="true" value> </option>
 \\parent_id|obj.parent?

@@ -1,9 +1,7 @@
 pub fn post(req: *http.Request, db: *DB) !void {
     const requested_dist_name = try req.get_path_param("dist");
     const idx = Distributor.maybe_lookup(db, requested_dist_name) orelse return;
-    const dist_id = Distributor.get_id(db, idx);
     const relation_list = try get_sorted_relations(db, idx);
-    const post_prefix = try http.tprint("/dist:{}", .{ http.fmtForUrl(dist_id) });
 
     var new_list = try std.ArrayList(Relation).initCapacity(http.temp(), relation_list.items.len);
     var apply_changes = true;
@@ -39,6 +37,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
         }
     }
 
+    const post_prefix = try Transaction.get_post_prefix(db, idx);
     for (0.., new_list.items) |i, relation| {
         try req.render("dist/post_relation.zk", .{
             .valid = true,
@@ -55,6 +54,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
 
 const log = std.log.scoped(.@"http.dist");
 
+const Transaction = @import("Transaction.zig");
 const Relation = @import("../dist.zig").Relation;
 const get_sorted_relations = @import("../dist.zig").get_sorted_relations;
 

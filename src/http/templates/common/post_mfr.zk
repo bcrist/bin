@@ -16,7 +16,6 @@
         hx-target="closest tr"
         hx-swap="outerHTML"
         data-deselectable
-        data-addable
         data-search-url="/mfr">
         <option data-placeholder="true" value> </option>
 \\mfr_id|obj.mfr?

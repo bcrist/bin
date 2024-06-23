@@ -1,0 +1,22 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/p/add">Add</a>
+</aside>
+\\~
+
+\\missing_part?
+<div class="error">
+    No part named <b>\\missing_part//</b> was found!
+    Would you like to <a href="/p/add?id=\\@url missing_part missing_part_mfr?//&mfr=\\@url missing_part_mfr~//">add it</a>?
+</div>
+\\~
+
+<h1>All Parts</h1>
+<div class="columns">
+\\part_list:
+    <a href="\\mfr?///mfr:\\@url mfr~///p:\\@url id//">\\id//</a>
+<br>
+\\~
+</div>
+\\@include "_bottom.zk"

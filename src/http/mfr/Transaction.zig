@@ -5,10 +5,12 @@ fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
 additional_names: std.StringArrayHashMapUnmanaged(Field_Data),
 relations: std.StringArrayHashMapUnmanaged(Relation_Data),
 
+add_another: bool = false,
 was_valid: bool = true,
 valid: bool = true,
 changes_applied: bool = false,
 names_changed: bool = false,
+created_idx: ?Manufacturer.Index = null,
 
 pub const Field = enum {
     id,
@@ -91,7 +93,14 @@ pub fn init_idx(db: *const DB, idx: Manufacturer.Index) !Transaction {
     };
 }
 
-pub fn process_all_params(self: *Transaction, req: *http.Request) !void {
+pub fn process_query_params(self: *Transaction, req: *http.Request) !void {
+    var iter = req.query_iterator();
+    while (try iter.next()) |param| {
+        try self.process_param(param);
+    }
+}
+
+pub fn process_form_params(self: *Transaction, req: *http.Request) !void {
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
         try self.process_param(param);
@@ -108,6 +117,11 @@ pub fn process_param(self: *Transaction, param: Query_Param) !void {
 pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
     if (std.mem.eql(u8, param.name, "invalid")) {
         self.was_valid = false;
+        return true;
+    }
+
+    if (std.mem.eql(u8, param.name, "another")) {
+        self.add_another = true;
         return true;
     }
 
@@ -275,7 +289,7 @@ fn validate_relation(self: *Transaction, index_str: []const u8, relation: *Relat
             self.valid = false;
         }
     } else {
-        log.debug("Mfr can't have a relation with itself: {s}", .{ relation.other.future });
+        log.debug("Mfr not found: {s}", .{ relation.other.future });
         relation.other.err = "Manufacturer not found";
         relation.other.valid = false;
         relation.err = relation.other.err;
@@ -335,6 +349,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         }
 
         self.changes_applied = true;
+        self.created_idx = idx;
         return;
     };
 
@@ -438,6 +453,15 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     }
 }
 
+pub fn get_post_prefix(db: *const DB, maybe_idx: ?Manufacturer.Index) ![]const u8 {
+    if (maybe_idx) |idx| {
+        const id = Manufacturer.get_id(db, idx);
+        return try http.tprint("/mfr:{}", .{ http.fmtForUrl(id) });
+    }
+    return "/mfr";
+}
+
+
 const Render_Options = struct {
     target: union (enum) {
         add,
@@ -446,15 +470,21 @@ const Render_Options = struct {
         additional_name: []const u8,
         relation: []const u8,
     },
-    post_prefix: []const u8,
     rnd: ?*std.rand.Xoshiro256,
 };
 
 pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, options: Render_Options) !void {
-    if (self.changes_applied) if (self.fields.id.edited()) |id| {
-        try req.redirect(try http.tprint("/mfr:{}?edit", .{ http.fmtForUrl(id.future) }), .see_other);
-        return;
-    };
+    const post_prefix = try get_post_prefix(self.db, self.created_idx orelse self.idx);
+
+    if (self.changes_applied) {
+        if (self.created_idx != null) {
+            try req.redirect(post_prefix, .see_other);
+            return;
+        } else if (self.fields.id.is_changed()) {
+            try req.redirect(try http.tprint("{s}?edit", .{ post_prefix }), .see_other);
+            return;
+        }
+    }
 
     if (self.was_valid != self.valid) {
         try req.add_response_header("hx-trigger", "revalidate");
@@ -501,7 +531,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .title = self.fields.full_name.future_opt() orelse self.fields.id.future,
                 .additional_names = additional_names,
                 .relations = relations,
-                .post_prefix = options.post_prefix,
+                .post_prefix = post_prefix,
                 .cancel_url = "/mfr",
                 .country_search_url = "/mfr/countries",
             };
@@ -530,7 +560,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .err = data.err,
                 .swap_oob = !is_target,
                 .obj = obj,
-                .post_prefix = options.post_prefix,
+                .post_prefix = post_prefix,
                 .country_search_url = "/mfr/countries",
             };
             switch (field) {
@@ -552,7 +582,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .additional_name => |target_index| target_index,
             else => null,
         },
-        .post_prefix = options.post_prefix,
+        .post_prefix = post_prefix,
     });
 
     var relation_index: usize = 0;
@@ -607,7 +637,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .saved = self.changes_applied and is_changed,
             .valid = data.valid,
             .err = data.err,
-            .post_prefix = options.post_prefix,
+            .post_prefix = post_prefix,
             .index = if (is_placeholder) null else new_index,
             .swap_oob = if (is_target) null else try http.tprint("outerHTML:#relation{s}", .{ index_str }),
 
@@ -628,7 +658,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             try req.render("mfr/post_relation.zk", render_data, .{});
             if (index_str.len == 0) {
                 try req.render("mfr/post_relation_placeholder.zk", .{
-                    .post_prefix = options.post_prefix,
+                    .post_prefix = post_prefix,
                 }, .{});
             }
         }

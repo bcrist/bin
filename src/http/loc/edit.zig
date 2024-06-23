@@ -8,12 +8,11 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     const field = std.meta.stringToEnum(Transaction.Field, field_str) orelse return error.BadRequest;
 
     var txn = try Transaction.init_idx(db, idx);
-    try txn.process_all_params(req);
+    try txn.process_form_params(req);
     try txn.validate();
     try txn.apply_changes(db);
     try txn.render_results(session, req, .{
         .target = .{ .field = field },
-        .post_prefix = try http.tprint("/loc:{}", .{ http.fmtForUrl(Location.get_id(db, idx)) }),
         .rnd = null,
     });
 }

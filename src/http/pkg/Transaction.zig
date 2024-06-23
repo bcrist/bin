@@ -4,10 +4,12 @@ idx: ?Package.Index,
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
 additional_names: std.StringArrayHashMapUnmanaged(Field_Data),
 
+add_another: bool = false,
 was_valid: bool = true,
 valid: bool = true,
 changes_applied: bool = false,
 names_changed: bool = false,
+created_idx: ?Package.Index = null,
 
 pub const Field = enum {
     id,
@@ -53,7 +55,14 @@ pub fn init_idx(db: *const DB, idx: Package.Index) !Transaction {
     };
 }
 
-pub fn process_all_params(self: *Transaction, req: *http.Request) !void {
+pub fn process_query_params(self: *Transaction, req: *http.Request) !void {
+    var iter = req.query_iterator();
+    while (try iter.next()) |param| {
+        try self.process_param(param);
+    }
+}
+
+pub fn process_form_params(self: *Transaction, req: *http.Request) !void {
     var iter = try req.form_iterator();
     while (try iter.next()) |param| {
         try self.process_param(param);
@@ -70,6 +79,11 @@ pub fn process_param(self: *Transaction, param: Query_Param) !void {
 pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
     if (std.mem.eql(u8, param.name, "invalid")) {
         self.was_valid = false;
+        return true;
+    }
+
+    if (std.mem.eql(u8, param.name, "another")) {
+        self.add_another = true;
         return true;
     }
     
@@ -224,6 +238,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         }
 
         self.changes_applied = true;
+        self.created_idx = idx;
         return;
     };
 
@@ -269,6 +284,14 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     }
 }
 
+pub fn get_post_prefix(db: *const DB, maybe_idx: ?Package.Index) ![]const u8 {
+    if (maybe_idx) |idx| {
+        const id = Package.get_id(db, idx);
+        return try http.tprint("/pkg:{}", .{ http.fmtForUrl(id) });
+    }
+    return "/pkg";
+}
+
 const Render_Options = struct {
     target: union (enum) {
         add,
@@ -276,15 +299,21 @@ const Render_Options = struct {
         field: Field,
         additional_name: []const u8,
     },
-    post_prefix: []const u8,
     rnd: ?*std.rand.Xoshiro256,
 };
 
 pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, options: Render_Options) !void {
-    if (self.changes_applied) if (self.fields.id.edited()) |id| {
-        try req.redirect(try http.tprint("/pkg:{}?edit", .{ http.fmtForUrl(id.future) }), .see_other);
-        return;
-    };
+    const post_prefix = try get_post_prefix(self.db, self.created_idx orelse self.idx);
+
+    if (self.changes_applied) {
+        if (self.created_idx != null) {
+            try req.redirect(post_prefix, .see_other);
+            return;
+        } else if (self.fields.id.is_changed()) {
+            try req.redirect(try http.tprint("{s}?edit", .{ post_prefix }), .see_other);
+            return;
+        }
+    }
 
     if (self.was_valid != self.valid) {
         try req.add_response_header("hx-trigger", "revalidate");
@@ -306,7 +335,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .valid = self.valid,
                 .obj = obj,
                 .title = self.fields.full_name.future_opt() orelse self.fields.id.future,
-                .post_prefix = options.post_prefix,
+                .post_prefix = post_prefix,
                 .parent_search_url = "/pkg",
                 .cancel_url = "/pkg",
             };
@@ -334,7 +363,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .err = data.err,
                 .swap_oob = !is_target,
                 .obj = obj,
-                .post_prefix = options.post_prefix,
+                .post_prefix = post_prefix,
                 .parent_search_url = "/pkg",
             };
             switch (field) {
@@ -353,7 +382,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .additional_name => |target_index| target_index,
             else => null,
         },
-        .post_prefix = options.post_prefix,
+        .post_prefix = post_prefix,
     });
 }
 

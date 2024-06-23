@@ -1,0 +1,60 @@
+<tr id="parent"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="parent_input">Parent</label>
+</th>
+<td><div style="display: flex; gap: 0.5em;">
+    <form autocomplete="off"
+        hx-post="\\post_prefix///\\parent_qualifier_field//"
+        hx-trigger="submit, change[target === document.activeElement] from:#\\parent_qualifier_field//_input"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off" style="min-width: 15em"
+            id="\\parent_qualifier_field//_input"
+            name="\\parent_qualifier_field//"
+            list="\\parent_qualifier_field//_datalist"
+\\err_parent_qualifier?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
+\\~
+            value="\\parent_qualifier//"
+            placeholder="\\parent_qualifier_placeholder//"
+            hx-post="\\parent_qualifier_search_url//"
+            hx-trigger="input changed delay:200ms"
+            hx-params="\\parent_qualifier_field//"
+            hx-target="#\\parent_qualifier_field//_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="\\parent_qualifier_field//_datalist"></datalist>
+    </form>
+    <form autocomplete="off"
+        hx-post="\\post_prefix///parent"
+        hx-trigger="submit, change[target === document.activeElement] from:#parent_input"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off" style="min-width: 15em"
+            id="parent_input"
+            name="parent"
+            list="parent_datalist"
+\\err_parent?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
+\\~
+            value="\\parent|obj.parent//"
+            placeholder="ID"
+            hx-post="\\parent_search_url//"
+            hx-trigger="input changed delay:200ms"
+            hx-params="parent"
+            hx-target="#parent_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="parent_datalist"></datalist>
+    </form>
+</div></td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

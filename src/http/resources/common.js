@@ -88,7 +88,7 @@ htmx.onLoad(content => {
         if (search_url) {
             search_handler = async (search, currentData) => {
                 const params = new URLSearchParams();
-                params.set('name', search);
+                params.set('q', search);
                 const response = await fetch(search_url, {
                     method: 'POST',
                     headers: { 'Accept': 'application/json' },
