@@ -19,7 +19,7 @@ Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///p:\\@url parent_id//"
 \\children?
 <h2>Children</h2>
 \\children:
-<a href="/p:\\@url *//">\\*//</a><span class="separator"></span>
+<a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a><span class="separator"></span>
 \\~~
 
 \\pkg_id?

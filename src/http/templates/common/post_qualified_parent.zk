@@ -5,7 +5,7 @@
 <td><div style="display: flex; gap: 0.5em;">
     <form autocomplete="off"
         hx-post="\\post_prefix///\\parent_qualifier_field//"
-        hx-trigger="submit, change[target === document.activeElement] from:#\\parent_qualifier_field//_input"
+        hx-trigger="change from:#\\parent_qualifier_field//_input"
         hx-include=".submitted_field"
         hx-target="closest tr"
         hx-swap="outerHTML">
@@ -31,7 +31,7 @@
     </form>
     <form autocomplete="off"
         hx-post="\\post_prefix///parent"
-        hx-trigger="submit, change[target === document.activeElement] from:#parent_input"
+        hx-trigger="change from:#parent_input"
         hx-include=".submitted_field"
         hx-target="closest tr"
         hx-swap="outerHTML">

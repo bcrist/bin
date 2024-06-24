@@ -7,25 +7,16 @@
         return;
     };
 
-    const Part_Info = struct {
-        mfr: ?[]const u8,
-        id: []const u8,
-
-        pub fn less_than(_: void, a: @This(), b: @This()) bool {
-            return sort.natural_less_than({}, a.id, b.id);
-        }
-    };
-
-    var list = try std.ArrayList(Part_Info).initCapacity(http.temp(), db.parts.len);
+    var list = try std.ArrayList(common.Part_Info).initCapacity(http.temp(), db.parts.len);
     for (db.parts.items(.id), db.parts.items(.mfr), db.parts.items(.parent)) |id, mfr, parent| {
         if (parent == null) {
             list.appendAssumeCapacity(.{
-                .mfr = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+                .mfr_id = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
                 .id = id,
             });
         }
     }
-    std.sort.block(Part_Info, list.items, {}, Part_Info.less_than);
+    std.sort.block(common.Part_Info, list.items, {}, common.Part_Info.less_than);
 
     try req.render("part/list.zk", .{
         .part_list = list.items,
@@ -87,6 +78,7 @@ const Part = DB.Part;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
+const common = @import("../part.zig");
 const search = @import("../../search.zig");
 const sort = @import("../../sort.zig");
 const slimselect = @import("../slimselect.zig");

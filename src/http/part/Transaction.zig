@@ -321,6 +321,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
             }
         }
 
+        log.debug("changes applied: created", .{});
         self.changes_applied = true;
         self.created_idx = idx;
         return;
@@ -329,32 +330,38 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (self.fields.id.is_changed() or self.fields.mfr.is_changed()) {
         const mfr_idx = Manufacturer.maybe_lookup(db, self.fields.mfr.future_opt());
         try Part.set_id(db, idx, mfr_idx, self.fields.id.future);
+        log.debug("changes applied: ID/mfr changed", .{});
         self.changes_applied = true;
     }
 
     if (self.fields.notes.changed()) |notes| {
         try Part.set_notes(db, idx, notes.future_opt());
+        log.debug("changes applied: notes changed", .{});
         self.changes_applied = true;
     }
 
     if (self.fields.parent.is_removed()) {
         try Part.set_parent(db, idx, null);
+        log.debug("changes applied: parent removed", .{});
         self.changes_applied = true;
     } else if (self.fields.parent.future_opt()) |parent_id| {
         if (self.fields.parent.is_changed() or self.parent_mfr.is_changed()) {
             const parent_mfr_idx = Manufacturer.maybe_lookup(db, self.parent_mfr.future_opt());
             const parent_idx = Part.maybe_lookup(db, parent_mfr_idx, parent_id).?;
             try Part.set_parent(db, idx, parent_idx);
+            log.debug("changes applied: parent changed", .{});
             self.changes_applied = true;
         }
     }
 
     if (self.fields.pkg.is_removed()) {
         try Part.set_pkg(db, idx, null);
+        log.debug("changes applied: pkg removed", .{});
         self.changes_applied = true;
     } else if (self.fields.pkg.changed()) |pkg| {
         const pkg_idx = Package.maybe_lookup(db, pkg.future).?;
         try Part.set_pkg(db, idx, pkg_idx);
+        log.debug("changes applied: pkg changed", .{});
         self.changes_applied = true;
     }
 
@@ -364,9 +371,17 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
                 .dist = Distributor.maybe_lookup(db, dist_pn.dist.current).?,
                 .pn = dist_pn.pn.current,
             });
+            log.debug("changes applied: dist PN removed", .{});
             self.changes_applied = true;
         } else if (dist_pn.dist.future.len > 0 and dist_pn.pn.future.len > 0) {
-            if (dist_pn.dist.current.len > 0) {
+            if (dist_pn.dist.is_added() or dist_pn.pn.is_added()) {
+                try Part.add_dist_pn(db, idx, .{
+                    .dist = Distributor.maybe_lookup(db, dist_pn.dist.future).?,
+                    .pn = dist_pn.pn.future,
+                });
+                log.debug("changes applied: dist PN added", .{});
+                self.changes_applied = true;
+            } else if (dist_pn.dist.is_edited() or dist_pn.pn.is_edited()) {
                 try Part.edit_dist_pn(db, idx, .{
                     .dist = Distributor.maybe_lookup(db, dist_pn.dist.current).?,
                     .pn = dist_pn.pn.current,
@@ -374,13 +389,9 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
                     .dist = Distributor.maybe_lookup(db, dist_pn.dist.future).?,
                     .pn = dist_pn.pn.future,
                 });
-            } else {
-                try Part.add_dist_pn(db, idx, .{
-                    .dist = Distributor.maybe_lookup(db, dist_pn.dist.future).?,
-                    .pn = dist_pn.pn.future,
-                });
+                log.debug("changes applied: dist PN edited", .{});
+                self.changes_applied = true;
             }
-            self.changes_applied = true;
         }
     }
 }
@@ -482,59 +493,43 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         else => {},
     }
 
-    inline for (comptime std.enums.values(Field)) |field| {
+    { // ID row
         const is_target = switch (options.target) {
-            .field => |target_field| field == target_field,
+            .field => |field| field == .id or field == .mfr,
             else => false,
         };
-
-        const data = @field(self.fields, @tagName(field));
-        if (is_target or data.is_changed()) {
-            const render_data = .{
-                .validating = true,
-                .saved = self.changes_applied,
-                .valid = data.valid,
-                .err = if (data.err.len > 0) data.err else switch (field) {
-                    .id => self.fields.mfr.err,
-                    .mfr => self.fields.id.err,
-                    .parent => self.parent_mfr.err,
-                    else => null,
-                },
-                .err_id = !self.fields.id.valid,
-                .err_id_qualifier = !self.fields.mfr.valid,
-                .err_parent = !self.fields.parent.valid,
-                .err_parent_qualifier = !self.parent_mfr.valid,
-                .swap_oob = !is_target,
-                .obj = obj,
-                .post_prefix = post_prefix,
-                .id_qualifier_field = "mfr",
-                .id_qualifier = obj.mfr,
-                .id_qualifier_placeholder = "Manufacturer",
-                .id_qualifier_search_url = "/mfr",
-                .parent_qualifier_field = "parent_mfr",
-                .parent_qualifier = self.parent_mfr.future,
-                .parent_qualifier_placeholder = "Manufacturer",
-                .parent_qualifier_search_url = "/mfr",
-                .parent_search_url = parent_search_url,
-            };
-            switch (field) {
-                .mfr, .id => try req.render("common/post_qualified_id.zk", render_data, .{}),
-                .parent => try req.render("common/post_qualified_parent.zk", render_data, .{}),
-                .notes => try req.render("common/post_notes.zk", render_data, .{}),
-                .pkg => try req.render("part/post_pkg.zk", render_data, .{}),
-            }
-        }
+        const is_changed = self.fields.id.is_changed() or self.fields.mfr.is_changed();
+        if (is_target or is_changed) try req.render("common/post_qualified_id.zk", .{
+            .validating = true,
+            .saved = self.changes_applied,
+            .valid = self.fields.mfr.valid and self.fields.id.valid,
+            .err = if (self.fields.mfr.err.len > 0) self.fields.mfr.err else self.fields.id.err,
+            .err_id = !self.fields.id.valid,
+            .err_id_qualifier = !self.fields.mfr.valid,
+            .swap_oob = !is_target,
+            .obj = obj,
+            .post_prefix = post_prefix,
+            .id_qualifier_field = "mfr",
+            .id_qualifier = obj.mfr,
+            .id_qualifier_placeholder = "Manufacturer",
+            .id_qualifier_search_url = "/mfr",
+        }, .{});
     }
-
-    if (options.target == .parent_mfr or self.parent_mfr.is_changed()) {
-        const render_data = .{
+    { // Parent row
+        const is_target = switch (options.target) {
+            .field => |field| field == .parent,
+            .parent_mfr => true,
+            else => false,
+        };
+        const is_changed = self.fields.parent.is_changed() or self.parent_mfr.is_changed();
+        if (is_target or is_changed) try req.render("common/post_qualified_parent.zk", .{
             .validating = true,
             .saved = self.changes_applied and self.fields.parent.future.len > 0,
-            .valid = self.parent_mfr.valid,
+            .valid = self.parent_mfr.valid and self.fields.parent.valid,
             .err = if (self.parent_mfr.err.len > 0) self.parent_mfr.err else self.fields.parent.err,
             .err_parent = !self.fields.parent.valid,
             .err_parent_qualifier = !self.parent_mfr.valid,
-            .swap_oob = options.target != .parent_mfr,
+            .swap_oob = !is_target,
             .obj = obj,
             .post_prefix = post_prefix,
             .parent_qualifier_field = "parent_mfr",
@@ -542,8 +537,37 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .parent_qualifier_placeholder = "Manufacturer",
             .parent_qualifier_search_url = "/mfr",
             .parent_search_url = parent_search_url,
-        };
-        try req.render("common/post_qualified_parent.zk", render_data, .{});
+        }, .{});
+    }
+
+    inline for (comptime std.enums.values(Field)) |field| {
+        switch (field) {
+            .id, .mfr, .parent => {},
+            else => {
+                const is_target = switch (options.target) {
+                    .field => |target_field| field == target_field,
+                    else => false,
+                };
+
+                const data = @field(self.fields, @tagName(field));
+                if (is_target or data.is_changed()) {
+                    const render_data = .{
+                        .validating = true,
+                        .saved = self.changes_applied,
+                        .valid = data.valid,
+                        .err = data.err,
+                        .swap_oob = !is_target,
+                        .obj = obj,
+                        .post_prefix = post_prefix,
+                    };
+                    switch (field) {
+                        .id, .mfr, .parent => unreachable,
+                        .notes => try req.render("common/post_notes.zk", render_data, .{}),
+                        .pkg => try req.render("part/post_pkg.zk", render_data, .{}),
+                    }
+                }
+            }
+        }
     }
 
     var dist_pn_index: usize = 0;
@@ -600,7 +624,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .err = data.err,
             .post_prefix = post_prefix,
             .index = if (is_placeholder) null else new_index,
-            .swap_oob = if (is_target) null else try http.tprint("outerHTML:#dist_pn{s}", .{ index_str }),
+            .swap_oob = if (is_target) null else try http.tprint("outerHTML:#part_dist_pn{s}", .{ index_str }),
 
             .dist = data.dist.future,
             .err_dist = !data.dist.valid,

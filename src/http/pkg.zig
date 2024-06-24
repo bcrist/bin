@@ -37,13 +37,16 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(children.items);
 
-    var parts = std.ArrayList([]const u8).init(http.temp());
-    for (db.parts.items(.pkg), db.parts.items(.id)) |pkg_idx, id| {
+    var parts = std.ArrayList(part.Part_Info).init(http.temp());
+    for (db.parts.items(.pkg), db.parts.items(.id), db.parts.items(.mfr)) |pkg_idx, id, maybe_part_mfr_idx| {
         if (pkg_idx == idx) {
-            try parts.append(id);
+            try parts.append(.{
+                .mfr_id = if (maybe_part_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+                .id = id,
+            });
         }
     }
-    sort.natural(parts.items);
+    std.sort.block(part.Part_Info, parts.items, {}, part.Part_Info.less_than);
 
      const DTO = tempora.Date_Time.With_Offset;
 
@@ -84,6 +87,7 @@ const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
+const part = @import("part.zig");
 const sort = @import("../sort.zig");
 const http = @import("http");
 const tempora = @import("tempora");

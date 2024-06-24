@@ -33,7 +33,7 @@ Manufacturer: <a href="/mfr:\\@url mfr_id//">\\mfr_id//</a>
 \\parts?
     <h2>Parts</h2>
 \\  parts:
-    <div><a href="/p:\\@url *//">\\*//</a></div>
+    <div><a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a></div>
 \\~~
 
 

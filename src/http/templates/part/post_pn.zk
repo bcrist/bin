@@ -8,7 +8,7 @@
 \\~
             value="\\pn//"
             placeholder="Enter new name"
-            hx-post="\\post_prefix///pn\\@index.@exists/index?//:\\@index|index ~//"
+            hx-post="\\post_prefix///dist_pn\\@index.@exists/index?//:\\@index|index ~//"
             hx-include=".submitted_field"
             hx-target="closest div.sortable_row"
             hx-swap="outerHTML">

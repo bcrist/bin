@@ -15,7 +15,7 @@
 <h1>All Parts</h1>
 <div class="columns">
 \\part_list:
-    <a href="\\mfr?///mfr:\\@url mfr~///p:\\@url id//">\\id//</a>
+    <a href="\\*.mfr_id?///mfr:\\@url mfr_id~///p:\\@url id//">\\id//</a>
 <br>
 \\~
 </div>

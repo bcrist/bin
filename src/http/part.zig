@@ -42,13 +42,16 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         parent_id = Part.get_id(db, parent_idx);
     }
 
-    var children = std.ArrayList([]const u8).init(http.temp());
-    for (db.parts.items(.parent), db.parts.items(.id)) |parent_idx, id| {
+    var children = std.ArrayList(Part_Info).init(http.temp());
+    for (db.parts.items(.parent), db.parts.items(.id), db.parts.items(.mfr)) |parent_idx, id, maybe_child_mfr_idx| {
         if (parent_idx == idx) {
-            try children.append(id);
+            try children.append(.{
+                .mfr_id = if (maybe_child_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+                .id = id,
+            });
         }
     }
-    sort.natural(children.items);
+    std.sort.block(Part_Info, children.items, {}, Part_Info.less_than);
 
     var dist_pns = try std.ArrayList(Distributor_Part_Number).initCapacity(http.temp(), part.dist_pns.items.len);
     for (part.dist_pns.items) |pn| {
@@ -93,6 +96,15 @@ pub fn delete(req: *http.Request, db: *DB) !void {
 
     try req.redirect("/p", .see_other);
 }
+
+pub const Part_Info = struct {
+    mfr_id: ?[]const u8,
+    id: []const u8,
+
+    pub fn less_than(_: void, a: @This(), b: @This()) bool {
+        return sort.natural_less_than({}, a.id, b.id);
+    }
+};
 
 pub const Distributor_Part_Number = struct {
     dist: []const u8,

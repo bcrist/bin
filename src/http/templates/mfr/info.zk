@@ -40,7 +40,7 @@
 \\parts?
     <h2>Parts</h2>
 \\  parts:
-    <div><a href="/p:\\@url *//">\\*//</a></div>
+    <div><a href="/mfr:\\@url obj.id///p:\\@url *//">\\*//</a></div>
 \\~~
 
 <hr>

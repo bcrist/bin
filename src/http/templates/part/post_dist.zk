@@ -6,7 +6,7 @@
 \\;
         class="slimselect submitted_field"
 \\~
-        hx-post="\\post_prefix///dist\\@index.@exists/index?//:\\@index|index ~//"
+        hx-post="\\post_prefix///dist_pn\\@index.@exists/index?//:\\@index|index ~//"
         hx-trigger="ss:afterChange"
         hx-include=".submitted_field"
         hx-target="closest div.sortable_row"
