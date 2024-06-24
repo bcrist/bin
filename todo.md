@@ -2,6 +2,9 @@
 * Projects
 * Parameters
 * Files
+* Tags
+
+* don't allow multiple identical distributor PNs
 
 * When IDs change, any data files that reference the old ID need to be re-written, even if they're not modified
 * slimselect: Automatically compute the end year based on the current time
@@ -18,7 +21,6 @@
 * zkittle template fragments
 * zkittle vscode fix expression syntax highlighting
 
-* Merging multiple mfrs/locations/etc?
 * Keyboard shortcuts
 * recently modified items on landing page
 * git status on landing page

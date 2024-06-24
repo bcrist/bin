@@ -56,6 +56,8 @@ pub fn maybe_lookup(db: *const DB, mfr: ?Manufacturer.Index, possible_name: ?[]c
 pub fn lookup_or_create(db: *DB, mfr: ?Manufacturer.Index, id: []const u8) !Index {
     if (db.part_lookup.get(.{ mfr, id })) |idx| return idx;
     
+    if (!DB.is_valid_id(id)) return error.Invalid_ID;
+
     const idx: Index = @enumFromInt(db.parts.len);
     const now = std.time.milliTimestamp();
     const part = init_empty(mfr, try db.intern(id), now);

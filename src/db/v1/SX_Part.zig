@@ -8,12 +8,17 @@ created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
 
 const Manufacturer_And_Part = struct {
-    mfr: ?[]const u8 = "",
+    mfr: []const u8 = "_",
     id: []const u8 = "",
 
     pub const context = struct {
         pub const inline_fields = &.{ "mfr", "id" };
     };
+
+    pub fn get_mfr_idx(self: Manufacturer_And_Part, db: *DB) !?Manufacturer.Index {
+        if (self.mfr.len == 0 or std.mem.eql(u8, self.mfr, "_")) return null;
+        return try Manufacturer.lookup_or_create(db, self.mfr);
+    }
 };
 
 const Distributor_Part_Number = struct {
@@ -47,7 +52,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
     for (0.., db.parts.items(.parent)) |child_i, parent_idx| {
         if (parent_idx == idx) {
             try children.append(.{
-                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[@intFromEnum(mfr_idx)] else null,
+                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[@intFromEnum(mfr_idx)] else "_",
                 .id = ids[child_i],
             });
         }
@@ -64,12 +69,12 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
     }
 
     const id: Manufacturer_And_Part = .{
-        .mfr = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .mfr = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
         .id = data.id,
     };
 
     const parent: ?Manufacturer_And_Part = if (data.parent) |parent_idx| .{
-        .mfr = if (Part.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .mfr = if (Part.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
         .id = Part.get_id(db, parent_idx),
     } else null;
 
@@ -89,20 +94,11 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
 pub fn read(self: SX_Part, db: *DB) !void {
     const id = std.mem.trim(u8, self.id.id, &std.ascii.whitespace);
 
-    if (!DB.is_valid_id(id)) {
-        log.warn("Skipping Part {s} (invalid ID)", .{ id });
-        return;
-    }
-
-    var mfr_idx: ?Manufacturer.Index = null;
-    if (self.id.mfr) |mfr_id| {
-        mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
-    }
-
+    const mfr_idx = try self.id.get_mfr_idx(db);
     const idx = try Part.lookup_or_create(db, mfr_idx, id);
 
     if (self.parent) |parent| {
-        const parent_mfr_idx = if (parent.mfr) |mfr_id| try Manufacturer.lookup_or_create(db, mfr_id) else null;
+        const parent_mfr_idx = try parent.get_mfr_idx(db);
         const parent_idx = try Part.lookup_or_create(db, parent_mfr_idx, parent.id);
         _ = try Part.set_parent(db, idx, parent_idx);
     }

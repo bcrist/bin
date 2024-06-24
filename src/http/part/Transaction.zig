@@ -340,11 +340,13 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (self.fields.parent.is_removed()) {
         try Part.set_parent(db, idx, null);
         self.changes_applied = true;
-    } else if (self.fields.parent.is_changed() or self.parent_mfr.is_changed()) {
-        const parent_mfr_idx = Manufacturer.maybe_lookup(db, self.parent_mfr.future_opt());
-        const parent_idx = Part.maybe_lookup(db, parent_mfr_idx, self.fields.parent.future).?;
-        try Part.set_parent(db, idx, parent_idx);
-        self.changes_applied = true;
+    } else if (self.fields.parent.future_opt()) |parent_id| {
+        if (self.fields.parent.is_changed() or self.parent_mfr.is_changed()) {
+            const parent_mfr_idx = Manufacturer.maybe_lookup(db, self.parent_mfr.future_opt());
+            const parent_idx = Part.maybe_lookup(db, parent_mfr_idx, parent_id).?;
+            try Part.set_parent(db, idx, parent_idx);
+            self.changes_applied = true;
+        }
     }
 
     if (self.fields.pkg.is_removed()) {
@@ -443,12 +445,22 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
 
     switch (options.target) {
         .add, .edit => {
+            const dist_pns = try http.temp().alloc(common.Distributor_Part_Number, self.dist_pns.count());
+            for (dist_pns, self.dist_pns.values()) |*out, pn| {
+                out.* = .{
+                    .dist = pn.dist.future,
+                    .pn = pn.pn.future,
+                };
+            }
+
             const render_data = .{
                 .session = session,
                 .validating = true,
                 .valid = self.valid,
                 .obj = obj,
+                .mfr_id = obj.mfr,
                 .title = self.fields.id.future,
+                .dist_pns = dist_pns,
                 .post_prefix = post_prefix,
                 .cancel_url = "/p",
                 .id_qualifier_field = "mfr",
@@ -517,7 +529,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
     if (options.target == .parent_mfr or self.parent_mfr.is_changed()) {
         const render_data = .{
             .validating = true,
-            .saved = self.changes_applied,
+            .saved = self.changes_applied and self.fields.parent.future.len > 0,
             .valid = self.parent_mfr.valid,
             .err = if (self.parent_mfr.err.len > 0) self.parent_mfr.err else self.fields.parent.err,
             .err_parent = !self.fields.parent.valid,
@@ -617,6 +629,7 @@ const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
 const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
+const common = @import("../part.zig");
 const Field_Data = @import("../Field_Data.zig");
 const Session = @import("../../Session.zig");
 const Query_Param = http.Query_Iterator.Query_Param;

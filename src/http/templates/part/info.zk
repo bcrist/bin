@@ -30,6 +30,13 @@ Package: <a href="/pkg:\\@url pkg_id//">\\pkg_id//</a>
 <h2>Notes</h2>
 <div>\\p.notes//</div>
 \\~
+
+\\dist_pns?
+<h2>Distributor Part Numbers</h2>
+\\dist_pns:
+<div><a href="/dist:\\dist//">\\dist//</a>: \\pn//</div>
+\\~~
+
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>

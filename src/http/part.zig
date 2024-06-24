@@ -50,6 +50,14 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(children.items);
 
+    var dist_pns = try std.ArrayList(Distributor_Part_Number).initCapacity(http.temp(), part.dist_pns.items.len);
+    for (part.dist_pns.items) |pn| {
+        dist_pns.appendAssumeCapacity(.{
+            .dist = Distributor.get_id(db, pn.dist),
+            .pn = pn.pn,
+        });
+    }
+
     const DTO = tempora.Date_Time.With_Offset;
 
     const created_dto = DTO.from_timestamp_ms(part.created_timestamp_ms, tz);
@@ -60,7 +68,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         pub const modified = DTO.fmt_sql;
     };
 
-    try req.render("pkg/info.zk", .{
+    try req.render("part/info.zk", .{
         .session = session,
         .title = part.id,
         .obj = part,
@@ -68,6 +76,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .parent_mfr = parent_mfr_id,
         .mfr_id = mfr_id,
         .pkg_id = pkg_id,
+        .dist_pns = dist_pns.items,
         .children = children.items,
         .created = created_dto,
         .modified = modified_dto,
@@ -85,12 +94,18 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.redirect("/p", .see_other);
 }
 
+pub const Distributor_Part_Number = struct {
+    dist: []const u8,
+    pn: []const u8,
+};
+
 const log = std.log.scoped(.@"http.part");
 
 const Transaction = @import("part/Transaction.zig");
 const Part = DB.Part;
 const Package = DB.Package;
 const Manufacturer = DB.Manufacturer;
+const Distributor = DB.Distributor;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const sort = @import("../sort.zig");

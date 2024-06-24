@@ -1,5 +1,7 @@
 (version 1)
 (part Lattice LC4064ZC-75TN100I
+   (dist_pn DK asdf)
+   (dist_pn Mouser 23445234)
    (created "2024-06-23 05:09:33 +00:00")
-   (modified "2024-06-23 05:09:33 +00:00")
+   (modified "2024-06-23 22:06:19 +00:00")
 )

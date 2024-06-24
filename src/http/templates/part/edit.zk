@@ -7,7 +7,7 @@
 \\@include "part/add_or_edit_fields.zk"
 
 <h2>Distributor Part Numbers</h2>
-<div class="sortable" hx-post="/p:\\@url obj.id///dist_pns" hx-trigger="end" hx-include=".dist_pn_ordering">
+<div class="sortable" hx-post="\\mfr_id?///mfr:\\@url mfr_id ~///p:\\@url obj.id///dist_pns" hx-trigger="end" hx-include=".dist_pn_ordering">
 \\dist_pns:
 \\  @include "part/post_dist_pn.zk"
 \\~

@@ -39,11 +39,6 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Location.Index) !SX_Loc
 pub fn read(self: SX_Location, db: *DB) !void {
     const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
 
-    if (!DB.is_valid_id(id)) {
-        log.warn("Skipping Location {s} (invalid ID)", .{ id });
-        return;
-    }
-
     var full_name = self.full_name;
     if (self.full_name) |name| {
         if (std.mem.eql(u8, id, name)) {

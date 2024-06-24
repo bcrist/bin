@@ -57,7 +57,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         var options = try std.ArrayList(Option).initCapacity(http.temp(), results.len);
         for (results) |result| {
             options.appendAssumeCapacity(.{
-                .value = try result.item.name(db, http.temp()),
+                .value = Part.get_id(db, result.item.part),
                 .text = try result.item.name(db, http.temp()),
             });
         }
@@ -72,7 +72,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         });
         for (results) |result| {
             options.appendAssumeCapacity(.{
-                .value = try result.item.name(db, http.temp()),
+                .value = Part.get_id(db, result.item.part),
                 .text = try result.item.name(db, http.temp()),
             });
         }

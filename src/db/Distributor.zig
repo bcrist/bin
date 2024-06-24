@@ -53,6 +53,8 @@ pub fn lookup_multiple(db: *const DB, possible_names: []const []const u8) ?Index
 pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     if (db.dist_lookup.get(id)) |idx| return idx;
     
+    if (!DB.is_valid_id(id)) return error.Invalid_ID;
+
     const idx: Index = @enumFromInt(db.dists.len);
     const now = std.time.milliTimestamp();
     const dist = init_empty(try db.intern(id), now);
