@@ -2,8 +2,8 @@
 (mfr Motorola
    (wiki https://en.wikipedia.org/wiki/Motorola)
    (country USA)
-   (created "2024-05-05 21:22:01 +00:00")
-   (modified "2024-05-05 21:22:01 +00:00")
    (rel spun-off Freescale 2004)
    (rel spun-off Onsemi 1999)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
 )

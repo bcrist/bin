@@ -1,6 +1,0 @@
-(version 1)
-(pkg DIP-40 "DIP-40 (600mil)"
-   (parent DIP)
-   (created "2024-06-08 20:25:35 +00:00")
-   (modified "2024-06-08 23:37:19 +00:00")
-)

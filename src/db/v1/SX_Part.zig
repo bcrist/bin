@@ -128,15 +128,32 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     var dir = try root.makeOpenPath("p", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.parts.len, db.parts.items(.id), db.parts.items(.modified_timestamp_ms)) |i, id, modified_ts| {
-        const dest_path = try paths.unique_path(allocator, id, filenames);
+    const parents = db.parts.items(.parent);
+
+    // Make sure any dirty child parts also mark their root parts dirty:
+    for (0.., parents) |i, maybe_parent_idx| {
+        var root_idx = Part.Index.init(i);
+        if (!db.dirty_set.contains(root_idx.any())) continue;
+
+        var maybe_root_parent_idx = maybe_parent_idx;
+        while (maybe_root_parent_idx) |root_parent_idx| {
+            root_idx = root_parent_idx;
+            maybe_root_parent_idx = parents[root_idx.raw()];
+        }
+
+        try db.mark_dirty(root_idx);
+    }
+
+    for (0.., db.parts.items(.id), parents, db.parts.items(.mfr)) |i, id, maybe_parent_idx, maybe_mfr_idx| {
+        if (maybe_parent_idx != null) continue; // only write files for root parts
+
+        const mfr_id = if (maybe_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "";
+        const dest_path = try paths.unique_path2(allocator, mfr_id, id, filenames);
         const idx = Part.Index.init(i);
         
         if (!db.dirty_set.contains(idx.any())) continue;
 
-        const DTO = Date_Time.With_Offset;
-        const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
-        log.info("Writing p{s}{s} (modified {" ++ DTO.fmt_sql_ms ++ "})", .{ std.fs.path.sep_str, dest_path, modified_dto });
+        log.info("Writing p{s}{s}", .{ std.fs.path.sep_str, dest_path });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();
@@ -148,14 +165,24 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try sxw.int(1, 10);
         try sxw.close();
 
-        try sxw.expression_expanded("part");
-        try sxw.object(try SX_Part.init(allocator, db, idx), SX_Part.context);
-        try sxw.close();
+        try write_with_children(allocator, db, &sxw, idx);
 
         try af.finish();
     }
 
     try paths.delete_all_except(&dir, filenames.*, "p" ++ std.fs.path.sep_str);
+}
+
+pub fn write_with_children(allocator: std.mem.Allocator, db: *DB, sxw: *sx.Writer, idx: Part.Index) !void {
+    try sxw.expression_expanded("part");
+    try sxw.object(try SX_Part.init(allocator, db, idx), SX_Part.context);
+    try sxw.close();
+
+    for (0.., db.parts.items(.parent)) |i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            try write_with_children(allocator, db, sxw, Part.Index.init(i));
+        }
+    }
 }
 
 const log = std.log.scoped(.db);

@@ -1,10 +1,35 @@
 (version 1)
 (pkg DIP "Dual In-line Package"
+   (child DIP-14)
+   (child DIP-20)
    (child DIP-40)
    (child DIP-6)
    (child DIP-8)
-   (child DIP-14)
-   (child DIP-20)
    (created "2024-06-08 20:20:16 +00:00")
    (modified "2024-06-09 01:06:58 +00:00")
+)
+(pkg DIP-14
+   (parent DIP)
+   (created "2024-06-09 01:06:52 +00:00")
+   (modified "2024-06-09 01:06:52 +00:00")
+)
+(pkg DIP-20
+   (parent DIP)
+   (created "2024-06-09 01:06:58 +00:00")
+   (modified "2024-06-09 01:06:58 +00:00")
+)
+(pkg DIP-40 "DIP-40 (600mil)"
+   (parent DIP)
+   (created "2024-06-08 20:25:35 +00:00")
+   (modified "2024-06-08 23:37:19 +00:00")
+)
+(pkg DIP-6
+   (parent DIP)
+   (created "2024-06-09 01:06:14 +00:00")
+   (modified "2024-06-09 01:06:14 +00:00")
+)
+(pkg DIP-8
+   (parent DIP)
+   (created "2024-06-09 01:06:37 +00:00")
+   (modified "2024-06-09 01:06:37 +00:00")
 )

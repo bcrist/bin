@@ -2,7 +2,7 @@
 (mfr IR "International Rectifier"
    (wiki https://en.wikipedia.org/wiki/International_Rectifier)
    (country USA)
+   (rel absorbed-by Infineon 2014)
    (created "2024-05-05 21:22:01 +00:00")
    (modified "2024-05-05 21:22:01 +00:00")
-   (rel absorbed-by Infineon 2014)
 )

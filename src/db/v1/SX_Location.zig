@@ -64,15 +64,30 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     var dir = try root.makeOpenPath("loc", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.locs.len, db.locs.items(.id), db.locs.items(.modified_timestamp_ms)) |i, id, modified_ts| {
+    // Make sure any dirty child locations also mark their root locations dirty:
+    const parents = db.locs.items(.parent);
+    for (0.., parents) |i, maybe_parent_idx| {
+        var root_idx = Location.Index.init(i);
+        if (!db.dirty_set.contains(root_idx.any())) continue;
+
+        var maybe_root_parent_idx = maybe_parent_idx;
+        while (maybe_root_parent_idx) |root_parent_idx| {
+            root_idx = root_parent_idx;
+            maybe_root_parent_idx = parents[root_idx.raw()];
+        }
+
+        try db.mark_dirty(root_idx);
+    }
+
+    for (0.., db.locs.items(.id), db.locs.items(.parent)) |i, id, maybe_parent_idx| {
+        if (maybe_parent_idx != null) continue; // only write files for root locations
+
         const dest_path = try paths.unique_path(allocator, id, filenames);
         const idx = Location.Index.init(i);
         
         if (!db.dirty_set.contains(idx.any())) continue;
 
-        const DTO = Date_Time.With_Offset;
-        const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
-        log.info("Writing loc{s}{s} (modified {" ++ DTO.fmt_sql_ms ++ "})", .{ std.fs.path.sep_str, dest_path, modified_dto });
+        log.info("Writing loc{s}{s}", .{ std.fs.path.sep_str, dest_path });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();
@@ -84,14 +99,24 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try sxw.int(1, 10);
         try sxw.close();
 
-        try sxw.expression_expanded("loc");
-        try sxw.object(try SX_Location.init(allocator, db, idx), SX_Location.context);
-        try sxw.close();
+        try write_with_children(allocator, db, &sxw, idx);
 
         try af.finish();
     }
 
     try paths.delete_all_except(&dir, filenames.*, "loc" ++ std.fs.path.sep_str);
+}
+
+pub fn write_with_children(allocator: std.mem.Allocator, db: *DB, sxw: *sx.Writer, idx: Location.Index) !void {
+    try sxw.expression_expanded("loc");
+    try sxw.object(try SX_Location.init(allocator, db, idx), SX_Location.context);
+    try sxw.close();
+
+    for (0.., db.locs.items(.parent)) |i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            try write_with_children(allocator, db, sxw, Location.Index.init(i));
+        }
+    }
 }
 
 const log = std.log.scoped(.db);

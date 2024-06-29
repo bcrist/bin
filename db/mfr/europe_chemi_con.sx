@@ -2,7 +2,7 @@
 (mfr "Europe Chemi-Con"
    (url https://www.europechemicon.de/en/)
    (country Germany)
+   (rel subsidiary-of "Nippon Chemi-Con")
    (created "2024-05-05 21:22:01 +00:00")
    (modified "2024-05-05 21:22:01 +00:00")
-   (rel subsidiary-of "Nippon Chemi-Con")
 )

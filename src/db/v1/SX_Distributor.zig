@@ -116,15 +116,13 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     var dir = try root.makeOpenPath("dist", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.dists.len, db.dists.items(.id), db.dists.items(.modified_timestamp_ms)) |i, id, modified_ts| {
+    for (0..db.dists.len, db.dists.items(.id)) |i, id| {
         const dest_path = try paths.unique_path(allocator, id, filenames);
         const idx = Distributor.Index.init(i);
         
         if (!db.dirty_set.contains(idx.any())) continue;
 
-        const DTO = Date_Time.With_Offset;
-        const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
-        log.info("Writing dist{s}{s} (modified {" ++ DTO.fmt_sql_ms ++ "})", .{ std.fs.path.sep_str, dest_path, modified_dto });
+        log.info("Writing dist{s}{s}", .{ std.fs.path.sep_str, dest_path });
 
         var af = try dir.atomicFile(dest_path, .{});
         defer af.deinit();

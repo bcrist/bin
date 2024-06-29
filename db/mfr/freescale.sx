@@ -2,8 +2,8 @@
 (mfr Freescale "Freescale Semiconductor"
    (wiki https://en.wikipedia.org/wiki/Freescale_Semiconductor)
    (country USA)
-   (created "2024-05-05 21:22:01 +00:00")
-   (modified "2024-05-05 21:22:01 +00:00")
    (rel spun-off-from Motorola 2004)
    (rel absorbed-by NXP 2015)
+   (created "2024-05-05 21:22:01 +00:00")
+   (modified "2024-05-05 21:22:01 +00:00")
 )
