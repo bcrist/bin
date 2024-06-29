@@ -80,6 +80,10 @@ pub fn lookup_or_create(db: *DB, mfr: ?Manufacturer.Index, id: []const u8) !Inde
     return idx;
 }
 
+pub fn lookup_dist_pn(db: *const DB, dist: Distributor.Index, pn: []const u8) ?Index {
+    return db.dist_part_lookup.get(.{ dist, pn });
+}
+
 pub inline fn get(db: *const DB, idx: Index) Part {
     return db.parts.get(idx.raw());
 }

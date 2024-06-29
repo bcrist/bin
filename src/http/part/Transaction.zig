@@ -164,8 +164,9 @@ pub fn validate(self: *Transaction) !void {
     try self.validate_parent();
     try self.validate_pkg();
 
-    for (self.dist_pns.keys(), self.dist_pns.values()) |dist_pn_index, *dist_pn| {
-        try self.validate_dist_pn(dist_pn_index, dist_pn);
+    const dist_pns = self.dist_pns.values();
+    for (0.., self.dist_pns.keys(), dist_pns) |i, dist_pn_index, *dist_pn| {
+        try self.validate_dist_pn(dist_pn_index, dist_pn, dist_pns[0..i]);
     }
 }
 
@@ -198,7 +199,19 @@ fn validate_id(self: *Transaction) !void {
         if (self.idx == null or existing_idx != self.idx.?) {
             log.debug("Invalid ID (in use): {s}", .{ self.fields.id.future });
             const existing_id = Part.get_id(self.db, existing_idx);
-            self.fields.id.err = try http.tprint("In use by <a href=\"/p:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(existing_id), existing_id });
+            const maybe_existing_mfr_idx = Part.get_mfr(self.db, existing_idx);
+            if (maybe_existing_mfr_idx) |existing_mfr_idx| {
+                self.fields.id.err = try http.tprint("In use by <a href=\"/mfr:{}/p:{}\" target=\"_blank\">{s}</a>", .{
+                    http.fmtForUrl(Manufacturer.get_id(existing_mfr_idx)),
+                    http.fmtForUrl(existing_id),
+                    existing_id,
+                });
+            } else {
+                self.fields.id.err = try http.tprint("In use by <a href=\"/p:{}\" target=\"_blank\">{s}</a>", .{
+                    http.fmtForUrl(existing_id),
+                    existing_id,
+                });
+            }
             self.fields.id.valid = false;
             self.valid = false;
             return;
@@ -260,7 +273,7 @@ fn validate_pkg(self: *Transaction) !void {
     self.fields.pkg.future = Package.get_id(self.db, pkg_idx);
 }
 
-fn validate_dist_pn(self: *Transaction, index_str: []const u8, dist_pn: *Distributor_Part_Number_Data) !void {
+fn validate_dist_pn(self: *Transaction, index_str: []const u8, dist_pn: *Distributor_Part_Number_Data, prev_dist_pns: []const Distributor_Part_Number_Data) !void {
     const fields_processed = dist_pn.fields_processed();
     if (fields_processed == 0) return;
     if (fields_processed != 2) {
@@ -273,15 +286,49 @@ fn validate_dist_pn(self: *Transaction, index_str: []const u8, dist_pn: *Distrib
     if (dist_pn.dist.future.len == 0) return;
     if (dist_pn.pn.future.len == 0) return;
 
-    if (Distributor.maybe_lookup(self.db, dist_pn.dist.future)) |other_idx| {
-        dist_pn.dist.future = Distributor.get_id(self.db, other_idx);
+    if (Distributor.maybe_lookup(self.db, dist_pn.dist.future)) |dist_idx| {
+        dist_pn.dist.future = Distributor.get_id(self.db, dist_idx);
+        if (Part.lookup_dist_pn(self.db, dist_idx, dist_pn.pn.future)) |existing_part_idx| {
+            if (self.idx != existing_part_idx) {
+                log.debug("Invalid distributor part number (in use): {s} {s}", .{ dist_pn.dist.future, dist_pn.pn.future });
+                const existing_part_id = Part.get_id(self.db, existing_part_idx);
+                const maybe_existing_mfr_idx = Part.get_mfr(self.db, existing_part_idx);
+                if (maybe_existing_mfr_idx) |existing_mfr_idx| {
+                    dist_pn.pn.err = try http.tprint("In use by <a href=\"/mfr:{}/p:{}\" target=\"_blank\">{s}</a>", .{
+                        http.fmtForUrl(Manufacturer.get_id(existing_mfr_idx)),
+                        http.fmtForUrl(existing_part_id),
+                        existing_part_id,
+                    });
+                } else {
+                    dist_pn.pn.err = try http.tprint("In use by <a href=\"/p:{}\" target=\"_blank\">{s}</a>", .{
+                        http.fmtForUrl(existing_part_id),
+                        existing_part_id,
+                    });
+                }
+                dist_pn.err = dist_pn.pn.err;
+                dist_pn.pn.valid = false;
+                dist_pn.valid = false;
+                self.valid = false;
+                return;
+            }
+        }
     } else {
         log.debug("Distributor not found: {s}", .{ dist_pn.dist.future });
         dist_pn.dist.err = "Distributor not found";
-        dist_pn.dist.valid = false;
         dist_pn.err = dist_pn.dist.err;
+        dist_pn.dist.valid = false;
         dist_pn.valid = false;
         self.valid = false;
+        return;
+    }
+
+    for (prev_dist_pns) |prev_pn| {
+        if (!prev_pn.valid) continue;
+        if (!std.mem.eql(u8, dist_pn.dist.future, prev_pn.dist.future)) continue;
+        if (!std.ascii.eqlIgnoreCase(dist_pn.pn.future, prev_pn.pn.future)) continue;
+
+        dist_pn.dist.future.len = 0;
+        dist_pn.pn.future.len = 0;
     }
 }
 

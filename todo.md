@@ -4,7 +4,6 @@
 * Parameters
 * Files
 
-* don't allow multiple identical distributor PNs
 * Don't use slimselect for package/location parents, package mfr, or mfr relation.other - do like for for main search bar
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
