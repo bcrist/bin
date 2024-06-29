@@ -57,7 +57,12 @@ fn append_safe_path(id: []const u8, buf: []u8, prev_was_underscore: bool) []cons
     for (id) |c| {
         if (i == buf.len) break;
         switch (c) {
-            'a'...'z', 'A'...'Z', '0'...'9' => {
+            'A'...'Z' => {
+                buf[i] = std.ascii.toLower(c);
+                i += 1;
+                last_was_underscore = false;
+            },
+            'a'...'z', '0'...'9' => {
                 buf[i] = c;
                 i += 1;
                 last_was_underscore = false;
