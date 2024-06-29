@@ -22,6 +22,19 @@ pub const Index = enum (u32) {
     _,
 
     pub const Type = Part;
+    
+    pub inline fn init(i: usize) Index {
+        const raw_i: u32 = @intCast(i);
+        return @enumFromInt(raw_i);
+    }
+
+    pub inline fn any(self: Index) DB.Any_Index {
+        return DB.Any_Index.init(self);
+    }
+
+    pub inline fn raw(self: Index) u32 {
+        return @intFromEnum(self);
+    }
 };
 
 pub const Distributor_Part_Number = struct {
@@ -58,37 +71,37 @@ pub fn lookup_or_create(db: *DB, mfr: ?Manufacturer.Index, id: []const u8) !Inde
     
     if (!DB.is_valid_id(id)) return error.Invalid_ID;
 
-    const idx: Index = @enumFromInt(db.parts.len);
+    const idx = Index.init(db.parts.len);
     const now = std.time.milliTimestamp();
     const part = init_empty(mfr, try db.intern(id), now);
     try db.parts.append(db.container_alloc, part);
     try db.part_lookup.putNoClobber(db.container_alloc, .{ mfr, part.id }, idx);
-    db.mark_dirty(now);
+    try db.mark_dirty(idx);
     return idx;
 }
 
 pub inline fn get(db: *const DB, idx: Index) Part {
-    return db.parts.get(@intFromEnum(idx));
+    return db.parts.get(idx.raw());
 }
 
 pub inline fn get_mfr(db: *const DB, idx: Index) ?Manufacturer.Index {
-    return db.parts.items(.mfr)[@intFromEnum(idx)];
+    return db.parts.items(.mfr)[idx.raw()];
 }
 
 pub inline fn get_id(db: *const DB, idx: Index) []const u8 {
-    return db.parts.items(.id)[@intFromEnum(idx)];
+    return db.parts.items(.id)[idx.raw()];
 }
 
 pub inline fn get_parent(db: *const DB, idx: Index) ?Index {
-    return db.parts.items(.parent)[@intFromEnum(idx)];
+    return db.parts.items(.parent)[idx.raw()];
 }
 
 pub inline fn get_dist_pns(db: *const DB, idx: Index) []const Distributor_Part_Number {
-    return db.parts.items(.dist_pns)[@intFromEnum(idx)];
+    return db.parts.items(.dist_pns)[idx.raw()];
 }
 
 pub inline fn get_pkg(db: *const DB, idx: Index) ?Package.Index {
-    return db.parts.items(.pkg)[@intFromEnum(idx)];
+    return db.parts.items(.pkg)[idx.raw()];
 }
 
 pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
@@ -98,7 +111,7 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
     while (maybe_idx) |idx| {
         if (idx == ancestor_idx) return true;
 
-        const i = @intFromEnum(idx);
+        const i = idx.raw();
         if (depth > 1000) {
             log.warn("Too many part ancestors; probably recursive parent chain involving {s}", .{
                 db.parts.items(.id)[i],
@@ -113,17 +126,15 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
 }
 
 pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
 
     const parents = db.parts.items(.parent);
-    for (0.., parents) |child_idx, maybe_parent_idx| {
-        if (maybe_parent_idx) |parent_idx| {
-            if (parent_idx == idx) {
-                if (recursive) {
-                    try delete(db, @enumFromInt(child_idx), true);
-                } else {
-                    try set_parent(db, @enumFromInt(child_idx), null);
-                }
+    for (0.., parents) |child_i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            if (recursive) {
+                try delete(db, Index.init(child_i), true);
+            } else {
+                try set_parent(db, Index.init(child_i), null);
             }
         }
     }
@@ -135,17 +146,16 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
 
     db.parts.items(.dist_pns)[i].deinit(db.container_alloc);
 
-    if (parents[@intFromEnum(idx)]) |parent_idx| {
-        set_modified(db, parent_idx);
+    if (parents[idx.raw()]) |parent_idx| {
+        try db.mark_dirty(parent_idx);
     }
 
-    const now = std.time.milliTimestamp();
-    db.parts.set(i, init_empty(null, "", now));
-    db.mark_dirty(now);
+    db.parts.set(i, init_empty(null, "", std.time.milliTimestamp()));
+    try db.mark_dirty(idx);
 }
 
 pub fn set_id(db: *DB, idx: Index, mfr_idx: ?Manufacturer.Index, id: []const u8) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const mfrs = db.parts.items(.mfr);
     const ids = db.parts.items(.id);
     const old_mfr = mfrs[i];
@@ -159,7 +169,15 @@ pub fn set_id(db: *DB, idx: Index, mfr_idx: ?Manufacturer.Index, id: []const u8)
     try db.part_lookup.putNoClobber(db.container_alloc, .{ mfr_idx, new_id }, idx);
     mfrs[i] = mfr_idx;
     ids[i] = new_id;
-    set_modified(db, idx);
+    try set_modified(db, idx);
+
+    if (db.loading) return;
+
+    for (0.., db.parts.items(.parent)) |child_i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            try db.mark_dirty(Index.init(child_i));
+        }
+    }
 }
 
 pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
@@ -175,23 +193,23 @@ pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const created_timestamps = db.parts.items(.created_timestamp_ms);
     if (timestamp_ms == created_timestamps[i]) return;
     created_timestamps[i] = timestamp_ms;
-    set_modified(db, idx);
+    try set_modified(db, idx);
 }
 
 pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const modified_timestamps = db.parts.items(.modified_timestamp_ms);
     if (timestamp_ms == modified_timestamps[i]) return;
     modified_timestamps[i] = timestamp_ms;
-    db.mark_dirty(timestamp_ms);
+    try db.mark_dirty(idx);
 }
 
 pub fn add_dist_pn(db: *DB, idx: Index, pn: Distributor_Part_Number) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged(Distributor_Part_Number) = &db.parts.items(.dist_pns)[i];
 
     for (list.items) |existing_pn| {
@@ -207,18 +225,18 @@ pub fn add_dist_pn(db: *DB, idx: Index, pn: Distributor_Part_Number) !void {
         .pn = interned_pn,
     });
 
-    set_modified(db, idx);
+    try set_modified(db, idx);
 }
 
 pub fn remove_dist_pn(db: *DB, idx: Index, pn: Distributor_Part_Number) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged(Distributor_Part_Number) = &db.parts.items(.dist_pns)[i];
     
     for (0.., list.items) |list_index, existing_pn| {
         if (existing_pn.eql(pn)) {
             _ = list.orderedRemove(list_index);
             std.debug.assert(db.dist_part_lookup.remove(.{ pn.dist, pn.pn }));
-            set_modified(db, idx);
+            try set_modified(db, idx);
             break;
         }
     }
@@ -227,7 +245,7 @@ pub fn remove_dist_pn(db: *DB, idx: Index, pn: Distributor_Part_Number) !void {
 pub fn edit_dist_pn(db: *DB, idx: Index, old: Distributor_Part_Number, new: Distributor_Part_Number) !void {
     if (old.eql(new)) return;
 
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged(Distributor_Part_Number) = &db.parts.items(.dist_pns)[i];
     
     for (0.., list.items) |list_index, existing_pn| {
@@ -239,7 +257,7 @@ pub fn edit_dist_pn(db: *DB, idx: Index, old: Distributor_Part_Number, new: Dist
                 .dist = new.dist,
                 .pn = interned_pn,
             };
-            set_modified(db, idx);
+            try set_modified(db, idx);
             break;
         }
     }
@@ -249,8 +267,8 @@ fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.
     try db.set_optional(Part, idx, field, T, raw);
 }
 
-fn set_modified(db: *DB, idx: Index) void {
-    db.maybe_set_modified(idx);
+fn set_modified(db: *DB, idx: Index) !void {
+    try db.maybe_set_modified(idx);
 }
 
 const log = std.log.scoped(.db);

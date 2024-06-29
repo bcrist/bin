@@ -28,7 +28,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         } else {
             const results = try search.query(db, http.temp(), q, .{ .max_results = 1 });
             if (results.len > 0) {
-                try req.redirect(try results[0].item.url(db, http.temp()), .see_other);
+                try req.redirect(try results[0].url(db, http.temp()), .see_other);
                 return;
             }
         }
@@ -40,7 +40,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         var options = try std.ArrayList(Option).initCapacity(http.temp(), results.len);
         for (results) |result| {
             options.appendAssumeCapacity(.{
-                .value = try result.item.url(db, http.temp()),
+                .value = try result.url(db, http.temp()),
                 .text = try result.item.name(db, http.temp()),
             });
         }
@@ -50,7 +50,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
         var options = try std.ArrayList(slimselect.Option).initCapacity(http.temp(), results.len);
         for (results) |result| {
             options.appendAssumeCapacity(.{
-                .value = try result.item.url(db, http.temp()),
+                .value = try result.url(db, http.temp()),
                 .text = try result.item.name(db, http.temp()),
             });
         }

@@ -22,6 +22,19 @@ pub const Index = enum (u32) {
     _,
 
     pub const Type = Package;
+    
+    pub inline fn init(i: usize) Index {
+        const raw_i: u32 = @intCast(i);
+        return @enumFromInt(raw_i);
+    }
+
+    pub inline fn any(self: Index) DB.Any_Index {
+        return DB.Any_Index.init(self);
+    }
+
+    pub inline fn raw(self: Index) u32 {
+        return @intFromEnum(self);
+    }
 };
 
 pub fn init_empty(id: []const u8, timestamp_ms: i64) Package {
@@ -56,37 +69,37 @@ pub fn lookup_or_create(db: *DB, id: []const u8) !Index {
     
     if (!DB.is_valid_id(id)) return error.Invalid_ID;
 
-    const idx: Index = @enumFromInt(db.pkgs.len);
+    const idx = Index.init(db.pkgs.len);
     const now = std.time.milliTimestamp();
     const pkg = init_empty(try db.intern(id), now);
     try db.pkgs.append(db.container_alloc, pkg);
     try db.pkg_lookup.putNoClobber(db.container_alloc, pkg.id, idx);
-    db.mark_dirty(now);
+    try db.mark_dirty(idx);
     return idx;
 }
 
 pub inline fn get(db: *const DB, idx: Index) Package {
-    return db.pkgs.get(@intFromEnum(idx));
+    return db.pkgs.get(idx.raw());
 }
 
 pub inline fn get_id(db: *const DB, idx: Index) []const u8 {
-    return db.pkgs.items(.id)[@intFromEnum(idx)];
+    return db.pkgs.items(.id)[idx.raw()];
 }
 
 pub inline fn get_full_name(db: *const DB, idx: Index) ?[]const u8 {
-    return db.pkgs.items(.full_name)[@intFromEnum(idx)];
+    return db.pkgs.items(.full_name)[idx.raw()];
 }
 
 pub inline fn get_parent(db: *const DB, idx: Index) ?Index {
-    return db.pkgs.items(.parent)[@intFromEnum(idx)];
+    return db.pkgs.items(.parent)[idx.raw()];
 }
 
 pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8 {
-    return db.pkgs.items(.additional_names)[@intFromEnum(idx)].items;
+    return db.pkgs.items(.additional_names)[idx.raw()].items;
 }
 
 pub inline fn get_mfr(db: *const DB, idx: Index) ?Manufacturer.Index {
-    return db.pkgs.items(.mfr)[@intFromEnum(idx)];
+    return db.pkgs.items(.mfr)[idx.raw()];
 }
 
 pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bool {
@@ -96,7 +109,7 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
     while (maybe_idx) |idx| {
         if (idx == ancestor_idx) return true;
 
-        const i = @intFromEnum(idx);
+        const i = idx.raw();
         if (depth > 1000) {
             log.warn("Too many package ancestors; probably recursive parent chain involving {s}", .{
                 db.pkgs.items(.id)[i],
@@ -111,23 +124,21 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
 }
 
 pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
-    for (0.., db.parts.items(.pkg)) |part_idx, maybe_pkg_idx| {
+    for (0.., db.parts.items(.pkg)) |part_i, maybe_pkg_idx| {
         if (maybe_pkg_idx == idx) {
-            try Part.set_pkg(db, @enumFromInt(part_idx), null);
+            try Part.set_pkg(db, Part.Index.init(part_i), null);
         }
     }
 
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
 
     const parents = db.pkgs.items(.parent);
-    for (0.., parents) |child_idx, maybe_parent_idx| {
-        if (maybe_parent_idx) |parent_idx| {
-            if (parent_idx == idx) {
-                if (recursive) {
-                    try delete(db, @enumFromInt(child_idx), true);
-                } else {
-                    try set_parent(db, @enumFromInt(child_idx), null);
-                }
+    for (0.., parents) |child_i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            if (recursive) {
+                try delete(db, Index.init(child_i), true);
+            } else {
+                try set_parent(db, Index.init(child_i), null);
             }
         }
     }
@@ -144,17 +155,16 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     }
     additional_names.deinit(db.container_alloc);
 
-    if (parents[@intFromEnum(idx)]) |parent_idx| {
-        set_modified(db, parent_idx);
+    if (parents[idx.raw()]) |parent_idx| {
+        try db.mark_dirty(parent_idx);
     }
 
-    const now = std.time.milliTimestamp();
-    db.pkgs.set(i, init_empty("", now));
-    db.mark_dirty(now);
+    db.pkgs.set(i, init_empty("", std.time.milliTimestamp()));
+    try db.mark_dirty(idx);
 }
 
 pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const ids = db.pkgs.items(.id);
     const old_id = ids[i];
     if (std.mem.eql(u8, id, old_id)) return;
@@ -165,11 +175,25 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
     std.debug.assert(db.pkg_lookup.remove(old_id));
     try db.pkg_lookup.putNoClobber(db.container_alloc, new_id, idx);
     ids[i] = new_id;
-    set_modified(db, idx);
+    try set_modified(db, idx);
+
+    if (db.loading) return;
+
+    for (0.., db.pkgs.items(.parent)) |child_i, maybe_parent_idx| {
+        if (maybe_parent_idx == idx) {
+            try db.mark_dirty(Index.init(child_i));
+        }
+    }
+
+    for (0.., db.parts.items(.pkg)) |part_i, maybe_pkg_idx| {
+        if (maybe_pkg_idx == idx) {
+            try db.mark_dirty(Part.Index.init(part_i));
+        }
+    }
 }
 
 pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const full_names = db.pkgs.items(.full_name);
     const old_name = full_names[i];
     try set_optional([]const u8, db, idx, .full_name, full_name);
@@ -197,25 +221,25 @@ pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const created_timestamps = db.pkgs.items(.created_timestamp_ms);
     if (timestamp_ms == created_timestamps[i]) return;
     created_timestamps[i] = timestamp_ms;
-    set_modified(db, idx);
+    try set_modified(db, idx);
 }
 
 pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const modified_timestamps = db.pkgs.items(.modified_timestamp_ms);
     if (timestamp_ms == modified_timestamps[i]) return;
     modified_timestamps[i] = timestamp_ms;
-    db.mark_dirty(timestamp_ms);
+    try db.mark_dirty(idx);
 }
 
 pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []const u8) !void {
     if (additional_names.len == 0) return;
 
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
     try list.ensureUnusedCapacity(db.container_alloc, additional_names.len);
 
@@ -228,7 +252,7 @@ pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []con
                 const ids = db.pkgs.items(.id);
                 log.err("Ignoring additional name \"{}\" for package \"{}\" because it is already associated with \"{}\"", .{
                     std.zig.fmtEscapes(raw_name),
-                    std.zig.fmtEscapes(ids[@intFromEnum(idx)]),
+                    std.zig.fmtEscapes(ids[idx.raw()]),
                     std.zig.fmtEscapes(ids[@intFromEnum(gop.value_ptr.*)]),
                 });
             }
@@ -242,12 +266,12 @@ pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []con
     }
 
     if (added_name) {
-        set_modified(db, idx);
+        try set_modified(db, idx);
     }
 }
 
 pub fn remove_additional_name(db: *DB, idx: Index, additional_name: []const u8) !void {
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
     
     for (0.., list.items) |list_index, name| {
@@ -258,7 +282,7 @@ pub fn remove_additional_name(db: *DB, idx: Index, additional_name: []const u8) 
         }
     } else return;
 
-    set_modified(db, idx);
+    try set_modified(db, idx);
 }
 
 pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_name: []const u8) !void {
@@ -267,7 +291,7 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
     const interned = try db.intern(new_name);
     try db.pkg_lookup.putNoClobber(db.container_alloc, interned, idx);
 
-    const i = @intFromEnum(idx);
+    const i = idx.raw();
     const list: *std.ArrayListUnmanaged([]const u8) = &db.pkgs.items(.additional_names)[i];
     
     for (0.., list.items) |list_index, name| {
@@ -280,15 +304,15 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
         try list.append(db.container_alloc, interned);
     }
 
-    set_modified(db, idx);
+    try set_modified(db, idx);
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
     try db.set_optional(Package, idx, field, T, raw);
 }
 
-inline fn set_modified(db: *DB, idx: Index) void {
-    db.maybe_set_modified(idx);
+inline fn set_modified(db: *DB, idx: Index) !void {
+    try db.maybe_set_modified(idx);
 }
 
 const log = std.log.scoped(.db);

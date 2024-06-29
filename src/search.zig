@@ -1,33 +1,13 @@
-pub const Result_Item = union (enum) {
-    mfr: DB.Manufacturer.Index,
-    dist: DB.Distributor.Index,
-    part: DB.Part.Index,
-    //order: DB.Order.Index,
-    //prj: DB.Project.Index,
-    pkg: DB.Package.Index,
-    loc: DB.Location.Index,
+pub const Result = struct {
+    relevance: f64, 
+    item: DB.Any_Index,
 
-    pub fn name(self: Result_Item, db: *const DB, arena: std.mem.Allocator) ![]const u8 {
-        return switch (self) {
-            .mfr => |idx| DB.Manufacturer.get_id(db, idx),
-            .dist => |idx| DB.Distributor.get_id(db, idx),
-            .part => |idx| {
-                const id = DB.Part.get_id(db, idx);
-                if (DB.Part.get_mfr(db, idx)) |mfr_idx| {
-                    const mfr_id = DB.Manufacturer.get_id(db, mfr_idx);
-                    return try std.fmt.allocPrint(arena, "{s} {s}", .{ mfr_id, id });
-                }
-                return id;
-            },
-            // .order: DB.Order.Index,
-            // .prj: DB.Project.Index,
-            .pkg => |idx| DB.Package.get_id(db, idx),
-            .loc => |idx| DB.Location.get_id(db, idx),
-        };
+    pub fn order(_: void, a: Result, b: Result) bool {
+        return a.relevance > b.relevance;
     }
 
-    pub fn url(self: Result_Item, db: *const DB, arena: std.mem.Allocator) ![]const u8 {
-        switch (self) {
+    pub fn url(self: Result, db: *const DB, arena: std.mem.Allocator) ![]const u8 {
+        switch (self.item) {
             .mfr => |idx| {
                 return try std.fmt.allocPrint(arena, "/mfr:{}", .{
                     http.fmtForUrl(DB.Manufacturer.get_id(db, idx)),
@@ -65,15 +45,6 @@ pub const Result_Item = union (enum) {
     }
 };
 
-pub const Result = struct {
-    relevance: f64, 
-    item: Result_Item,
-
-    pub fn order(_: void, a: Result, b: Result) bool {
-        return a.relevance > b.relevance;
-    }
-};
-
 pub const Query_Options = struct {
     max_results: ?usize = null,
     enable_by_kind: ?struct {
@@ -106,7 +77,7 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         var iter = db.mfr_lookup.iterator();
         while (iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
-                try items.update(.{ .mfr = entry.value_ptr.* }, relevance + bonus_relevance);
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }
     }
@@ -122,7 +93,7 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         var iter = db.dist_lookup.iterator();
         while (iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
-                try items.update(.{ .dist = entry.value_ptr.* }, relevance + bonus_relevance);
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }
     }
@@ -138,7 +109,7 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         var iter = db.part_lookup.iterator();
         while (iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.@"1")) |relevance| {
-                try items.update(.{ .part = entry.value_ptr.* }, relevance + bonus_relevance);
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }
     }
@@ -154,7 +125,7 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         var name_iter = db.pkg_lookup.iterator();
         while (name_iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
-                try items.update(.{ .pkg = entry.value_ptr.* }, relevance + bonus_relevance);
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }
     }
@@ -170,7 +141,7 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         var name_iter = db.loc_lookup.iterator();
         while (name_iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
-                try items.update(.{ .loc = entry.value_ptr.* }, relevance + bonus_relevance);
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }
     }
@@ -191,11 +162,11 @@ fn name_relevance(q: []const u8, name: []const u8) ?f64 {
 }
 
 const Relevance_Data = struct {
-    relevances: std.AutoHashMap(Result_Item, f64),
+    relevances: std.AutoHashMap(DB.Any_Index, f64),
 
     pub fn init(allocator: std.mem.Allocator) Relevance_Data {
         return .{
-            .relevances = std.AutoHashMap(Result_Item, f64).init(allocator),
+            .relevances = std.AutoHashMap(DB.Any_Index, f64).init(allocator),
         };
     }
 
@@ -203,7 +174,7 @@ const Relevance_Data = struct {
         self.relevances.deinit();
     }
 
-    pub fn update(self: *Relevance_Data, item: Result_Item, relevance: f64) !void {
+    pub fn update(self: *Relevance_Data, item: DB.Any_Index, relevance: f64) !void {
         const result = try self.relevances.getOrPut(item);
         if (result.found_existing) {
             if (relevance > result.value_ptr.*) {

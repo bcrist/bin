@@ -125,15 +125,14 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     try filenames.ensureUnusedCapacity(@intCast(db.parts.len));
     defer filenames.clearRetainingCapacity();
 
-    const dirty_timestamp_ms = db.dirty_timestamp_ms orelse std.time.milliTimestamp();
-
     var dir = try root.makeOpenPath("p", .{ .iterate = true });
     defer dir.close();
 
     for (0..db.parts.len, db.parts.items(.id), db.parts.items(.modified_timestamp_ms)) |i, id, modified_ts| {
         const dest_path = try paths.unique_path(allocator, id, filenames);
+        const idx = Part.Index.init(i);
         
-        if (modified_ts < dirty_timestamp_ms) continue;
+        if (!db.dirty_set.contains(idx.any())) continue;
 
         const DTO = Date_Time.With_Offset;
         const modified_dto = DTO.from_timestamp_ms(modified_ts, null);
@@ -150,7 +149,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try sxw.close();
 
         try sxw.expression_expanded("part");
-        try sxw.object(try SX_Part.init(allocator, db, @enumFromInt(i)), SX_Part.context);
+        try sxw.object(try SX_Part.init(allocator, db, idx), SX_Part.context);
         try sxw.close();
 
         try af.finish();

@@ -2,8 +2,8 @@ arena: std.heap.ArenaAllocator,
 container_alloc: std.mem.Allocator,
 
 loading: bool = false,
-dirty_timestamp_ms: ?i64 = null,
 last_modification_timestamp_ms: ?i64 = null,
+dirty_set: std.AutoArrayHashMapUnmanaged(Any_Index, void) = .{},
 
 strings: std.StringHashMapUnmanaged(void) = .{},
 
@@ -34,6 +34,49 @@ pub const Project = @import("db/Project.zig");
 pub const Package = @import("db/Package.zig");
 pub const Location = @import("db/Location.zig");
 
+pub const Any_Index = union (enum) {
+    mfr: Manufacturer.Index,
+    dist: Distributor.Index,
+    part: Part.Index,
+    //order: Order.Index,
+    //prj: Project.Index,
+    pkg: Package.Index,
+    loc: Location.Index,
+
+    pub fn init(index: anytype) Any_Index {
+        return switch (@TypeOf(index).Type) {
+            Any_Index => index,
+            Manufacturer => .{ .mfr = index },
+            Distributor => .{ .dist = index },
+            Part => .{ .part = index },
+            // Order => .{ .order = index },
+            // Project => .{ .prj = index },
+            Package => .{ .pkg = index },
+            Location => .{ .loc = index },
+            else => unreachable,
+        };
+    }
+
+    pub fn name(self: Any_Index, db: *const DB, arena: std.mem.Allocator) ![]const u8 {
+        return switch (self) {
+            .mfr => |idx| Manufacturer.get_id(db, idx),
+            .dist => |idx| Distributor.get_id(db, idx),
+            .part => |idx| {
+                const id = Part.get_id(db, idx);
+                if (Part.get_mfr(db, idx)) |mfr_idx| {
+                    const mfr_id = DB.Manufacturer.get_id(db, mfr_idx);
+                    return try std.fmt.allocPrint(arena, "{s} {s}", .{ mfr_id, id });
+                }
+                return id;
+            },
+            // .order: Order.Index,
+            // .prj: Project.Index,
+            .pkg => |idx| Package.get_id(db, idx),
+            .loc => |idx| Location.get_id(db, idx),
+        };
+    }
+};
+
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
 
@@ -63,8 +106,9 @@ pub fn deinit(self: *DB) void {
 
     self.strings.deinit(gpa);
     
+    self.dirty_set.deinit(gpa);
+
     self.arena.deinit();
-    self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
     self.loading = false;
 }
@@ -98,33 +142,11 @@ pub fn reset(self: *DB) void {
 
     self.strings.clearRetainingCapacity();
 
+    self.dirty_set.clearRetainingCapacity();
+
     self.arena.reset(.retain_capacity);
-    self.dirty_timestamp_ms = null;
     self.last_modification_timestamp_ms = null;
     self.loading = false;
-}
-
-/// This should only be necessary after importing with .loading = true;
-/// otherwise mark_dirty() will keep it up-to-date.
-pub fn recompute_last_modification_time(self: *DB) void {
-    var last_mod: i64 = 0;
-    for (self.mfrs.items(.modified_timestamp_ms)) |ts| {
-        if (ts > last_mod) last_mod = ts;
-    }
-    for (self.dists.items(.modified_timestamp_ms)) |ts| {
-        if (ts > last_mod) last_mod = ts;
-    }
-    for (self.locs.items(.modified_timestamp_ms)) |ts| {
-        if (ts > last_mod) last_mod = ts;
-    }
-    for (self.pkgs.items(.modified_timestamp_ms)) |ts| {
-        if (ts > last_mod) last_mod = ts;
-    }
-    for (self.parts.items(.modified_timestamp_ms)) |ts| {
-        if (ts > last_mod) last_mod = ts;
-    }
-    log.debug("Updated last modification time to {}", .{ last_mod });
-    self.last_modification_timestamp_ms = last_mod;
 }
 
 fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
@@ -215,26 +237,36 @@ fn parse_data(self: *DB, reader: *sx.Reader) !void {
 }
 
 pub fn export_data(self: *DB, dir: *std.fs.Dir) !void {
-    const dirty_timestamp_ms = self.dirty_timestamp_ms orelse std.time.milliTimestamp();
-    const DTO = tempora.Date_Time.With_Offset;
-    const dirty_timestamp = DTO.from_timestamp_ms(dirty_timestamp_ms, null);
-    log.info("Writing data modified after {" ++ DTO.fmt_sql_ms ++ "}", .{ dirty_timestamp });
+    if (self.dirty_set.count() == 0) return;
     try v1.write_data(self, dir);
-    self.dirty_timestamp_ms = null;
+    self.dirty_set.clearRetainingCapacity();
 }
 
-pub fn mark_dirty(self: *DB, timestamp_ms: i64) void {
-    if (self.loading) return;
-
-    if (self.dirty_timestamp_ms) |dirty| {
-        if (timestamp_ms < dirty) {
-            log.debug("Updated dirty time to {}", .{ timestamp_ms });
-            self.dirty_timestamp_ms = timestamp_ms;
-        }
-    } else {
-        log.debug("Updated dirty time to {}", .{ timestamp_ms });
-        self.dirty_timestamp_ms = timestamp_ms;
+/// This should only be necessary after importing with .loading = true;
+/// otherwise update_modification_time() will keep it up-to-date.
+pub fn recompute_last_modification_time(self: *DB) void {
+    var last_mod: i64 = 0;
+    for (self.mfrs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
     }
+    for (self.dists.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.locs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.pkgs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.parts.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    log.debug("Updated last modification time to {}", .{ last_mod });
+    self.last_modification_timestamp_ms = last_mod;
+}
+
+pub fn update_modification_time(self: *DB, timestamp_ms: i64) void {
+    if (self.loading) return;
 
     if (self.last_modification_timestamp_ms) |last| {
         if (timestamp_ms <= last) return;
@@ -243,15 +275,81 @@ pub fn mark_dirty(self: *DB, timestamp_ms: i64) void {
     self.last_modification_timestamp_ms = timestamp_ms;
 }
 
-pub fn intern(self: *DB, str: []const u8) ![]const u8 {
-    if (self.strings.getKey(str)) |interned| return interned;
-    intern_log.debug("Interning string \"{}\"", .{ std.zig.fmtEscapes(str) });
-    const duped = try self.arena.allocator().dupe(u8, str);
-    try self.strings.put(self.container_alloc, duped, {});
-    return duped;
+pub fn mark_dirty(self: *DB, idx: anytype) !void {
+    if (self.loading) return;
+
+    const ai = Any_Index.init(idx);
+    try self.dirty_set.put(self.container_alloc, ai, {});
 }
-pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
-    return if (maybe_str) |str| try self.intern(str) else null;
+
+pub fn maybe_set_modified(self: *DB, idx: anytype) !void {
+    const Index = @TypeOf(idx);
+    if (comptime @typeInfo(Index) == .Enum and @hasDecl(Index, "Type") and std.mem.endsWith(u8, @typeName(Index), ".Index")) {
+        if (self.loading) return;
+        const list = self.get_list(Index.Type);
+        const i = idx.raw();
+        const now = std.time.milliTimestamp();
+        const DTO = tempora.Date_Time.With_Offset;
+        const now_dto = DTO.from_timestamp_ms(now, null);
+        log.debug("Setting {} last modified to {" ++ DTO.fmt_sql_ms ++ "}", .{ idx, now_dto });
+        list.items(.modified_timestamp_ms)[i] = now;
+        self.update_modification_time(now);
+        try self.mark_dirty(idx);
+    }
+}
+
+pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @TypeOf(.enum_field), comptime F: type, raw: ?F) !void {
+    const i = idx.raw();
+    const list = self.get_list(T);
+    const array = list.items(field);
+    if (array[i]) |current| {
+        if (raw) |new| {
+            if (F == []const u8) {
+                if (!std.mem.eql(u8, current, new)) {
+                    array[i] = try self.intern(new);
+                    try self.maybe_set_modified(idx);
+                }
+            } else {
+                if (!std.meta.eql(current, new)) {
+                    if (F == T.Index) {
+                        if (array[i]) |old| {
+                            try self.maybe_set_modified(old);
+                        }
+                        try self.maybe_set_modified(new);
+                    }
+                    array[i] = new;
+                    try self.maybe_set_modified(idx);
+                }
+            }
+            
+        } else {
+            // removing
+            if (F == T.Index) {
+                if (array[i]) |old| {
+                    try self.maybe_set_modified(old);
+                }
+            }
+            array[i] = null;
+            try self.maybe_set_modified(idx);
+        }
+    } else {
+        if (raw) |new| {
+            // adding
+            if (F == []const u8) {
+                array[i] = try self.intern(new);
+            } else {
+                if (F == T.Index) {
+                    try self.maybe_set_modified(new);
+                }
+                array[i] = new;
+            }
+            try self.maybe_set_modified(idx);
+        }
+    }
+}
+
+pub fn get_id(self: *const DB, idx: anytype) []const u8 {
+    return self.get_list(@TypeOf(idx).Type).items(.id)[idx.raw()];
 }
 
 pub fn is_valid_id(id: []const u8) bool {
@@ -261,73 +359,16 @@ pub fn is_valid_id(id: []const u8) bool {
     return true;
 }
 
-pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @TypeOf(.enum_field), comptime F: type, raw: ?F) !void {
-    const i = @intFromEnum(idx);
-    const list = self.get_list(T);
-    const array = list.items(field);
-    if (array[i]) |current| {
-        if (raw) |new| {
-            if (F == []const u8) {
-                if (!std.mem.eql(u8, current, new)) {
-                    array[i] = try self.intern(new);
-                    self.maybe_set_modified(idx);
-                }
-            } else {
-                if (!std.meta.eql(current, new)) {
-                    if (F == T.Index) {
-                        if (array[i]) |old| {
-                            self.maybe_set_modified(old);
-                        }
-                        self.maybe_set_modified(new);
-                    }
-                    array[i] = new;
-                    self.maybe_set_modified(idx);
-                }
-            }
-            
-        } else {
-            // removing
-            if (F == T.Index) {
-                if (array[i]) |old| {
-                    self.maybe_set_modified(old);
-                }
-            }
-            array[i] = null;
-            self.maybe_set_modified(idx);
-        }
-    } else {
-        if (raw) |new| {
-            // adding
-            if (F == []const u8) {
-                array[i] = try self.intern(new);
-            } else {
-                if (F == T.Index) {
-                    self.maybe_set_modified(new);
-                }
-                array[i] = new;
-            }
-            self.maybe_set_modified(idx);
-        }
-    }
+pub fn intern(self: *DB, str: []const u8) ![]const u8 {
+    if (self.strings.getKey(str)) |interned| return interned;
+    intern_log.debug("Interning string \"{}\"", .{ std.zig.fmtEscapes(str) });
+    const duped = try self.arena.allocator().dupe(u8, str);
+    try self.strings.put(self.container_alloc, duped, {});
+    return duped;
 }
 
-pub fn maybe_set_modified(self: *DB, idx: anytype) void {
-    const Index = @TypeOf(idx);
-    if (comptime @typeInfo(Index) == .Enum and @hasDecl(Index, "Type") and std.mem.endsWith(u8, @typeName(Index), ".Index")) {
-        if (self.loading) return;
-        const list = self.get_list(Index.Type);
-        const i = @intFromEnum(idx);
-        const now = std.time.milliTimestamp();
-        const DTO = tempora.Date_Time.With_Offset;
-        const now_dto = DTO.from_timestamp_ms(now, null);
-        log.debug("Setting {} last modified to {" ++ DTO.fmt_sql_ms ++ "}", .{ idx, now_dto });
-        list.items(.modified_timestamp_ms)[i] = now;
-        self.mark_dirty(now);
-    }
-}
-
-pub fn get_id(self: *const DB, idx: anytype) []const u8 {
-    return self.get_list(@TypeOf(idx).Type).items(.id)[@intFromEnum(idx)];
+pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
+    return if (maybe_str) |str| try self.intern(str) else null;
 }
 
 const log = std.log.scoped(.db);

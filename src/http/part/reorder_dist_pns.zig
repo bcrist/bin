@@ -3,7 +3,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     const requested_part_name = try req.get_path_param("p");
     const maybe_mfr_idx = Manufacturer.maybe_lookup(db, requested_mfr_name);
     const idx = Part.maybe_lookup(db, maybe_mfr_idx, requested_part_name) orelse return;
-    const list = &db.parts.items(.dist_pns)[@intFromEnum(idx)];
+    const list = &db.parts.items(.dist_pns)[idx.raw()];
 
     var new_list = try std.ArrayList(Part.Distributor_Part_Number).initCapacity(http.temp(), list.items.len);
     var apply_changes = true;

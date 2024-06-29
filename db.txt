@@ -1,26 +1,25 @@
 Distributor
-    - name lookup
-    - references Distributor (relations)
+    <=> Distributor (relations)
+    <=  Part (dist part numbers)
 
 Manufacturer
-    - name lookup
-    - references Manufacturer (relations)
-
-Location
-    - name lookup
-    - references Location (parent chain)
+    <=> Manufacturer (relations)
+    <=  Package
+    <=  Part
 
 Package
-    - name lookup
-    - references Package (parent chain)
-    - references Manufacturer
+    <=> Package (parent chain)
+     => Manufacturer
+    <=  Part
 
 Part
-    - name lookup
-    - references Part (parent chain)
-    - references Manufacturer
-    - references Package
-    - references Distributor (dist part numbers)
+    <=> Part (parent chain)
+     => Manufacturer
+     => Package
+     => Distributor (dist part numbers)
+
+Location
+    <=> Location (parent chain)
 
 Order
 

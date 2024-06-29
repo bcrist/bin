@@ -20,7 +20,21 @@ pub const Index = enum (u32) {
     _,
 
     pub const Type = Order;
+    
+    pub inline fn init(i: usize) Index {
+        const raw_i: u32 = @intCast(i);
+        return @enumFromInt(raw_i);
+    }
+
+    pub inline fn any(self: Index) DB.Any_Index {
+        return DB.Any_Index.init(self);
+    }
+
+    pub inline fn raw(self: Index) u32 {
+        return @intFromEnum(self);
+    }
 };
 
+const DB = @import("../DB.zig");
 const Date_Time = @import("tempora").Date_Time;
 const std = @import("std");

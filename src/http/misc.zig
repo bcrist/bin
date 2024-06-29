@@ -5,7 +5,7 @@ pub const entry = struct {
         try req.render("index.zk", .{
             .session = session,
             .last_modified = last_modified,
-            .dirty = db.dirty_timestamp_ms != null,
+            .dirty = db.dirty_set.count() > 0,
         }, .{ .Context = Context });
     }
 

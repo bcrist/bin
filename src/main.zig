@@ -260,7 +260,7 @@ fn persist_thread_task() void {
 
             if (shut_down) break;
 
-            if (db.dirty_timestamp_ms != null) {
+            if (db.dirty_set.count() > 0) {
                 if (db.last_modification_timestamp_ms) |last_mod| {
                     const ms_since_last_mod = std.time.milliTimestamp() - last_mod;
                     if (ms_since_last_mod >= config.autosave_delay_ms) {

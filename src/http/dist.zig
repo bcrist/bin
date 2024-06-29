@@ -77,7 +77,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Distributor.Index) !std.ArrayLis
         if (src == idx) {
             const rel = db.dist_relations.get(i);
             try relations.append(.{
-                .db_index = @enumFromInt(i),
+                .db_index = Distributor.Relation.Index.init(i),
                 .is_inverted = false,
                 .kind = rel.kind,
                 .kind_str = rel.kind.display(),
@@ -88,7 +88,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Distributor.Index) !std.ArrayLis
         } else if (target == idx) {
             const rel = db.dist_relations.get(i);
             try relations.append(.{
-                .db_index = @enumFromInt(i),
+                .db_index = Distributor.Relation.Index.init(i),
                 .is_inverted = true,
                 .kind = rel.kind.inverse(),
                 .kind_str = rel.kind.inverse().display(),

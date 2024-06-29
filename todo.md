@@ -1,33 +1,25 @@
+* Tags
 * Orders
 * Projects
 * Parameters
 * Files
-* Tags
 
 * don't allow multiple identical distributor PNs
-
-* When IDs change, any data files that reference the old ID need to be re-written, even if they're not modified
-* slimselect: Automatically compute the end year based on the current time
-* slimselect: typing while focused should open, search
 * Don't use slimselect for package/location parents, package mfr, or mfr relation.other - do like for for main search bar
+* For objects with parent chains, serialize all descendant objects within the same file as the top level one
+* slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
-
-* For objects with parent chains, serialize all descendant objects within the same file as the top level one
 * Deduplicate Mfr relations
-* Part numbers by distributor
-* Part tags
 
+* slimselect: Automatically compute the end year based on the current time
+* login page password field styling
 * zkittle template fragments
 * zkittle vscode fix expression syntax highlighting
-
 * Keyboard shortcuts
 * recently modified items on landing page
 * git status on landing page
 * automated git commit/push
-
-* login page password field styling
-
 
 
 Search syntax brainstorm area

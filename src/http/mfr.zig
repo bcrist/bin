@@ -95,7 +95,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
         if (src == idx) {
             const rel = db.mfr_relations.get(i);
             try relations.append(.{
-                .db_index = @enumFromInt(i),
+                .db_index = Manufacturer.Relation.Index.init(i),
                 .is_inverted = false,
                 .kind = rel.kind,
                 .kind_str = rel.kind.display(),
@@ -106,7 +106,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Manufacturer.Index) !std.ArrayLi
         } else if (target == idx) {
             const rel = db.mfr_relations.get(i);
             try relations.append(.{
-                .db_index = @enumFromInt(i),
+                .db_index = Manufacturer.Relation.Index.init(i),
                 .is_inverted = true,
                 .kind = rel.kind.inverse(),
                 .kind_str = rel.kind.inverse().display(),
