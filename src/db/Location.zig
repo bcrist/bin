@@ -1,4 +1,3 @@
-
 id: []const u8,
 full_name: ?[]const u8,
 parent: ?Index,
@@ -6,13 +5,9 @@ notes: ?[]const u8,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
 
-// ancestors
-// children
-// descendents
 // dimensions (rows/columns)
 // inventories
 // Attachments/Images
-// Tags - lead free
 
 const Location = @This();
 pub const Index = enum (u32) {

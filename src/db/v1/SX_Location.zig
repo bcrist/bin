@@ -49,8 +49,8 @@ pub fn read(self: SX_Location, db: *DB) !void {
     const idx = Location.maybe_lookup(db, full_name) orelse try Location.lookup_or_create(db, id);
     const parent_idx = if (self.parent) |parent_id| try Location.lookup_or_create(db, parent_id) else null;
 
-    _ = try Location.set_id(db, idx, id);
-    _ = try Location.set_parent(db, idx, parent_idx);
+    try Location.set_id(db, idx, id);
+    try Location.set_parent(db, idx, parent_idx);
     if (full_name) |name| try Location.set_full_name(db, idx, name);
     if (self.notes) |notes| try Location.set_notes(db, idx, notes);
     if (self.created) |dto| try Location.set_created_time(db, idx, dto.timestamp_ms());

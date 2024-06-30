@@ -1,4 +1,3 @@
-
 id: []const u8,
 full_name: ?[]const u8,
 project_id: ?[]const u8,

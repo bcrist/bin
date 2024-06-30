@@ -89,7 +89,7 @@ pub fn read(self: SX_Distributor, db: *DB) !void {
         orelse Distributor.lookup_multiple(db, self.additional_names)
         orelse try Distributor.lookup_or_create(db, id);
 
-    _ = try Distributor.set_id(db, idx, id);
+    try Distributor.set_id(db, idx, id);
     if (full_name) |name| try Distributor.set_full_name(db, idx, name);
     if (self.country) |country| try Distributor.set_country(db, idx, country);
     if (self.url) |url| try Distributor.set_website(db, idx, url);

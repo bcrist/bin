@@ -30,7 +30,11 @@ pub const Result = struct {
                 return try std.fmt.allocPrint(arena, "/p:{}", .{ http.fmtForUrl(id) });
             },
             // .order: DB.Order.Index,
-            // .prj: DB.Project.Index,
+            .prj => |idx| {
+                return try std.fmt.allocPrint(arena, "/prj:{}", .{
+                    http.fmtForUrl(DB.Project.get_id(db, idx)),
+                });
+            },
             .pkg => |idx| {
                 return try std.fmt.allocPrint(arena, "/pkg:{}", .{
                     http.fmtForUrl(DB.Package.get_id(db, idx)),
@@ -52,7 +56,7 @@ pub const Query_Options = struct {
         dists: bool = false,
         parts: bool = false,
         //orders: DB.Order.Index,
-        //prjs: DB.Project.Index,
+        prjs: bool = false,
         pkgs: bool = false,
         locs: bool = false,
     } = null,
@@ -139,6 +143,22 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
         }
 
         var name_iter = db.loc_lookup.iterator();
+        while (name_iter.next()) |entry| {
+            if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
+                try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
+            }
+        }
+    }
+
+    if (if (options.enable_by_kind) |e| e.prjs else true) {
+        var qq = q;
+        var bonus_relevance: f64 = 0;
+        if (std.mem.startsWith(u8, q, "prj:")) {
+            bonus_relevance = 100;
+            qq = q["prj:".len..];
+        }
+
+        var name_iter = db.prj_lookup.iterator();
         while (name_iter.next()) |entry| {
             if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
                 try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);

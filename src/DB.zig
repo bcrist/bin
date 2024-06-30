@@ -25,6 +25,9 @@ dist_part_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(Distribut
 part_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(?Manufacturer.Index, Part.Index) = .{},
 parts: std.MultiArrayList(Part) = .{},
 
+prj_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Project.Index) = .{},
+prjs: std.MultiArrayList(Project) = .{},
+
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
@@ -39,7 +42,7 @@ pub const Any_Index = union (enum) {
     dist: Distributor.Index,
     part: Part.Index,
     //order: Order.Index,
-    //prj: Project.Index,
+    prj: Project.Index,
     pkg: Package.Index,
     loc: Location.Index,
 
@@ -50,7 +53,7 @@ pub const Any_Index = union (enum) {
             Distributor => .{ .dist = index },
             Part => .{ .part = index },
             // Order => .{ .order = index },
-            // Project => .{ .prj = index },
+            Project => .{ .prj = index },
             Package => .{ .pkg = index },
             Location => .{ .loc = index },
             else => unreachable,
@@ -70,7 +73,7 @@ pub const Any_Index = union (enum) {
                 return id;
             },
             // .order: Order.Index,
-            // .prj: Project.Index,
+            .prj => |idx| Project.get_id(db, idx),
             .pkg => |idx| Package.get_id(db, idx),
             .loc => |idx| Location.get_id(db, idx),
         };
@@ -80,10 +83,19 @@ pub const Any_Index = union (enum) {
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
 
+    self.prjs.deinit(gpa);
+    self.prj_lookup.deinit(gpa);
+
+    for (self.parts.items(.dist_pns)) |*list| {
+        list.deinit(gpa);
+    }
     self.parts.deinit(gpa);
     self.part_lookup.deinit(gpa);
     self.dist_part_lookup.deinit(gpa);
 
+    for (self.pkgs.items(.additional_names)) |*list| {
+        list.deinit(gpa);
+    }
     self.pkgs.deinit(gpa);
     self.pkg_lookup.deinit(gpa);
 
@@ -116,10 +128,19 @@ pub fn deinit(self: *DB) void {
 pub fn reset(self: *DB) void {
     const gpa = self.container_alloc;
 
+    self.prjs.len = 0;
+    self.prj_lookup.clearRetainingCapacity();
+
+    for (self.parts.items(.dist_pns)) |*list| {
+        list.deinit(gpa);
+    }
     self.parts.len = 0;
     self.part_lookup.clearRetainingCapacity();
     self.dist_part_lookup.clearRetainingCapacity();
 
+    for (self.pkgs.items(.additional_names)) |*list| {
+        list.deinit(gpa);
+    }
     self.pkgs.len = 0;
     self.pkg_lookup.clearRetainingCapacity();
 
@@ -155,7 +176,7 @@ fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
         Distributor => self.dists,
         Part => self.parts,
         //Order => self.orders,
-        //Project => self.projects,
+        Project => self.prjs,
         Package => self.pkgs,
         Location => self.locs,
         else => unreachable,
@@ -259,6 +280,9 @@ pub fn recompute_last_modification_time(self: *DB) void {
         if (ts > last_mod) last_mod = ts;
     }
     for (self.parts.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.prjs.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
     log.debug("Updated last modification time to {}", .{ last_mod });

@@ -91,13 +91,13 @@ pub fn read(self: SX_Part, db: *DB) !void {
     if (self.parent) |parent| {
         const parent_mfr_idx = try parent.get_mfr_idx(db);
         const parent_idx = try Part.lookup_or_create(db, parent_mfr_idx, parent.id);
-        _ = try Part.set_parent(db, idx, parent_idx);
+        try Part.set_parent(db, idx, parent_idx);
     }
 
     if (self.pkg) |pkg| {
         const pkg_mfr_idx = try pkg.get_mfr_idx(db);
         const pkg_idx = try Package.lookup_or_create(db, pkg_mfr_idx, pkg.id);
-        _ = try Part.set_pkg(db, idx, pkg_idx);
+        try Part.set_pkg(db, idx, pkg_idx);
     }
 
     for (self.dist_pn) |pn| {

@@ -72,12 +72,12 @@ pub fn read(self: SX_Package, db: *DB) !void {
         orelse Package.lookup_multiple(db, mfr_idx, self.additional_names)
         orelse try Package.lookup_or_create(db, mfr_idx, id);
 
-    _ = try Package.set_id(db, idx, mfr_idx, id);
+    try Package.set_id(db, idx, mfr_idx, id);
 
     if (self.parent) |parent| {
         const parent_mfr_idx = try parent.get_mfr_idx(db);
         const parent_idx = try Package.lookup_or_create(db, parent_mfr_idx, parent.id);
-        _ = try Package.set_parent(db, idx, parent_idx);
+        try Package.set_parent(db, idx, parent_idx);
     }
 
     if (full_name) |name| try Package.set_full_name(db, idx, name);
