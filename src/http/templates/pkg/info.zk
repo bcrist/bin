@@ -40,4 +40,4 @@ Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///pkg:\\@url parent_id/
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>
-\\@include "_bottom.zk" 
+\\@include "_bottom.zk"

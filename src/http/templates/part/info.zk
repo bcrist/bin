@@ -40,4 +40,4 @@ Package: <a href="\\pkg_mfr?///mfr:\\@url pkg_mfr ~///pkg:\\@url pkg_id//">\\pkg
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>
-\\@include "_bottom.zk" 
+\\@include "_bottom.zk"
