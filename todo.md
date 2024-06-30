@@ -1,14 +1,13 @@
-* Tags
-* Orders
 * Projects
+* Orders
+* Tags
 * Parameters
 * Files
 
-* Don't use slimselect for package/location parents, package mfr, or mfr relation.other - do like for for main search bar
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
-* Deduplicate Mfr relations
+* Deduplicate Mfr/dist relations
 
 * slimselect: Automatically compute the end year based on the current time
 * login page password field styling

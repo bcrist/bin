@@ -1,21 +1,28 @@
 <div class="mfr_relation_other">
-    <select id="relation_other\\@index|index//" name="relation_other\\@index|index//"
-\\err_other?
-        class="slimselect submitted_field invalid"
-        hx-vals='{"invalid":true}'
-\\;
-        class="slimselect submitted_field"
-\\~
+    <form autocomplete="off"
         hx-post="\\post_prefix///relation\\@index.@exists/index?//:\\@index|index ~//"
-        hx-trigger="ss:afterChange"
+        hx-trigger="change from:#relation_other\\@index|index//_input"
         hx-include=".submitted_field"
         hx-target="closest div.sortable_row"
-        hx-swap="outerHTML"
-        data-deselectable
-        data-search-url="/mfr">
-        <option data-placeholder="true" value="">Select...</option>
-\\other?
-        <option selected value="\\other//">\\other_str|other//</option>
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off"
+            id="relation_other\\@index|index//_input"
+            name="relation_other\\@index|index//"
+            list="relation_other\\@index|index//_datalist"
+\\err_other?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
 \\~
-    </select>
+            value="\\other//"
+            placeholder="Manufacturer"
+            hx-post="/mfr"
+            hx-trigger="input changed delay:200ms"
+            hx-params="relation_other\\@index|index//"
+            hx-target="#relation_other\\@index|index//_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="relation_other\\@index|index//_datalist"></datalist>
+    </form>
 </div>

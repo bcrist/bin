@@ -1,19 +1,19 @@
 (version 1)
 (loc asdf
+   (child asdagsd)
    (child asdgaw)
-   (child dfa)
    (created "2024-06-01 18:58:57 +00:00")
-   (modified "2024-06-09 21:51:44 +00:00")
+   (modified "2024-06-30 03:22:36 +00:00")
+)
+(loc asdagsd gwer
+   (parent asdf)
+   (notes asdf)
+   (created "2024-06-09 21:45:18 +00:00")
+   (modified "2024-06-30 03:22:21 +00:00")
 )
 (loc asdgaw wer
    (parent asdf)
    (notes asdfgaweg)
    (created "2024-06-09 21:47:01 +00:00")
-   (modified "2024-06-09 21:51:44 +00:00")
-)
-(loc dfa gg
-   (parent asdf)
-   (notes gasdf)
-   (created "2024-06-01 18:59:34 +00:00")
    (modified "2024-06-09 21:51:44 +00:00")
 )

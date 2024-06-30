@@ -2,6 +2,7 @@
 (dist DK DigiKey
    (url https://www.digikey.com/)
    (country USA)
+   (rel formerly Mouser)
    (created "2024-06-21 00:31:43 +00:00")
-   (modified "2024-06-21 00:34:15 +00:00")
+   (modified "2024-06-30 03:09:33 +00:00")
 )
