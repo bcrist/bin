@@ -15,10 +15,10 @@
 <body>
     <header>
         <nav>
-            <a href="/po">Purchases</a>
             <a href="/prj">Projects</a>
-            <a href="/i">Inventory</a>
+            <a href="/o">Orders</a>
             <a href="/loc">Locations</a>
+            <a href="/tag">Tags</a>
             <a href="/p">Parts</a>
             <a href="/mfr">Manufacturers</a>
         </nav>

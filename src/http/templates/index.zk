@@ -1,5 +1,13 @@
 \\@include "_top.zk"
-<aside>
+<aside class="flex">
+    <a href="/prj">Projects</a>
+    <a href="/o">Orders</a>
+    <a href="/loc">Locations</a>
+    <a href="/tag">Tags</a>
+    <a href="/p">Parts</a>
+    <a href="/pkg">Packages</a>
+    <a href="/mfr">Manufacturers</a>
+    <a href="/dist">Distributors</a>
 </aside>
 
 \\last_modified?//Database Last Modified: \\last_modified ~//

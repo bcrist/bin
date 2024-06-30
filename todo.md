@@ -8,6 +8,7 @@
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
 * Deduplicate Mfr/dist relations
+* Improve search syntax
 
 * slimselect: Automatically compute the end year based on the current time
 * login page password field styling
@@ -17,6 +18,7 @@
 * zkittle: vscode fix expression syntax highlighting
 * Keyboard shortcuts
 * recently modified items on landing page
+* memory status on landing page
 * git status on landing page
 * automated git commit/push
 
