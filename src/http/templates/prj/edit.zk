@@ -1,0 +1,8 @@
+\\@include "_top.zk"
+<aside class="flex">
+    <a href="/prj:\\@url obj.id//">Done</a>
+    <button hx-delete="/prj:\\@url obj.id//" hx-confirm="Are you sure you want to delete \\obj.id//?  Any child projects will also be deleted.">Delete</button>
+</aside>
+<h1>Edit \\obj.full_name/obj.id//</h1>
+\\@include "prj/add_or_edit_fields.zk"
+\\@include "_bottom.zk" 

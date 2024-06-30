@@ -9,7 +9,7 @@
 
     var list = try std.ArrayList(common.Package_Info).initCapacity(http.temp(), db.pkgs.len);
     for (db.pkgs.items(.id), db.pkgs.items(.mfr), db.pkgs.items(.parent)) |id, mfr, parent| {
-        if (parent == null) {
+        if (parent == null and id.len > 0) {
             list.appendAssumeCapacity(.{
                 .mfr_id = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
                 .id = id,

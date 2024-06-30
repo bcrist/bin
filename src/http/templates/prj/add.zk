@@ -1,0 +1,11 @@
+\\@include "_top.zk"
+<div class="hidden" hx-post="/prj/add/validate" hx-trigger="revalidate from:body"
+    hx-include=".submitted_field"
+    hx-target="#add_cancel_aside"
+    hx-swap="outerHTML"></div>
+<form hx-post="/prj/add" hx-include=".submitted_field">
+\\@include "common/add_cancel.zk"//
+</form>
+<h1>Add Project</h1>
+\\@include "prj/add_or_edit_fields.zk"
+\\@include "_bottom.zk" 

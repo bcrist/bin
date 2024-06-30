@@ -9,7 +9,7 @@
 
     var list = try std.ArrayList(common.Part_Info).initCapacity(http.temp(), db.parts.len);
     for (db.parts.items(.id), db.parts.items(.mfr), db.parts.items(.parent)) |id, mfr, parent| {
-        if (parent == null) {
+        if (parent == null and id.len > 0) {
             list.appendAssumeCapacity(.{
                 .mfr_id = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
                 .id = id,

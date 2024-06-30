@@ -63,7 +63,6 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
 const log = std.log.scoped(.@"http.mfr");
 
-const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
 const search = @import("../../search.zig");

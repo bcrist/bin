@@ -5,8 +5,8 @@
     .paths = .{""},
     .dependencies = .{
         .Temp_Allocator = .{
-            .url = "git+https://github.com/bcrist/zig-tempallocator#169daa85a12283b027906d22a04e0c52960ca756",
-            .hash = "12205fda9dd276abb11d2f2e45aed0b5149ce98b3cab0aa7e0b51ab68837f0ec5f6a",
+            .url = "git+https://github.com/bcrist/zig-tempallocator#0f42bc77b7da384655fcef8f4f85fc078fa0efe1",
+            .hash = "1220223a16891214e3ddf4fb55950cf46e6c79c68dadca5b22a974530d6451ae3870",
         },
         .deep_hash_map = .{
             .url = "git+https://github.com/bcrist/zig-deephashmap#5ce7efd1785a5b3d3d5bb1f5842154c91eb7a74d",
@@ -25,12 +25,12 @@
             .hash = "1220aac52c4e9bba0baae290d4171bd3980c19d22d8709900da5a7dc8ce6486d7819",
         },
         .zkittle = .{
-            .url = "git+https://github.com/bcrist/zkittle#03a87443429b3983d7b856ac43f6ddd0e72c80f9",
-            .hash = "1220d388b761df713a2fdf3c1779fc540c9848582e23709e31b1f702f33528f3d4ef",
+            .url = "git+https://github.com/bcrist/zkittle#b5eca6d2edb02e623e884771d3943cb221b4a914",
+            .hash = "12207843a59a79a582f485d6c4d0cf0d2e9dacdb3c2de59ed853fdb8151951b3bd05",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#5b26acba5f3afa81c0a809b89d94b70e6b14a062",
-            .hash = "1220f02668bfd2d30d53393d54fe0efd4d5b3073fd4150b42f568d14f54e2fb044ac",
+            .url = "git+https://github.com/bcrist/shittip#c1c481ae70d3c5b78095c716e3e6c7b9b3897ce0",
+            .hash = "12208b484c48bd7fcadea5c0035de716f35c6be6179147f172bd19932b75744450e6",
         },
     },
 }

@@ -1,18 +1,39 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
-    const missing_dist = try req.get_path_param("dist");
+    const missing_prj = try req.get_path_param("prj");
 
-    if (missing_dist) |name| if (name.len == 0) {
-        try req.redirect("/dist", .moved_permanently);
+    if (missing_prj) |name| if (name.len == 0) {
+        try req.redirect("/prj", .moved_permanently);
         return;
     };
 
-    const dist_list = try http.temp().dupe([]const u8, db.dists.items(.id));
-    sort.natural(dist_list);
+    var active_list = std.ArrayList([]const u8).init(http.temp());
+    var on_hold_list = std.ArrayList([]const u8).init(http.temp());
+    var abandoned_list = std.ArrayList([]const u8).init(http.temp());
+    var completed_list = std.ArrayList([]const u8).init(http.temp());
 
-    try req.render("dist/list.zk", .{
-        .dist_list = dist_list,
+    for (db.prjs.items(.id), db.prjs.items(.parent), db.prjs.items(.status)) |id, parent, status| {
+        if (parent == null and id.len > 0) {
+            switch (status) {
+                .active => try active_list.append(id),
+                .on_hold => try on_hold_list.append(id),
+                .abandoned => try abandoned_list.append(id),
+                .completed => try completed_list.append(id),
+            }
+        }
+    }
+
+    sort.natural(active_list.items);
+    sort.natural(on_hold_list.items);
+    sort.natural(abandoned_list.items);
+    sort.natural(completed_list.items);
+
+    try req.render("prj/list.zk", .{
+        .active_list = active_list.items,
+        .on_hold_list = on_hold_list.items,
+        .abandoned_list = abandoned_list.items,
+        .completed_list = completed_list.items,
         .session = session,
-        .missing_dist = missing_dist,
+        .missing_prj = missing_prj,
     }, .{});
 }
 
@@ -25,7 +46,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     }
 
     const results = try search.query(db, http.temp(), q, .{
-        .enable_by_kind = .{ .dists = true },
+        .enable_by_kind = .{ .prjs = true },
         .max_results = 200,
     });
 
@@ -61,7 +82,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
     }
 }
 
-const log = std.log.scoped(.@"http.dist");
+const log = std.log.scoped(.@"http.prj");
 
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");

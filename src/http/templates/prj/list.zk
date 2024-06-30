@@ -1,0 +1,42 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/prj/add">Add</a>
+</aside>
+\\~
+\\missing_prj?
+<div class="error">
+    No project named <b>\\missing_prj//</b> was found!
+    Would you like to <a href="/prj/add?id=\\@url missing_prj//">add it</a>?
+</div>
+\\~
+
+<h1>Active Projects</h1>
+<div class="columns">
+\\active_list:
+    <a href="/prj:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>On Hold Projects</h1>
+<div class="columns">
+\\on_hold_list:
+    <a href="/prj:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Completed Projects</h1>
+<div class="columns">
+\\completed_list:
+    <a href="/prj:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+\\abandoned_list
+<h1>Abandoned Projects</h1>
+<div class="columns">
+\\abandoned_list:
+    <a href="/prj:\\@url *//">\\*//</a><br>
+\\~
+</div>
+\\@include "_bottom.zk"

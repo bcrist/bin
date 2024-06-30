@@ -45,6 +45,7 @@ pub fn main() !void {
     const loc = @import("http/loc.zig");
     const pkg = @import("http/pkg.zig");
     const part = @import("http/part.zig");
+    const prj = @import("http/prj.zig");
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -59,13 +60,13 @@ pub fn main() !void {
 
         .{ "/search", r.module(Injector, search) },
 
+        .{ "/pkg**" },
+        .{ "/prj**" },
+        .{ "/p**" },
+        .{ "/loc**" },
         .{ "/mfr**" },
         .{ "/dist**" },
-        .{ "/loc**" },
-        .{ "/pkg**" },
-        .{ "/p**" },
         // .{ "/o:*" },
-        // .{ "/prj:*" },
         // .{ "/param:*" },
         // .{ "/f:*" },
 
@@ -235,6 +236,24 @@ pub fn main() !void {
         .{ ":*/dist_pn",    r.module(Injector, part.edit.dist_pn) },
         .{ ":*/dist_pn:*",  r.module(Injector, part.edit.dist_pn) },
         .{ ":*/dist_pns",   r.module(Injector, part.reorder_dist_pns) },
+    });
+
+    try server.router("/prj**", .{
+        .{ "",              r.module(Injector, prj.list) },
+        .{ "/add",          r.module(Injector, prj.add) },
+        .{ "/add/validate", r.module(Injector, prj.add.validate) },
+        .{ "/id",           r.module(Injector, prj.add.validate) },
+        .{ "/full_name",    r.module(Injector, prj.add.validate) },
+        .{ "/status",       r.module(Injector, prj.add.validate) },
+        .{ "/notes",        r.module(Injector, prj.add.validate) },
+        .{ "/parent",       r.module(Injector, prj.add.validate) },
+        .{ "/statuses",     r.module(Injector, prj.statuses) },
+        .{ ":*",            r.module(Injector, prj) },
+        .{ ":*/id",         r.module(Injector, prj.edit) },
+        .{ ":*/full_name",  r.module(Injector, prj.edit) },
+        .{ ":*/status",     r.module(Injector, prj.edit) },
+        .{ ":*/notes",      r.module(Injector, prj.edit) },
+        .{ ":*/parent",     r.module(Injector, prj.edit) },
     });
     
     const listen_addr = try http.parse_hostname(global.gpa(), config.host, config.port);

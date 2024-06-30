@@ -1,0 +1,23 @@
+<tr id="status"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="status_input">Status</label>
+</th>
+<td>
+    <select id="status_input" name="status"
+\\err?
+        class="slimselect submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="slimselect submitted_field"
+\\~
+        hx-post="\\post_prefix///status"
+        hx-trigger="ss:afterChange"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML"
+        data-options="/prj/statuses">
+        <option selected value="\\status|obj.status//">\\status_str|status|obj.status//</option>
+    </select>
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

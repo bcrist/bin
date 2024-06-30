@@ -8,7 +8,7 @@
 
     var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.locs.len);
     for (db.locs.items(.id), db.locs.items(.parent)) |id, parent| {
-        if (parent == null) {
+        if (parent == null and id.len > 0) {
             list.appendAssumeCapacity(id);
         }
     }
@@ -68,7 +68,6 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
 const log = std.log.scoped(.@"http.loc");
 
-const Location = DB.Location;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
 const search = @import("../../search.zig");
