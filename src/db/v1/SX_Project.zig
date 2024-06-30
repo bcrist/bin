@@ -4,6 +4,8 @@ status: ?Project.Status = .active,
 status_changed: ?Date_Time.With_Offset = null,
 parent: ?[]const u8 = null,
 child: []const []const u8 = &.{},
+website: ?[]const u8 = null,
+source_control: ?[]const u8 = null,
 notes: ?[]const u8 = null,
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
@@ -40,6 +42,8 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Project.Index) !SX_Proj
         .status_changed = Date_Time.With_Offset.from_timestamp_ms(data.status_change_timestamp_ms, null),
         .parent = parent_id,
         .child = children.items,
+        .website = data.website,
+        .source_control = data.source_control,
         .notes = data.notes,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
         .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
@@ -64,6 +68,8 @@ pub fn read(self: SX_Project, db: *DB) !void {
     if (full_name) |name| try Project.set_full_name(db, idx, name);
     if (self.status) |status| try Project.set_status(db, idx, status);
     if (self.status_changed) |dto| try Project.set_status_change_time(db, idx, dto.timestamp_ms());
+    if (self.website) |url| try Project.set_website(db, idx, url);
+    if (self.source_control) |url| try Project.set_source_control(db, idx, url);
     if (self.notes) |notes| try Project.set_notes(db, idx, notes);
     if (self.created) |dto| try Project.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Project.set_modified_time(db, idx, dto.timestamp_ms());

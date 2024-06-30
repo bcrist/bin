@@ -3,5 +3,7 @@
 \\@include "common/post_full_name.zk"//
 \\@include "common/post_parent.zk"//
 \\@include "prj/post_status.zk"//
+\\@include "common/post_website.zk"//
+\\@include "common/post_source_control.zk"//
 \\@include "common/post_notes.zk"//
 </table>

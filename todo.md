@@ -4,14 +4,12 @@
 * Parameters
 * Files
 
+* Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
 * Deduplicate Mfr/dist relations
 * Improve search syntax
-
-* Projects: github URL, website URL
-* Projects: steps - progress bars, due dates
 
 * slimselect: Automatically compute the end year based on the current time
 * login page password field styling

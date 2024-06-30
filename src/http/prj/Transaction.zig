@@ -15,6 +15,8 @@ pub const Field = enum {
     full_name,
     parent,
     status,
+    website,
+    source_control,
     notes,
 };
 
@@ -28,6 +30,8 @@ pub fn init_empty(db: *const DB) Transaction {
             .id = .{},
             .full_name = .{},
             .parent = .{},
+            .website = .{},
+            .source_control = .{},
             .notes = .{},
             .status = .{
                 .current = "active",
@@ -199,6 +203,16 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Project.set_status(db, idx, status.future_enum(Project.Status));
         self.changes_applied = true;
     }
+
+    if (self.fields.website.changed()) |url| {
+        try Project.set_website(db, idx, url.future_opt());
+        self.changes_applied = true;
+    }
+
+    if (self.fields.source_control.changed()) |url| {
+        try Project.set_source_control(db, idx, url.future_opt());
+        self.changes_applied = true;
+    }
     
     if (self.fields.notes.changed()) |notes| {
         try Project.set_notes(db, idx, notes.future_opt());
@@ -257,6 +271,8 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         .id = self.fields.id.future,
         .full_name = self.fields.full_name.future,
         .status = self.fields.status.future,
+        .website = self.fields.website.future,
+        .source_control = self.fields.source_control.future,
         .notes = self.fields.notes.future,
         .parent = self.fields.parent.future,
     };
@@ -305,6 +321,8 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                     .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
                     .status => try req.render("prj/post_status.zk", render_data, .{}),
                     .notes => try req.render("common/post_notes.zk", render_data, .{}),
+                    .website => try req.render("common/post_website.zk", render_data, .{}),
+                    .source_control => try req.render("common/post_source_control.zk", render_data, .{}),
                     .parent => try req.render("common/post_parent.zk", render_data, .{}),
                 }
             }

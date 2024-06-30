@@ -26,9 +26,9 @@ Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///pkg:\\@url parent_id/
 <a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///pkg:\\@url id//">\\id//</a><span class="separator"></span>
 \\~~
 
-\\pkg.notes?
+\\obj.notes?
 <h2>Notes</h2>
-<div>\\pkg.notes//</div>
+<div>\\obj.notes//</div>
 \\~
 
 \\parts?

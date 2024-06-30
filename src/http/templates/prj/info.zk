@@ -18,7 +18,9 @@ Parent: <a href="/prj:\\@url parent_id//">\\parent_id//</a>
 \\children:
 <a href="/prj:\\@url *//">\\*//</a><span class="separator"></span>
 \\~~
-\\prj:
+\\obj:
+\\  website://<div>Website: <a href="\\*//">\\*//</a></div>\\~//
+\\  source_control://<div>Source Control: <a href="\\*//">\\*//</a></div>\\~//
 \\  notes?
     <h2>Notes</h2>
     <div>\\notes//</div>

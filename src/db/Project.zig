@@ -4,6 +4,8 @@ parent: ?Index,
 status: Status,
 status_change_timestamp_ms: i64,
 notes: ?[]const u8,
+website: ?[]const u8,
+source_control: ?[]const u8,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
 
@@ -54,6 +56,8 @@ pub fn init_empty(id: []const u8, timestamp_ms: i64) Project {
         .status = .active,
         .status_change_timestamp_ms = timestamp_ms,
         .notes = null,
+        .website = null,
+        .source_control = null,
         .created_timestamp_ms = timestamp_ms,
         .modified_timestamp_ms = timestamp_ms,
     };
@@ -226,6 +230,14 @@ pub fn set_status_change_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
     return set_optional([]const u8, db, idx, .notes, notes);
+}
+
+pub fn set_website(db: *DB, idx: Index, url: ?[]const u8) !void {
+    return set_optional([]const u8, db, idx, .website, url);
+}
+
+pub fn set_source_control(db: *DB, idx: Index, url: ?[]const u8) !void {
+    return set_optional([]const u8, db, idx, .source_control, url);
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
