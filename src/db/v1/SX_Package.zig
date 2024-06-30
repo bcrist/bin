@@ -1,9 +1,8 @@
-id: []const u8 = "",
+id: SX_ID_With_Manufacturer = .{},
 full_name: ?[]const u8 = null,
 additional_names: []const []const u8 = &.{},
-parent: ?[]const u8 = null,
-child: []const []const u8 = &.{},
-mfr: ?[]const u8 = null,
+parent: ?SX_ID_With_Manufacturer = null,
+child: []const SX_ID_With_Manufacturer = &.{},
 notes: ?[]const u8 = null,
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
@@ -12,34 +11,46 @@ const SX_Package = @This();
 
 pub const context = struct {
     pub const inline_fields = &.{ "id", "full_name", "additional_names" };
+    pub const id = SX_ID_With_Manufacturer.context;
+    pub const parent = SX_ID_With_Manufacturer.context;
+    pub const child = SX_ID_With_Manufacturer.context;
     pub const created = Date_Time.With_Offset.fmt_sql;
     pub const modified = Date_Time.With_Offset.fmt_sql;
 };
 
 pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Package.Index) !SX_Package {
-    var children = std.ArrayList([]const u8).init(temp);
     const ids = db.pkgs.items(.id);
+    const mfrs = db.pkgs.items(.mfr);
+    const mfr_ids = db.mfrs.items(.id);
+
+    var children = std.ArrayList(SX_ID_With_Manufacturer).init(temp);
     for (0.., db.pkgs.items(.parent)) |child_i, parent_idx| {
         if (parent_idx == idx) {
-            try children.append(ids[child_i]);
+            try children.append(.{
+                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[mfr_idx.raw()] else "_",
+                .id = ids[child_i],
+            });
         }
     }
 
     const data = Package.get(db, idx);
-    var full_name = data.full_name;
-    if (data.additional_names.items.len > 0 and full_name == null) {
-        full_name = data.id;
-    }
 
-    const parent_id = if (data.parent) |parent_idx| Package.get_id(db, parent_idx) else null;
-    const mfr_id = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
-    return .{
+    const id: SX_ID_With_Manufacturer = .{
+        .mfr = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
         .id = data.id,
+    };
+
+    const parent: ?SX_ID_With_Manufacturer = if (data.parent) |parent_idx| .{
+        .mfr = if (Package.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
+        .id = Package.get_id(db, parent_idx),
+    } else null;
+
+    return .{
+        .id = id,
         .full_name = data.full_name,
         .additional_names = data.additional_names.items,
-        .parent = parent_id,
+        .parent = parent,
         .child = children.items,
-        .mfr = mfr_id,
         .notes = data.notes,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
         .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
@@ -47,7 +58,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Package.Index) !SX_Pack
 }
 
 pub fn read(self: SX_Package, db: *DB) !void {
-    const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
+    const id = std.mem.trim(u8, self.id.id, &std.ascii.whitespace);
 
     var full_name = self.full_name;
     if (self.full_name) |name| {
@@ -56,20 +67,17 @@ pub fn read(self: SX_Package, db: *DB) !void {
         }
     }
 
-    const idx = Package.maybe_lookup(db, full_name)
-        orelse Package.lookup_multiple(db, self.additional_names)
-        orelse try Package.lookup_or_create(db, id);
+    const mfr_idx = try self.id.get_mfr_idx(db);
+    const idx = Package.maybe_lookup(db, mfr_idx, full_name)
+        orelse Package.lookup_multiple(db, mfr_idx, self.additional_names)
+        orelse try Package.lookup_or_create(db, mfr_idx, id);
 
-    _ = try Package.set_id(db, idx, id);
+    _ = try Package.set_id(db, idx, mfr_idx, id);
 
-    if (self.parent) |parent_id| {
-        const parent_idx = try Package.lookup_or_create(db, parent_id);
+    if (self.parent) |parent| {
+        const parent_mfr_idx = try parent.get_mfr_idx(db);
+        const parent_idx = try Package.lookup_or_create(db, parent_mfr_idx, parent.id);
         _ = try Package.set_parent(db, idx, parent_idx);
-    }
-
-    if (self.mfr) |mfr_id| {
-        const mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
-        _ = try Package.set_mfr(db, idx, mfr_idx);
     }
 
     if (full_name) |name| try Package.set_full_name(db, idx, name);
@@ -102,10 +110,11 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try db.mark_dirty(root_idx);
     }
 
-    for (0..db.pkgs.len, db.pkgs.items(.id), db.pkgs.items(.parent)) |i, id, maybe_parent_idx| {
+    for (0.., db.pkgs.items(.id), parents, db.pkgs.items(.mfr)) |i, id, maybe_parent_idx, maybe_mfr_idx| {
         if (maybe_parent_idx != null) continue; // only write files for root packages
 
-        const dest_path = try paths.unique_path(allocator, id, filenames);
+        const mfr_id = if (maybe_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "";
+        const dest_path = try paths.unique_path2(allocator, mfr_id, id, filenames);
         const idx = Package.Index.init(i);
         
         if (!db.dirty_set.contains(idx.any())) continue;
@@ -147,6 +156,7 @@ const log = std.log.scoped(.db);
 const Package = @import("../Package.zig");
 const Manufacturer = @import("../Manufacturer.zig");
 const DB = @import("../../DB.zig");
+const SX_ID_With_Manufacturer = @import("SX_ID_With_Manufacturer.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;
 const tempora = @import("tempora");

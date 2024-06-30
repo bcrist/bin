@@ -1,11 +1,23 @@
 (version 1)
-(pkg TSSOP "Thin Shrink Small Outline Package"
-   (child TSSOP-48)
+(pkg _ TSSOP "Thin Shrink Small Outline Package"
+   (child _ TSSOP-48)
+   (child _ asdf)
    (created "2024-06-09 00:13:00 +00:00")
-   (modified "2024-06-09 01:03:32 +00:00")
+   (modified "2024-06-30 02:31:46 +00:00")
 )
-(pkg TSSOP-48
-   (parent TSSOP)
+(pkg _ TSSOP-48
+   (parent _ TSSOP)
+   (child National f)
    (created "2024-06-09 00:14:32 +00:00")
-   (modified "2024-06-09 00:14:32 +00:00")
+   (modified "2024-06-30 02:33:24 +00:00")
+)
+(pkg National f
+   (parent _ TSSOP-48)
+   (created "2024-06-30 02:33:24 +00:00")
+   (modified "2024-06-30 02:33:24 +00:00")
+)
+(pkg _ asdf NatSemi
+   (parent _ TSSOP)
+   (created "2024-06-30 02:31:46 +00:00")
+   (modified "2024-06-30 02:31:46 +00:00")
 )

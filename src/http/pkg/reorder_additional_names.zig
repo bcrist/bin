@@ -1,9 +1,11 @@
 pub fn post(req: *http.Request, db: *DB) !void {
+    const requested_mfr_name = try req.get_path_param("mfr");
     const requested_pkg_name = try req.get_path_param("pkg");
-    const idx = Package.maybe_lookup(db, requested_pkg_name) orelse return;
-    const name_list = &db.pkgs.items(.additional_names)[idx.raw()];
+    const maybe_mfr_idx = Manufacturer.maybe_lookup(db, requested_mfr_name);
+    const idx = Package.maybe_lookup(db, maybe_mfr_idx, requested_pkg_name) orelse return;
+    const list = &db.pkgs.items(.additional_names)[idx.raw()];
 
-    var new_list = try std.ArrayList([]const u8).initCapacity(http.temp(), name_list.items.len);
+    var new_list = try std.ArrayList([]const u8).initCapacity(http.temp(), list.items.len);
     var apply_changes = true;
 
     var iter = try req.form_iterator();
@@ -16,19 +18,19 @@ pub fn post(req: *http.Request, db: *DB) !void {
             apply_changes = false;
             break;
         };
-        if (index >= name_list.items.len) {
+        if (index >= list.items.len) {
             apply_changes = false;
         }
 
-        try new_list.append(name_list.items[index]);
+        try new_list.append(list.items[index]);
     }
 
-    if (apply_changes and new_list.items.len == name_list.items.len) {
-        @memcpy(name_list.items, new_list.items);
+    if (apply_changes and new_list.items.len == list.items.len) {
+        @memcpy(list.items, new_list.items);
     }
 
     const post_prefix = try Transaction.get_post_prefix(db, idx);
-    for (0.., name_list.items) |i, name| {
+    for (0.., list.items) |i, name| {
         try req.render("common/post_additional_name.zk", .{
             .valid = true,
             .post_prefix = post_prefix,
@@ -41,6 +43,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
 
 const Transaction = @import("Transaction.zig");
 const Package = DB.Package;
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
 const http = @import("http");

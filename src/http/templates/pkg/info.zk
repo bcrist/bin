@@ -1,9 +1,13 @@
 \\@include "_top.zk"
 \\session?
 <aside class="flex">
-    <a href="/pkg:\\@url obj.id//?edit">Edit</a>
-    <a href="/pkg/add?parent=\\@url obj.id//">Add Child</a>
+    <a href="\\mfr_id?///mfr:\\@url mfr_id ~///pkg:\\@url obj.id//?edit">Edit</a>
+    <a href="/pkg/add?parent=\\@url obj.id mfr_id?//&parent_mfr=\\@url mfr_id ~//">Add Child</a>
 </aside>
+\\~
+
+\\mfr_id?
+<div><a href="/mfr:\\@url mfr_id//">mfr:\\mfr_id//</a></div>
 \\~
 <div>pkg:\\obj.id//</div>
 <h1>\\obj.full_name/obj.id//</h1>
@@ -13,29 +17,25 @@
 \\~
 
 \\parent_id?
-Parent: <a href="/pkg:\\@url parent_id//">\\parent_id//</a>
+Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///pkg:\\@url parent_id//">\\parent_id//</a>
 \\~
+
 \\children?
 <h2>Children</h2>
 \\children:
-<a href="/pkg:\\@url *//">\\*//</a><span class="separator"></span>
+<a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///pkg:\\@url id//">\\id//</a><span class="separator"></span>
 \\~~
-\\mfr_id?
-Manufacturer: <a href="/mfr:\\@url mfr_id//">\\mfr_id//</a>
-\\~
-\\pkg:
-\\  notes?
-    <h2>Notes</h2>
-    <div>\\notes//</div>
-\\  ~
+
+\\pkg.notes?
+<h2>Notes</h2>
+<div>\\pkg.notes//</div>
 \\~
 
 \\parts?
-    <h2>Parts</h2>
-\\  parts:
-    <div><a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a></div>
+<h2>Parts</h2>
+\\parts:
+<div><a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a></div>
 \\~~
-
 
 <hr>
 <div>Created: \\created//</div>

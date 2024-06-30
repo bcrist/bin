@@ -37,6 +37,11 @@ pub const validate = struct {
                 .valid = txn.valid,
                 .cancel_url = "/pkg",
             }, .{});
+        } else if (std.mem.eql(u8, target_str, "parent_mfr")) {
+            try txn.render_results(session, req, .{
+                .target = .parent_mfr,
+                .rnd = null,
+            });
         } else {
             const field = std.meta.stringToEnum(Transaction.Field, target_str) orelse return error.BadRequest;
             try txn.render_results(session, req, .{

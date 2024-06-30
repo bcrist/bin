@@ -9,13 +9,14 @@ Manufacturer
 
 Package
     <=> Package (parent chain)
-     => Manufacturer
+     => Manufacturer (namespace)
     <=  Part
 
 Part
     <=> Part (parent chain)
-     => Manufacturer
+     => Manufacturer (namespace)
      => Package
+     => Manufacturer (indirectly via pkg namespace)
      => Distributor (dist part numbers)
 
 Location

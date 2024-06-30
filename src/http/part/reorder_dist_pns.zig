@@ -36,7 +36,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
             .valid = true,
             .post_prefix = post_prefix,
             .index = i,
-            .dist = dist_ids[@intFromEnum(pn.dist)],
+            .dist = dist_ids[pn.dist.raw()],
             .pn = pn.pn,
         }, .{});
     }

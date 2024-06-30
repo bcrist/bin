@@ -23,7 +23,7 @@ Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///p:\\@url parent_id//"
 \\~~
 
 \\pkg_id?
-Package: <a href="/pkg:\\@url pkg_id//">\\pkg_id//</a>
+Package: <a href="\\pkg_mfr?///mfr:\\@url pkg_mfr ~///pkg:\\@url pkg_id//">\\pkg_id//</a>
 \\~
 
 \\p.notes?

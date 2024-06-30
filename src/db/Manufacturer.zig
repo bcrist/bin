@@ -96,7 +96,8 @@ pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8
 pub fn delete(db: *DB, idx: Index) !void {
     for (0.., db.pkgs.items(.mfr)) |pkg_i, maybe_mfr_idx| {
         if (maybe_mfr_idx == idx) {
-            try Package.set_mfr(db, Package.Index.init(pkg_i), null);
+            const pkg_idx = Package.Index.init(pkg_i);
+            try Package.set_id(db, pkg_idx, null, Package.get_id(db, pkg_idx));
         }
     }
 
@@ -166,9 +167,14 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
         }
     }
 
-    for (0.., db.parts.items(.mfr)) |part_i, maybe_mfr_idx| {
+    const pkg_mfrs = db.pkgs.items(.mfr);
+    for (0.., db.parts.items(.mfr), db.parts.items(.pkg)) |part_i, maybe_mfr_idx, maybe_pkg_idx| {
         if (maybe_mfr_idx == idx) {
             try db.mark_dirty(Part.Index.init(part_i));
+        } else if (maybe_pkg_idx) |pkg_idx| {
+            if (pkg_mfrs[pkg_idx.raw()] == idx) {
+                try db.mark_dirty(Part.Index.init(part_i));
+            }
         }
     }
 }
@@ -246,7 +252,7 @@ pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []con
                 log.err("Ignoring additional name \"{}\" for manufacturer \"{}\" because it is already associated with \"{}\"", .{
                     std.zig.fmtEscapes(raw_name),
                     std.zig.fmtEscapes(ids[idx.raw()]),
-                    std.zig.fmtEscapes(ids[@intFromEnum(gop.value_ptr.*)]),
+                    std.zig.fmtEscapes(ids[gop.value_ptr.raw()]),
                 });
             }
         } else {
@@ -458,7 +464,7 @@ pub const Relation = struct {
         const current = sources[i];
         if (current != source) {
             sources[i] = source;
-            log.debug("Changed source for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(source) });
+            log.debug("Changed source for {} from {} to {}", .{ idx, current.raw(), source.raw() });
             try set_modified_relation(db, idx);
             try set_modified(db, current);
         }
@@ -470,7 +476,7 @@ pub const Relation = struct {
         const current = targets[i];
         if (current != target) {
             targets[i] = target;
-            log.debug("Changed target for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(target) });
+            log.debug("Changed target for {} from {} to {}", .{ idx, current.raw(), target.raw() });
             try set_modified_relation(db, idx);
             try set_modified(db, current);
         }

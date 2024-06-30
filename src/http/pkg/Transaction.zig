@@ -2,6 +2,7 @@ db: *const DB,
 idx: ?Package.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
+parent_mfr: Field_Data,
 additional_names: std.StringArrayHashMapUnmanaged(Field_Data),
 
 add_another: bool = false,
@@ -12,10 +13,10 @@ names_changed: bool = false,
 created_idx: ?Package.Index = null,
 
 pub const Field = enum {
+    mfr,
     id,
     full_name,
     parent,
-    mfr,
     notes,
 };
 
@@ -26,18 +27,22 @@ pub fn init_empty(db: *const DB) Transaction {
         .db = db,
         .idx = null,
         .fields = .{
+            .mfr = .{},
             .id = .{},
             .full_name = .{},
             .parent = .{},
-            .mfr = .{},
             .notes = .{},
         },
+        .parent_mfr = .{},
         .additional_names = .{},
     };
 }
 
 pub fn init_idx(db: *const DB, idx: Package.Index) !Transaction {
     const pkg = Package.get(db, idx);
+
+    const parent_mfr: Field_Data = if (pkg.parent) |parent_idx|
+        try Field_Data.init(db, Package.get_mfr(db, parent_idx)) else .{};
 
     var additional_names: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
     try additional_names.ensureTotalCapacity(http.temp(), pkg.additional_names.items.len);
@@ -51,6 +56,7 @@ pub fn init_idx(db: *const DB, idx: Package.Index) !Transaction {
         .db = db,
         .idx = idx,
         .fields = try Field_Data.init_fields(Field, db, pkg),
+        .parent_mfr = parent_mfr,
         .additional_names = additional_names,
     };
 }
@@ -104,6 +110,12 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         return true;
     }
 
+    if (std.mem.eql(u8, param.name, "parent_mfr")) {
+        const value = try trim(param.value);
+        self.parent_mfr.set_processed(value, self.idx == null);
+        return true;
+    }
+
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
             const value = try trim(param.value);
@@ -118,62 +130,57 @@ fn trim(value: ?[]const u8) ![]const u8 {
 }
 
 pub fn validate(self: *Transaction) !void {
-    const additional_names = self.additional_names.values();
-    try self.validate_name(&self.fields.id, .id, additional_names);
-    try self.validate_name(&self.fields.full_name, .full_name, additional_names);
-    for (1.., additional_names) |i, *data| {
-        try self.validate_name(data, null, additional_names[i..]);
+    if (self.fields.mfr.is_changed()) {
+        self.names_changed = true;
     }
-
+    try self.validate_mfr(&self.fields.mfr);
+    try self.validate_id();
+    try self.validate_mfr(&self.parent_mfr);
     try self.validate_parent();
-    try self.validate_mfr();
+    try self.validate_full_name();
+
+    const additional_names = self.additional_names.values();
+    for (0.., additional_names) |i, *data| {
+        try self.validate_additional_name(data, additional_names[0..i]);
+    }
 }
 
-fn validate_name(self: *Transaction, data: *Field_Data, field: ?Field, additional_names: []Field_Data) !void {
-    if (data.is_changed()) {
+fn validate_mfr(self: *Transaction, data: *Field_Data) !void {
+    if (data.future.len == 0) return;
+
+    const mfr_idx = Manufacturer.maybe_lookup(self.db, data.future) orelse {
+        log.debug("Invalid manufacturer: {s}", .{ data.future });
+        data.err = "Invalid manufacturer";
+        data.valid = false;
+        self.valid = false;
+        return;
+    };
+
+    data.future = Manufacturer.get_id(self.db, mfr_idx);
+}
+
+fn validate_id(self: *Transaction) !void {
+    if (self.fields.id.is_changed()) {
         self.names_changed = true;
     }
 
-    if (field == .id) {
-        if (!DB.is_valid_id(data.future)) {
-            log.debug("Invalid ID: {s}", .{ data.future });
-            data.err = "ID may not be empty or '_', or contain '/'";
-            data.valid = false;
-            self.valid = false;
-            return;
-        }
-
-        // check and remove duplicate in full name field
-        if (std.ascii.eqlIgnoreCase(data.future, self.fields.full_name.future)) {
-            self.fields.full_name.future = "";
-            self.names_changed = true;
-        }
-    } else if (data.future.len == 0) return;
-
-    if (Package.maybe_lookup(self.db, data.future)) |existing_idx| {
-        if (self.idx == null or existing_idx != self.idx.?) {
-            log.debug("Invalid ID (in use): {s}", .{ data.future });
-            const existing_id = Package.get_id(self.db, existing_idx);
-            data.err = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{ http.fmtForUrl(existing_id), existing_id });
-            data.valid = false;
-            self.valid = false;
-            return;
-        }
+    if (!DB.is_valid_id(self.fields.id.future)) {
+        log.debug("Invalid ID: {s}", .{ self.fields.id.future });
+        self.fields.id.err = "ID may not be empty or '_', or contain '/'";
+        self.fields.id.valid = false;
+        self.valid = false;
+        return;
     }
 
-    // check and remove duplicates in additional_names
-    for (additional_names) |*additional_name| {
-        if (std.ascii.eqlIgnoreCase(data.future, additional_name.future)) {
-            additional_name.future = "";
-            self.names_changed = true;
-        }
-    }
+    try self.validate_name_not_in_use(&self.fields.id);
 }
 
 fn validate_parent(self: *Transaction) !void {
     if (self.fields.parent.future.len == 0) return;
 
-    const parent_idx = Package.maybe_lookup(self.db, self.fields.parent.future) orelse {
+    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.parent_mfr.future);
+
+    const parent_idx = Package.maybe_lookup(self.db, mfr_idx, self.fields.parent.future) orelse {
         log.debug("Invalid parent package: {s}", .{ self.fields.parent.future });
         self.fields.parent.err = "Invalid package";
         self.fields.parent.valid = false;
@@ -194,18 +201,76 @@ fn validate_parent(self: *Transaction) !void {
     }
 }
 
-fn validate_mfr(self: *Transaction) !void {
-    if (self.fields.mfr.future.len == 0) return;
+fn validate_full_name(self: *Transaction) !void {
+    if (self.fields.full_name.is_changed()) {
+        self.names_changed = true;
+    }
 
-    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.fields.mfr.future) orelse {
-        log.debug("Invalid manufacturer: {s}", .{ self.fields.mfr.future });
-        self.fields.mfr.err = "Invalid manufacturer";
-        self.fields.mfr.valid = false;
-        self.valid = false;
+    if (self.fields.full_name.future.len == 0) return;
+
+    if (std.ascii.eqlIgnoreCase(self.fields.id.future, self.fields.full_name.future)) {
+        self.fields.full_name.future = "";
+        self.names_changed = true;
         return;
-    };
+    }
 
-    self.fields.mfr.future = Manufacturer.get_id(self.db, mfr_idx);
+    try self.validate_name_not_in_use(&self.fields.full_name);
+}
+
+fn validate_additional_name(self: *Transaction, data: *Field_Data, prev_additional_names: []Field_Data) !void {
+    if (data.is_changed()) {
+        self.names_changed = true;
+    }
+
+    if (data.future.len == 0) return;
+
+    if (std.ascii.eqlIgnoreCase(data.future, self.fields.id.future)) {
+        data.future = "";
+        self.names_changed = true;
+        return;
+    }
+
+    if (std.ascii.eqlIgnoreCase(data.future, self.fields.full_name.future)) {
+        data.future = "";
+        self.names_changed = true;
+        return;
+    }
+
+    for (prev_additional_names) |*additional_name| {
+        if (std.ascii.eqlIgnoreCase(data.future, additional_name.future)) {
+            data.future = "";
+            self.names_changed = true;
+            return;
+        }
+    }
+
+    try self.validate_name_not_in_use(data);
+}
+
+fn validate_name_not_in_use(self: *Transaction, data: *Field_Data) !void {
+    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.fields.mfr.future);
+
+    if (Package.maybe_lookup(self.db, mfr_idx, data.future)) |existing_idx| {
+        if (self.idx == null or existing_idx != self.idx.?) {
+            log.debug("Invalid ID (in use): {s}", .{ data.future });
+            const existing_id = Package.get_id(self.db, existing_idx);
+            const maybe_existing_mfr_idx = Package.get_mfr(self.db, existing_idx);
+            if (maybe_existing_mfr_idx) |existing_mfr_idx| {
+                data.err = try http.tprint("In use by <a href=\"/mfr:{}/pkg:{}\" target=\"_blank\">{s}</a>", .{
+                    http.fmtForUrl(Manufacturer.get_id(self.db, existing_mfr_idx)),
+                    http.fmtForUrl(existing_id),
+                    existing_id,
+                });
+            } else {
+                data.err = try http.tprint("In use by <a href=\"/pkg:{}\" target=\"_blank\">{s}</a>", .{
+                    http.fmtForUrl(existing_id),
+                    existing_id,
+                });
+            }
+            data.valid = false;
+            self.valid = false;
+        }
+    }
 }
 
 pub fn apply_changes(self: *Transaction, db: *DB) !void {
@@ -217,18 +282,16 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
             return error.BadRequest;
         };
 
-        const idx = try Package.lookup_or_create(db, id_str);
+        const mfr_idx = Manufacturer.maybe_lookup(db, self.fields.mfr.future_opt());
+
+        const idx = try Package.lookup_or_create(db, mfr_idx, id_str);
         try Package.set_full_name(db, idx, self.fields.full_name.future_opt());
         try Package.set_notes(db, idx, self.fields.notes.future_opt());
         
         if (self.fields.parent.future_opt()) |parent| {
-            const parent_idx = Package.maybe_lookup(db, parent).?;
+            const parent_mfr_idx = Manufacturer.maybe_lookup(db, self.parent_mfr.future_opt());
+            const parent_idx = Package.maybe_lookup(db, parent_mfr_idx, parent).?;
             try Package.set_parent(db, idx, parent_idx);
-        }
-
-        if (self.fields.mfr.future_opt()) |mfr| {
-            const mfr_idx = Manufacturer.maybe_lookup(db, mfr).?;
-            try Package.set_mfr(db, idx, mfr_idx);
         }
 
         for (self.additional_names.values()) |name_data| {
@@ -250,7 +313,9 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
             }
         }
 
-        try Package.set_id(db, idx, self.fields.id.future);
+        const mfr_idx = Manufacturer.maybe_lookup(db, self.fields.mfr.future_opt());
+        try Package.set_id(db, idx, mfr_idx, self.fields.id.future);
+
         try Package.set_full_name(db, idx, self.fields.full_name.future_opt());
         for (self.additional_names.values()) |name_data| {
             if (name_data.future_opt()) |name| {
@@ -268,26 +333,25 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (self.fields.parent.is_removed()) {
         try Package.set_parent(db, idx, null);
         self.changes_applied = true;
-    } else if (self.fields.parent.changed()) |parent| {
-        const parent_idx = Package.maybe_lookup(db, parent.future).?;
-        try Package.set_parent(db, idx, parent_idx);
-        self.changes_applied = true;
-    }
-
-    if (self.fields.mfr.is_removed()) {
-        try Package.set_mfr(db, idx, null);
-        self.changes_applied = true;
-    } else if (self.fields.mfr.changed()) |mfr| {
-        const mfr_idx = Manufacturer.maybe_lookup(db, mfr.future).?;
-        try Package.set_mfr(db, idx, mfr_idx);
-        self.changes_applied = true;
+    } else if (self.fields.parent.future_opt()) |parent_id| {
+        if (self.fields.parent.is_changed() or self.parent_mfr.is_changed()) {
+            const parent_mfr_idx = Manufacturer.maybe_lookup(db, self.parent_mfr.future_opt());
+            const parent_idx = Package.maybe_lookup(db, parent_mfr_idx, parent_id).?;
+            try Package.set_parent(db, idx, parent_idx);
+            self.changes_applied = true;
+        }
     }
 }
 
 pub fn get_post_prefix(db: *const DB, maybe_idx: ?Package.Index) ![]const u8 {
     if (maybe_idx) |idx| {
         const id = Package.get_id(db, idx);
-        return try http.tprint("/pkg:{}", .{ http.fmtForUrl(id) });
+        if (Package.get_mfr(db, idx)) |mfr_idx| {
+            const mfr_id = Manufacturer.get_id(db, mfr_idx);
+            return try http.tprint("/mfr:{}/pkg:{}", .{ http.fmtForUrl(mfr_id), http.fmtForUrl(id) });
+        } else {
+            return try http.tprint("/pkg:{}", .{ http.fmtForUrl(id) });
+        }
     }
     return "/pkg";
 }
@@ -297,6 +361,7 @@ const Render_Options = struct {
         add,
         edit,
         field: Field,
+        parent_mfr,
         additional_name: []const u8,
     },
     rnd: ?*std.rand.Xoshiro256,
@@ -307,9 +372,13 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
 
     if (self.changes_applied) {
         if (self.created_idx != null) {
-            try req.redirect(post_prefix, .see_other);
+            if (self.add_another) {
+                try req.redirect(try http.tprint("/pkg/add{s}", .{ req.hx_current_query() }), .see_other);
+            } else {
+                try req.redirect(post_prefix, .see_other);
+            }
             return;
-        } else if (self.fields.id.is_changed()) {
+        } else if (self.fields.id.is_changed() or self.fields.mfr.is_changed()) {
             try req.redirect(try http.tprint("{s}?edit", .{ post_prefix }), .see_other);
             return;
         }
@@ -327,6 +396,11 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         .mfr = self.fields.mfr.future,
     };
 
+    var parent_search_url: []const u8 = "/pkg";
+    if (self.parent_mfr.future_opt()) |parent_mfr| {
+        parent_search_url = try http.tprint("/mfr:{}/pkg", .{ http.fmtForUrl(parent_mfr) });
+    }
+
     switch (options.target) {
         .add, .edit => {
             const render_data = .{
@@ -334,10 +408,19 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .validating = true,
                 .valid = self.valid,
                 .obj = obj,
+                .mfr_id = obj.mfr,
                 .title = self.fields.full_name.future_opt() orelse self.fields.id.future,
                 .post_prefix = post_prefix,
-                .parent_search_url = "/pkg",
                 .cancel_url = "/pkg",
+                .id_qualifier_field = "mfr",
+                .id_qualifier = obj.mfr,
+                .id_qualifier_placeholder = "Manufacturer",
+                .id_qualifier_search_url = "/mfr",
+                .parent_qualifier_field = "parent_mfr",
+                .parent_qualifier = self.parent_mfr.future,
+                .parent_qualifier_placeholder = "Manufacturer",
+                .parent_qualifier_search_url = "/mfr",
+                .parent_search_url = parent_search_url,
             };
             return switch (options.target) {
                 .add => try req.render("pkg/add.zk", render_data, .{}),
@@ -348,30 +431,79 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         else => {},
     }
 
-    inline for (comptime std.enums.values(Field)) |field| {
+    { // ID row
         const is_target = switch (options.target) {
-            .field => |target_field| field == target_field,
+            .field => |field| field == .id or field == .mfr,
             else => false,
         };
+        const is_changed = self.fields.id.is_changed() or self.fields.mfr.is_changed();
+        if (is_target or is_changed) try req.render("common/post_qualified_id.zk", .{
+            .validating = true,
+            .saved = self.changes_applied,
+            .valid = self.fields.mfr.valid and self.fields.id.valid,
+            .err = if (self.fields.mfr.err.len > 0) self.fields.mfr.err else self.fields.id.err,
+            .err_id = !self.fields.id.valid,
+            .err_id_qualifier = !self.fields.mfr.valid,
+            .swap_oob = !is_target,
+            .obj = obj,
+            .post_prefix = post_prefix,
+            .id_qualifier_field = "mfr",
+            .id_qualifier = obj.mfr,
+            .id_qualifier_placeholder = "Manufacturer",
+            .id_qualifier_search_url = "/mfr",
+        }, .{});
+    }
+    { // Parent row
+        const is_target = switch (options.target) {
+            .field => |field| field == .parent,
+            .parent_mfr => true,
+            else => false,
+        };
+        const is_changed = self.fields.parent.is_changed() or self.parent_mfr.is_changed();
+        if (is_target or is_changed) try req.render("common/post_qualified_parent.zk", .{
+            .validating = true,
+            .saved = self.changes_applied and self.fields.parent.future.len > 0,
+            .valid = self.parent_mfr.valid and self.fields.parent.valid,
+            .err = if (self.parent_mfr.err.len > 0) self.parent_mfr.err else self.fields.parent.err,
+            .err_parent = !self.fields.parent.valid,
+            .err_parent_qualifier = !self.parent_mfr.valid,
+            .swap_oob = !is_target,
+            .obj = obj,
+            .post_prefix = post_prefix,
+            .parent_qualifier_field = "parent_mfr",
+            .parent_qualifier = self.parent_mfr.future,
+            .parent_qualifier_placeholder = "Manufacturer",
+            .parent_qualifier_search_url = "/mfr",
+            .parent_search_url = parent_search_url,
+        }, .{});
+    }
 
-        const data = @field(self.fields, @tagName(field));
-        if (is_target or data.is_changed()) {
-            const render_data = .{
-                .validating = true,
-                .saved = self.changes_applied,
-                .valid = data.valid,
-                .err = data.err,
-                .swap_oob = !is_target,
-                .obj = obj,
-                .post_prefix = post_prefix,
-                .parent_search_url = "/pkg",
-            };
-            switch (field) {
-                .id => try req.render("common/post_id.zk", render_data, .{}),
-                .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
-                .notes => try req.render("common/post_notes.zk", render_data, .{}),
-                .parent => try req.render("common/post_parent.zk", render_data, .{}),
-                .mfr => try req.render("common/post_mfr.zk", render_data, .{}),
+    inline for (comptime std.enums.values(Field)) |field| {
+        switch (field) {
+            .id, .mfr, .parent => {},
+            else => {
+                const is_target = switch (options.target) {
+                    .field => |target_field| field == target_field,
+                    else => false,
+                };
+
+                const data = @field(self.fields, @tagName(field));
+                if (is_target or data.is_changed()) {
+                    const render_data = .{
+                        .validating = true,
+                        .saved = self.changes_applied,
+                        .valid = data.valid,
+                        .err = data.err,
+                        .swap_oob = !is_target,
+                        .obj = obj,
+                        .post_prefix = post_prefix,
+                    };
+                    switch (field) {
+                        .id, .mfr, .parent => unreachable,
+                        .full_name => try req.render("common/post_full_name.zk", render_data, .{}),
+                        .notes => try req.render("common/post_notes.zk", render_data, .{}),
+                    }
+                }
             }
         }
     }

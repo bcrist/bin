@@ -122,9 +122,9 @@ pub fn query(db: *const DB, allocator: std.mem.Allocator, q: []const u8, options
             qq = q["pkg:".len..];
         }
 
-        var name_iter = db.pkg_lookup.iterator();
-        while (name_iter.next()) |entry| {
-            if (name_relevance(qq, entry.key_ptr.*)) |relevance| {
+        var iter = db.pkg_lookup.iterator();
+        while (iter.next()) |entry| {
+            if (name_relevance(qq, entry.key_ptr.@"1")) |relevance| {
                 try items.update(DB.Any_Index.init(entry.value_ptr.*), relevance + bonus_relevance);
             }
         }

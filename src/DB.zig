@@ -18,7 +18,7 @@ dist_relations: std.MultiArrayList(Distributor.Relation) = .{},
 loc_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Location.Index) = .{},
 locs: std.MultiArrayList(Location) = .{},
 
-pkg_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Package.Index) = .{},
+pkg_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(?Manufacturer.Index, Package.Index) = .{},
 pkgs: std.MultiArrayList(Package) = .{},
 
 dist_part_lookup: maps.Qualified_String_Hash_Map_Ignore_Case_Unmanaged(Distributor.Index, Part.Index) = .{},

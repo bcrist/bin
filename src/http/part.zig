@@ -30,7 +30,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     const part = Part.get(db, idx);
     const mfr_id = if (part.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
-    const pkg_id = if (part.pkg) |pkg_idx| Package.get_id(db, pkg_idx) else null;
+
     var parent_id: ?[]const u8 = null;
     var parent_mfr_id: ?[]const u8 = null;
 
@@ -40,6 +40,17 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
             parent_mfr_id = Manufacturer.get_id(db, mfr_idx);
         }
         parent_id = Part.get_id(db, parent_idx);
+    }
+
+    var pkg_id: ?[]const u8 = null;
+    var pkg_mfr_id: ?[]const u8 = null;
+
+    if (part.pkg) |pkg_idx| {
+        const pkg_mfr = Package.get_mfr(db, pkg_idx);
+        if (pkg_mfr) |mfr_idx| {
+            pkg_mfr_id = Manufacturer.get_id(db, mfr_idx);
+        }
+        pkg_id = Package.get_id(db, pkg_idx);
     }
 
     var children = std.ArrayList(Part_Info).init(http.temp());
@@ -79,6 +90,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .parent_mfr = parent_mfr_id,
         .mfr_id = mfr_id,
         .pkg_id = pkg_id,
+        .pkg_mfr = pkg_mfr_id,
         .dist_pns = dist_pns.items,
         .children = children.items,
         .created = created_dto,

@@ -1,23 +1,28 @@
  pub fn get(session: ?Session, req: *http.Request, db: *const DB) !void {
     const missing_pkg = try req.get_path_param("pkg");
+    const missing_pkg_mfr = try req.get_path_param("mfr");
 
     if (missing_pkg) |name| if (name.len == 0) {
         try req.redirect("/pkg", .moved_permanently);
         return;
     };
 
-    var list = try std.ArrayList([]const u8).initCapacity(http.temp(), db.pkgs.len);
-    for (db.pkgs.items(.id), db.pkgs.items(.parent)) |id, parent| {
+    var list = try std.ArrayList(common.Package_Info).initCapacity(http.temp(), db.pkgs.len);
+    for (db.pkgs.items(.id), db.pkgs.items(.mfr), db.pkgs.items(.parent)) |id, mfr, parent| {
         if (parent == null) {
-            list.appendAssumeCapacity(id);
+            list.appendAssumeCapacity(.{
+                .mfr_id = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+                .id = id,
+            });
         }
     }
-    sort.natural(list.items);
+    std.sort.block(common.Package_Info, list.items, {}, common.Package_Info.less_than);
 
     try req.render("pkg/list.zk", .{
         .pkg_list = list.items,
         .session = session,
         .missing_pkg = missing_pkg,
+        .missing_pkg_mfr = missing_pkg_mfr,
     }, .{});
 }
 
@@ -26,6 +31,7 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 
     var param_iter = try req.form_iterator();
     while (try param_iter.next()) |param| {
+        // TODO check for mfr param
         q = try http.temp().dupe(u8, param.value orelse "");
     }
 
@@ -69,8 +75,10 @@ pub fn post(req: *http.Request, db: *const DB) !void {
 const log = std.log.scoped(.@"http.pkg");
 
 const Package = DB.Package;
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const Session = @import("../../Session.zig");
+const common = @import("../pkg.zig");
 const search = @import("../../search.zig");
 const sort = @import("../../sort.zig");
 const slimselect = @import("../slimselect.zig");

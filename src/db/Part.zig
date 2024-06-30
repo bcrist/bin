@@ -1,4 +1,3 @@
-
 mfr: ?Manufacturer.Index,
 id: []const u8,
 parent: ?Index,
@@ -133,12 +132,13 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     const i = idx.raw();
 
     const parents = db.parts.items(.parent);
-    for (0.., parents) |child_i, maybe_parent_idx| {
-        if (maybe_parent_idx == idx) {
+    const maybe_parent_idx = parents[i];
+    for (0.., parents) |child_i, maybe_child_parent_idx| {
+        if (maybe_child_parent_idx == idx) {
             if (recursive) {
                 try delete(db, Index.init(child_i), true);
             } else {
-                try set_parent(db, Index.init(child_i), null);
+                try set_parent(db, Index.init(child_i), maybe_parent_idx);
             }
         }
     }
@@ -150,7 +150,7 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
 
     db.parts.items(.dist_pns)[i].deinit(db.container_alloc);
 
-    if (parents[idx.raw()]) |parent_idx| {
+    if (maybe_parent_idx) |parent_idx| {
         try db.mark_dirty(parent_idx);
     }
 

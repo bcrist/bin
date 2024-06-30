@@ -133,7 +133,8 @@ pub fn main() !void {
         .{ ":*/relation:*",         r.module(Injector, mfr.edit.relation) },
         .{ ":*/relations",          r.module(Injector, mfr.reorder_relations) },
 
-        .{ ":*/p**", "/p**" }, // anything like /mfr:whatever/p:* gets handled the same way as /p:*
+        .{ ":*/pkg**", "/pkg**" },  // anything like /mfr:whatever/pkg:* gets handled the same way as /pkg:*
+        .{ ":*/p**", "/p**" },      // anything like /mfr:whatever/p:* gets handled the same way as /p:*
     });
 
     try server.router("/dist**", .{
@@ -193,6 +194,7 @@ pub fn main() !void {
         .{ "/id",                  r.module(Injector, pkg.add.validate) },
         .{ "/full_name",           r.module(Injector, pkg.add.validate) },
         .{ "/notes",               r.module(Injector, pkg.add.validate) },
+        .{ "/parent_mfr",          r.module(Injector, pkg.add.validate) },
         .{ "/parent",              r.module(Injector, pkg.add.validate) },
         .{ "/mfr",                 r.module(Injector, pkg.add.validate) },
         .{ "/additional_name",     r.module(Injector, pkg.add.validate_additional_name) },
@@ -201,6 +203,7 @@ pub fn main() !void {
         .{ ":*/id",                r.module(Injector, pkg.edit) },
         .{ ":*/full_name",         r.module(Injector, pkg.edit) },
         .{ ":*/notes",             r.module(Injector, pkg.edit) },
+        .{ ":*/parent_mfr",        r.module(Injector, pkg.edit) },
         .{ ":*/parent",            r.module(Injector, pkg.edit) },
         .{ ":*/mfr",               r.module(Injector, pkg.edit) },
         .{ ":*/additional_name",   r.module(Injector, pkg.edit.additional_name) },
@@ -217,6 +220,7 @@ pub fn main() !void {
         .{ "/notes",        r.module(Injector, part.add.validate) },
         .{ "/parent_mfr",   r.module(Injector, part.add.validate) },
         .{ "/parent",       r.module(Injector, part.add.validate) },
+        .{ "/pkg_mfr",      r.module(Injector, part.add.validate) },
         .{ "/pkg",          r.module(Injector, part.add.validate) },
         .{ "/dist_pn",      r.module(Injector, part.add.validate_dist_pn) },
         .{ "/dist_pn:*",    r.module(Injector, part.add.validate_dist_pn) },
@@ -226,6 +230,7 @@ pub fn main() !void {
         .{ ":*/notes",      r.module(Injector, part.edit) },
         .{ ":*/parent_mfr", r.module(Injector, part.edit) },
         .{ ":*/parent",     r.module(Injector, part.edit) },
+        .{ ":*/pkg_mfr",    r.module(Injector, part.edit) },
         .{ ":*/pkg",        r.module(Injector, part.edit) },
         .{ ":*/dist_pn",    r.module(Injector, part.edit.dist_pn) },
         .{ ":*/dist_pn:*",  r.module(Injector, part.edit.dist_pn) },
@@ -351,10 +356,10 @@ const inject = struct {
 pub const std_options: std.Options = .{
     .log_scope_levels = &.{
         .{ .scope = .sx, .level = .info },
-        //.{ .scope = .db, .level = .info },
+        .{ .scope = .db, .level = .info },
         .{ .scope = .@"db.intern", .level = .info },
         .{ .scope = .zkittle, .level = .info },
-        // .{ .scope = .http, .level = .info },
+        .{ .scope = .http, .level = .info },
         .{ .scope = .@"http.temp", .level = .info },
         .{ .scope = .mutex, .level = .info },
         .{ .scope = .session, .level = .info },

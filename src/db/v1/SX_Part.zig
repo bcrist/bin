@@ -1,25 +1,11 @@
-id: Manufacturer_And_Part = .{},
-parent: ?Manufacturer_And_Part = null,
-child: []const Manufacturer_And_Part = &.{},
-pkg: ?[]const u8 = null,
+id: SX_ID_With_Manufacturer = .{},
+parent: ?SX_ID_With_Manufacturer = null,
+child: []const SX_ID_With_Manufacturer = &.{},
+pkg: ?SX_ID_With_Manufacturer = null,
 notes: ?[]const u8 = null,
 dist_pn: []const Distributor_Part_Number = &.{},
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
-
-const Manufacturer_And_Part = struct {
-    mfr: []const u8 = "_",
-    id: []const u8 = "",
-
-    pub const context = struct {
-        pub const inline_fields = &.{ "mfr", "id" };
-    };
-
-    pub fn get_mfr_idx(self: Manufacturer_And_Part, db: *DB) !?Manufacturer.Index {
-        if (self.mfr.len == 0 or std.mem.eql(u8, self.mfr, "_")) return null;
-        return try Manufacturer.lookup_or_create(db, self.mfr);
-    }
-};
 
 const Distributor_Part_Number = struct {
     dist: []const u8 = "",
@@ -34,9 +20,10 @@ const SX_Part = @This();
 
 pub const context = struct {
     pub const inline_fields = &.{ "id" };
-    pub const id = Manufacturer_And_Part.context;
-    pub const parent = Manufacturer_And_Part.context;
-    pub const child = Manufacturer_And_Part.context;
+    pub const id = SX_ID_With_Manufacturer.context;
+    pub const parent = SX_ID_With_Manufacturer.context;
+    pub const child = SX_ID_With_Manufacturer.context;
+    pub const pkg = SX_ID_With_Manufacturer.context;
     pub const dist_pn = Distributor_Part_Number.context;
     pub const created = Date_Time.With_Offset.fmt_sql;
     pub const modified = Date_Time.With_Offset.fmt_sql;
@@ -48,11 +35,11 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
     const mfr_ids = db.mfrs.items(.id);
     const dist_ids = db.dists.items(.id);
     
-    var children = std.ArrayList(Manufacturer_And_Part).init(temp);
+    var children = std.ArrayList(SX_ID_With_Manufacturer).init(temp);
     for (0.., db.parts.items(.parent)) |child_i, parent_idx| {
         if (parent_idx == idx) {
             try children.append(.{
-                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[@intFromEnum(mfr_idx)] else "_",
+                .mfr = if (mfrs[child_i]) |mfr_idx| mfr_ids[mfr_idx.raw()] else "_",
                 .id = ids[child_i],
             });
         }
@@ -63,27 +50,31 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Part.Index) !SX_Part {
     const dist_pns = try temp.alloc(Distributor_Part_Number, data.dist_pns.items.len);
     for (data.dist_pns.items, dist_pns) |src, *dest| {
         dest.* = .{
-            .dist = dist_ids[@intFromEnum(src.dist)],
+            .dist = dist_ids[src.dist.raw()],
             .pn = src.pn,
         };
     }
 
-    const id: Manufacturer_And_Part = .{
+    const id: SX_ID_With_Manufacturer = .{
         .mfr = if (data.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
         .id = data.id,
     };
 
-    const parent: ?Manufacturer_And_Part = if (data.parent) |parent_idx| .{
+    const parent: ?SX_ID_With_Manufacturer = if (data.parent) |parent_idx| .{
         .mfr = if (Part.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
         .id = Part.get_id(db, parent_idx),
     } else null;
 
-    const pkg_id = if (data.pkg) |pkg_idx| Package.get_id(db, pkg_idx) else null;
+    const pkg: ?SX_ID_With_Manufacturer = if (data.pkg) |pkg_idx| .{
+        .mfr = if (Package.get_mfr(db, pkg_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else "_",
+        .id = Package.get_id(db, pkg_idx),
+    } else null;
+
     return .{
         .id = id,
         .parent = parent,
         .child = children.items,
-        .pkg = pkg_id,
+        .pkg = pkg,
         .notes = data.notes,
         .dist_pn = dist_pns,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
@@ -103,8 +94,9 @@ pub fn read(self: SX_Part, db: *DB) !void {
         _ = try Part.set_parent(db, idx, parent_idx);
     }
 
-    if (self.pkg) |pkg_id| {
-        const pkg_idx = try Package.lookup_or_create(db, pkg_id);
+    if (self.pkg) |pkg| {
+        const pkg_mfr_idx = try pkg.get_mfr_idx(db);
+        const pkg_idx = try Package.lookup_or_create(db, pkg_mfr_idx, pkg.id);
         _ = try Part.set_pkg(db, idx, pkg_idx);
     }
 
@@ -192,6 +184,7 @@ const Manufacturer = DB.Manufacturer;
 const Distributor = DB.Distributor;
 const Package = DB.Package;
 const DB = @import("../../DB.zig");
+const SX_ID_With_Manufacturer = @import("SX_ID_With_Manufacturer.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;
 const tempora = @import("tempora");

@@ -2,26 +2,59 @@
 <th>
     <label for="pkg_input">Package</label>
 </th>
-<td>
-    <select id="pkg_input" name="pkg"
-\\err?
-        class="slimselect submitted_field invalid"
-        hx-vals='{"invalid":true}'
-\\;
-        class="slimselect submitted_field"
-\\~
-        hx-post="\\post_prefix///pkg"
-        hx-trigger="ss:afterChange"
+<td><div style="display: flex; gap: 0.5em;">
+    <form autocomplete="off"
+        hx-post="\\post_prefix///pkg_mfr"
+        hx-trigger="change from:#pkg_mfr_input"
         hx-include=".submitted_field"
         hx-target="closest tr"
-        hx-swap="outerHTML"
-        data-deselectable
-        data-search-url="/pkg">
-        <option data-placeholder="true" value> </option>
-\\pkg_id|obj.pkg?
-        <option selected value="\\pkg_id|obj.pkg//">\\pkg_id|obj.pkg//</option>
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off" style="min-width: 15em"
+            id="pkg_mfr_input"
+            name="pkg_mfr"
+            list="pkg_mfr_datalist"
+\\err_pkg_mfr?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
 \\~
-    </select>
-</td>
+            value="\\pkg_mfr//"
+            placeholder="Manufacturer"
+            hx-post="/mfr"
+            hx-trigger="input changed delay:200ms"
+            hx-params="pkg_mfr"
+            hx-target="#pkg_mfr_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="pkg_mfr_datalist"></datalist>
+    </form>
+    <form autocomplete="off"
+        hx-post="\\post_prefix///pkg"
+        hx-trigger="change from:#pkg_input"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off" style="min-width: 15em"
+            id="pkg_input"
+            name="pkg"
+            list="pkg_datalist"
+\\err_pkg?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
+\\~
+            value="\\pkg|obj.pkg//"
+            placeholder="ID"
+            hx-post="\\pkg_mfr?///mfr:\\@url pkg_mfr ~///pkg"
+            hx-trigger="input changed delay:200ms"
+            hx-params="pkg"
+            hx-target="#pkg_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="pkg_datalist"></datalist>
+    </form>
+</div></td>
 <td>\\@include "_validation.zk"//</td>
 </tr>

@@ -116,7 +116,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     var dir = try root.makeOpenPath("mfr", .{ .iterate = true });
     defer dir.close();
 
-    for (0..db.mfrs.len, db.mfrs.items(.id)) |i, id| {
+    for (0.., db.mfrs.items(.id)) |i, id| {
         const dest_path = try paths.unique_path(allocator, id, filenames);
         const idx = Manufacturer.Index.init(i);
 

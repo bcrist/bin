@@ -18,6 +18,11 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
             .target = .parent_mfr,
             .rnd = null,
         });
+    } else if (std.mem.eql(u8, field_str, "pkg_mfr")) {
+        try txn.render_results(session, req, .{
+            .target = .pkg_mfr,
+            .rnd = null,
+        });
     } else {
         const field = std.meta.stringToEnum(Transaction.Field, field_str) orelse return error.BadRequest;
         try txn.render_results(session, req, .{

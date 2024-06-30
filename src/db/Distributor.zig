@@ -243,7 +243,7 @@ pub fn add_additional_names(db: *DB, idx: Index, additional_names: []const []con
                 log.err("Ignoring additional name \"{}\" for distributor \"{}\" because it is already associated with \"{}\"", .{
                     std.zig.fmtEscapes(raw_name),
                     std.zig.fmtEscapes(ids[idx.raw()]),
-                    std.zig.fmtEscapes(ids[@intFromEnum(gop.value_ptr.*)]),
+                    std.zig.fmtEscapes(ids[gop.value_ptr.raw()]),
                 });
             }
         } else {
@@ -455,7 +455,7 @@ pub const Relation = struct {
         const current = sources[i];
         if (current != source) {
             sources[i] = source;
-            log.debug("Changed source for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(source) });
+            log.debug("Changed source for {} from {} to {}", .{ idx, current.raw(), source.raw() });
             try set_modified_relation(db, idx);
             try set_modified(db, current);
         }
@@ -467,7 +467,7 @@ pub const Relation = struct {
         const current = targets[i];
         if (current != target) {
             targets[i] = target;
-            log.debug("Changed target for {} from {} to {}", .{ idx, @intFromEnum(current), @intFromEnum(target) });
+            log.debug("Changed target for {} from {} to {}", .{ idx, current.raw(), target.raw() });
             try set_modified_relation(db, idx);
             try set_modified(db, current);
         }

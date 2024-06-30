@@ -478,7 +478,11 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
 
     if (self.changes_applied) {
         if (self.created_idx != null) {
-            try req.redirect(post_prefix, .see_other);
+            if (self.add_another) {
+                try req.redirect(try http.tprint("/mfr/add{s}", .{ req.hx_current_query() }), .see_other);
+            } else {
+                try req.redirect(post_prefix, .see_other);
+            }
             return;
         } else if (self.fields.id.is_changed()) {
             try req.redirect(try http.tprint("{s}?edit", .{ post_prefix }), .see_other);

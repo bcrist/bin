@@ -34,7 +34,7 @@
 \\packages?
     <h2>Packages</h2>
 \\  packages:
-    <div><a href="/pkg:\\@url *//">\\*//</a></div>
+    <div><a href="/mfr:\\@url obj.id///pkg:\\@url *//">\\*//</a></div>
 \\~~
 
 \\parts?

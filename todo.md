@@ -12,8 +12,10 @@
 
 * slimselect: Automatically compute the end year based on the current time
 * login page password field styling
-* zkittle template fragments
-* zkittle vscode fix expression syntax highlighting
+* zkittle: intern literal strings one line at a time
+* zkittle: add option to collapse whitespace
+* zkittle: template fragments
+* zkittle: vscode fix expression syntax highlighting
 * Keyboard shortcuts
 * recently modified items on landing page
 * git status on landing page

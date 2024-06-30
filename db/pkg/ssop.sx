@@ -1,11 +1,11 @@
 (version 1)
-(pkg SSOP "Shrink Small Outline Package"
-   (child SSOP-20)
+(pkg _ SSOP "Shrink Small Outline Package"
+   (child _ SSOP-20)
    (created "2024-06-09 00:02:41 +00:00")
    (modified "2024-06-09 01:04:21 +00:00")
 )
-(pkg SSOP-20
-   (parent SSOP)
+(pkg _ SSOP-20
+   (parent _ SSOP)
    (created "2024-06-09 01:04:21 +00:00")
    (modified "2024-06-09 01:04:21 +00:00")
 )

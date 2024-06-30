@@ -1,7 +1,6 @@
 <table class="edit_properties">
-\\@include "common/post_id.zk"//
+\\@include "common/post_qualified_id.zk"//
 \\@include "common/post_full_name.zk"//
-\\@include "common/post_parent.zk"//
-\\@include "common/post_mfr.zk"//
+\\@include "common/post_qualified_parent.zk"//
 \\@include "common/post_notes.zk"//
 </table>

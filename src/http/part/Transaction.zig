@@ -3,6 +3,7 @@ idx: ?Part.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
 parent_mfr: Field_Data,
+pkg_mfr: Field_Data,
 dist_pns: std.StringArrayHashMapUnmanaged(Distributor_Part_Number_Data),
 
 add_another: bool = false,
@@ -40,13 +41,14 @@ pub fn init_empty(db: *const DB) Transaction {
         .db = db,
         .idx = null,
         .fields = .{
+            .mfr = .{},
             .id = .{},
             .parent = .{},
-            .mfr = .{},
             .pkg = .{},
             .notes = .{},
         },
         .parent_mfr = .{},
+        .pkg_mfr = .{},
         .dist_pns = .{},
     };
 }
@@ -54,7 +56,11 @@ pub fn init_empty(db: *const DB) Transaction {
 pub fn init_idx(db: *const DB, idx: Part.Index) !Transaction {
     const part = Part.get(db, idx);
 
-    const parent_mfr: Field_Data = if (part.parent) |parent_idx| try Field_Data.init(db, parent_idx) else .{};
+    const parent_mfr: Field_Data = if (part.parent) |parent_idx|
+        try Field_Data.init(db, Part.get_mfr(db, parent_idx)) else .{};
+
+    const pkg_mfr: Field_Data = if (part.pkg) |pkg_idx|
+        try Field_Data.init(db, Package.get_mfr(db, pkg_idx)) else .{};
 
     var dist_pns: std.StringArrayHashMapUnmanaged(Distributor_Part_Number_Data) = .{};
     try dist_pns.ensureTotalCapacity(http.temp(), part.dist_pns.items.len);
@@ -72,6 +78,7 @@ pub fn init_idx(db: *const DB, idx: Part.Index) !Transaction {
         .idx = idx,
         .fields = try Field_Data.init_fields(Field, db, part),
         .parent_mfr = parent_mfr,
+        .pkg_mfr = pkg_mfr,
         .dist_pns = dist_pns,
     };
 }
@@ -144,6 +151,12 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         return true;
     }
 
+    if (std.mem.eql(u8, param.name, "pkg_mfr")) {
+        const value = try trim(param.value);
+        self.pkg_mfr.set_processed(value, self.idx == null);
+        return true;
+    }
+
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
             const value = try trim(param.value);
@@ -158,10 +171,11 @@ fn trim(value: ?[]const u8) ![]const u8 {
 }
 
 pub fn validate(self: *Transaction) !void {
-    try self.validate_mfr();
+    try self.validate_mfr(&self.fields.mfr);
     try self.validate_id();
-    try self.validate_parent_mfr();
+    try self.validate_mfr(&self.parent_mfr);
     try self.validate_parent();
+    try self.validate_mfr(&self.pkg_mfr);
     try self.validate_pkg();
 
     const dist_pns = self.dist_pns.values();
@@ -170,18 +184,18 @@ pub fn validate(self: *Transaction) !void {
     }
 }
 
-fn validate_mfr(self: *Transaction) !void {
-    if (self.fields.mfr.future.len == 0) return;
+fn validate_mfr(self: *Transaction, data: *Field_Data) !void {
+    if (data.future.len == 0) return;
 
-    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.fields.mfr.future) orelse {
-        log.debug("Invalid manufacturer: {s}", .{ self.fields.mfr.future });
-        self.fields.mfr.err = "Invalid manufacturer";
-        self.fields.mfr.valid = false;
+    const mfr_idx = Manufacturer.maybe_lookup(self.db, data.future) orelse {
+        log.debug("Invalid manufacturer: {s}", .{ data.future });
+        data.err = "Invalid manufacturer";
+        data.valid = false;
         self.valid = false;
         return;
     };
 
-    self.fields.mfr.future = Manufacturer.get_id(self.db, mfr_idx);
+    data.future = Manufacturer.get_id(self.db, mfr_idx);
 }
 
 fn validate_id(self: *Transaction) !void {
@@ -202,7 +216,7 @@ fn validate_id(self: *Transaction) !void {
             const maybe_existing_mfr_idx = Part.get_mfr(self.db, existing_idx);
             if (maybe_existing_mfr_idx) |existing_mfr_idx| {
                 self.fields.id.err = try http.tprint("In use by <a href=\"/mfr:{}/p:{}\" target=\"_blank\">{s}</a>", .{
-                    http.fmtForUrl(Manufacturer.get_id(existing_mfr_idx)),
+                    http.fmtForUrl(Manufacturer.get_id(self.db, existing_mfr_idx)),
                     http.fmtForUrl(existing_id),
                     existing_id,
                 });
@@ -217,20 +231,6 @@ fn validate_id(self: *Transaction) !void {
             return;
         }
     }
-}
-
-fn validate_parent_mfr(self: *Transaction) !void {
-    if (self.parent_mfr.future.len == 0) return;
-
-    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.parent_mfr.future) orelse {
-        log.debug("Invalid parent manufacturer: {s}", .{ self.parent_mfr.future });
-        self.parent_mfr.err = "Invalid manufacturer";
-        self.parent_mfr.valid = false;
-        self.valid = false;
-        return;
-    };
-
-    self.parent_mfr.future = Manufacturer.get_id(self.db, mfr_idx);
 }
 
 fn validate_parent(self: *Transaction) !void {
@@ -262,7 +262,9 @@ fn validate_parent(self: *Transaction) !void {
 fn validate_pkg(self: *Transaction) !void {
     if (self.fields.pkg.future.len == 0) return;
 
-    const pkg_idx = Package.maybe_lookup(self.db, self.fields.pkg.future) orelse {
+    const mfr_idx = Manufacturer.maybe_lookup(self.db, self.pkg_mfr.future);
+
+    const pkg_idx = Package.maybe_lookup(self.db, mfr_idx, self.fields.pkg.future) orelse {
         log.debug("Invalid package: {s}", .{ self.fields.pkg.future });
         self.fields.pkg.err = "Invalid package";
         self.fields.pkg.valid = false;
@@ -295,7 +297,7 @@ fn validate_dist_pn(self: *Transaction, index_str: []const u8, dist_pn: *Distrib
                 const maybe_existing_mfr_idx = Part.get_mfr(self.db, existing_part_idx);
                 if (maybe_existing_mfr_idx) |existing_mfr_idx| {
                     dist_pn.pn.err = try http.tprint("In use by <a href=\"/mfr:{}/p:{}\" target=\"_blank\">{s}</a>", .{
-                        http.fmtForUrl(Manufacturer.get_id(existing_mfr_idx)),
+                        http.fmtForUrl(Manufacturer.get_id(self.db, existing_mfr_idx)),
                         http.fmtForUrl(existing_part_id),
                         existing_part_id,
                     });
@@ -353,7 +355,8 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         }
 
         if (self.fields.pkg.future_opt()) |pkg| {
-            const pkg_idx = Package.maybe_lookup(db, pkg).?;
+            const pkg_mfr_idx = Manufacturer.maybe_lookup(db, self.pkg_mfr.future_opt());
+            const pkg_idx = Package.maybe_lookup(db, pkg_mfr_idx, pkg).?;
             try Part.set_pkg(db, idx, pkg_idx);
         }
 
@@ -405,11 +408,14 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Part.set_pkg(db, idx, null);
         log.debug("changes applied: pkg removed", .{});
         self.changes_applied = true;
-    } else if (self.fields.pkg.changed()) |pkg| {
-        const pkg_idx = Package.maybe_lookup(db, pkg.future).?;
-        try Part.set_pkg(db, idx, pkg_idx);
-        log.debug("changes applied: pkg changed", .{});
-        self.changes_applied = true;
+    } else if (self.fields.pkg.future_opt()) |pkg_id| {
+        if (self.fields.pkg.is_changed() or self.pkg_mfr.is_changed()) {
+            const pkg_mfr_idx = Manufacturer.maybe_lookup(db, self.pkg_mfr.future_opt());
+            const pkg_idx = Package.maybe_lookup(db, pkg_mfr_idx, pkg_id).?;
+            try Part.set_pkg(db, idx, pkg_idx);
+            log.debug("changes applied: pkg changed", .{});
+            self.changes_applied = true;
+        }
     }
 
     for (self.dist_pns.values()) |dist_pn| {
@@ -462,6 +468,7 @@ const Render_Options = struct {
         edit,
         field: Field,
         parent_mfr,
+        pkg_mfr,
         dist_pn: []const u8,
     },
     rnd: ?*std.rand.Xoshiro256,
@@ -501,6 +508,11 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         parent_search_url = try http.tprint("/mfr:{}/p", .{ http.fmtForUrl(parent_mfr) });
     }
 
+    // var pkg_search_url: []const u8 = "/pkg";
+    // if (self.pkg_mfr.future_opt()) |pkg_mfr| {
+    //     pkg_search_url = try http.tprint("/mfr:{}/pkg", .{ http.fmtForUrl(pkg_mfr) });
+    // }
+
     switch (options.target) {
         .add, .edit => {
             const dist_pns = try http.temp().alloc(common.Distributor_Part_Number, self.dist_pns.count());
@@ -517,6 +529,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .valid = self.valid,
                 .obj = obj,
                 .mfr_id = obj.mfr,
+                .pkg_mfr = self.pkg_mfr.future,
                 .title = self.fields.id.future,
                 .dist_pns = dist_pns,
                 .post_prefix = post_prefix,
@@ -586,10 +599,30 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
             .parent_search_url = parent_search_url,
         }, .{});
     }
+    { // Package row
+        const is_target = switch (options.target) {
+            .field => |field| field == .pkg,
+            .pkg_mfr => true,
+            else => false,
+        };
+        const is_changed = self.fields.pkg.is_changed() or self.pkg_mfr.is_changed();
+        if (is_target or is_changed) try req.render("part/post_pkg.zk", .{
+            .validating = true,
+            .saved = self.changes_applied and self.fields.pkg.future.len > 0,
+            .valid = self.pkg_mfr.valid and self.fields.pkg.valid,
+            .err = if (self.pkg_mfr.err.len > 0) self.pkg_mfr.err else self.fields.pkg.err,
+            .err_pkg = !self.fields.pkg.valid,
+            .err_mkg_mfr = !self.pkg_mfr.valid,
+            .swap_oob = !is_target,
+            .obj = obj,
+            .post_prefix = post_prefix,
+            .pkg_mfr = self.pkg_mfr.future,
+        }, .{});
+    }
 
     inline for (comptime std.enums.values(Field)) |field| {
         switch (field) {
-            .id, .mfr, .parent => {},
+            .id, .mfr, .parent, .pkg => {},
             else => {
                 const is_target = switch (options.target) {
                     .field => |target_field| field == target_field,
@@ -608,9 +641,8 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                         .post_prefix = post_prefix,
                     };
                     switch (field) {
-                        .id, .mfr, .parent => unreachable,
+                        .id, .mfr, .parent, .pkg => unreachable,
                         .notes => try req.render("common/post_notes.zk", render_data, .{}),
-                        .pkg => try req.render("part/post_pkg.zk", render_data, .{}),
                     }
                 }
             }

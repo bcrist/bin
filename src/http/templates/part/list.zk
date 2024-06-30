@@ -12,7 +12,7 @@
 </div>
 \\~
 
-<h1>All Parts</h1>
+<h1>Top-Level Parts</h1>
 <div class="columns">
 \\part_list:
     <a href="\\*.mfr_id?///mfr:\\@url mfr_id~///p:\\@url id//">\\id//</a>
