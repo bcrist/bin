@@ -10,6 +10,8 @@
 * Deduplicate Mfr/dist relations
 * Improve search syntax
 
+* Projects: steps - progress bars, due dates
+
 * slimselect: Automatically compute the end year based on the current time
 * login page password field styling
 * zkittle: intern literal strings one line at a time
