@@ -12,7 +12,6 @@
 * Improve search syntax
 
 * slimselect: Automatically compute the end year based on the current time
-* login page password field styling
 * Keyboard shortcuts
 * recently modified items on landing page
 * memory status on landing page

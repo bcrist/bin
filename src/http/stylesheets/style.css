@@ -51,7 +51,7 @@ header nav {
     justify-content: center;
 }
 
-header nav a, aside a, button {
+header nav a, aside a, button, input[type="submit"] {
     appearance: none;
     display: inline-block;
     background: #324653;
@@ -68,7 +68,7 @@ header nav a, aside a, button {
     min-width: 140px;
     cursor: pointer;
 }
-header nav a:hover, aside a:hover, button:hover {
+header nav a:hover, aside a:hover, button:hover, input[type="submit"]:hover {
     text-decoration: none;
     background: #38505f;
 }
@@ -136,7 +136,7 @@ aside.flex button, aside.flex a {
     transition: opacity 1s ease-out;
 }
 
-textarea, input[type=text], input[type=search], input[type=number] {
+textarea, input[type=text], input[type=search], input[type=number], input[type=password] {
     background: #111;
     color: #eee;
     border-radius: 0.5em;
@@ -156,7 +156,7 @@ textarea {
     min-height: 8em;
 }
 
-textarea.invalid, input[type=text].invalid, input[type=search].invalid, input[type=number].invalid {
+textarea.invalid, input[type=text].invalid, input[type=search].invalid, input[type=number].invalid, input[type=password].invalid {
     background: #100;
     border-color: #722;
     color: #ccc;
