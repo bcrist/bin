@@ -1,6 +1,6 @@
 (version 1)
 (mfr Intel "Intel Corporation"
-   (url https://www.intel.com/content/www/us/en/homepage.html)
+   (website https://www.intel.com/content/www/us/en/homepage.html)
    (wiki https://en.wikipedia.org/wiki/Intel)
    (country USA)
    (created "2024-05-05 21:22:01 +00:00")

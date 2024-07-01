@@ -1,7 +1,7 @@
 id: []const u8 = "",
 full_name: ?[]const u8 = null,
 additional_names: []const []const u8 = &.{},
-url: ?[]const u8 = null,
+website: ?[]const u8 = null,
 wiki: ?[]const u8 = null,
 country: ?[]const u8 = null,
 founded: ?u16 = null,
@@ -63,7 +63,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Distributor.Index) !SX_
         .id = data.id,
         .full_name = full_name,
         .additional_names = data.additional_names.items,
-        .url = data.website,
+        .website = data.website,
         .wiki = data.wiki,
         .country = data.country,
         .notes = data.notes,
@@ -92,8 +92,8 @@ pub fn read(self: SX_Distributor, db: *DB) !void {
     try Distributor.set_id(db, idx, id);
     if (full_name) |name| try Distributor.set_full_name(db, idx, name);
     if (self.country) |country| try Distributor.set_country(db, idx, country);
-    if (self.url) |url| try Distributor.set_website(db, idx, url);
-    if (self.wiki) |wiki| try Distributor.set_wiki(db, idx, wiki);
+    if (self.website) |url| try Distributor.set_website(db, idx, url);
+    if (self.wiki) |url| try Distributor.set_wiki(db, idx, url);
     if (self.notes) |notes| try Distributor.set_notes(db, idx, notes);
     if (self.founded) |year| try Distributor.set_founded_year(db, idx, year);
     if (self.suspended) |year| try Distributor.set_suspended_year(db, idx, year);
@@ -146,7 +146,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
 
 const log = std.log.scoped(.db);
 
-const Distributor = @import("../Distributor.zig");
+const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;

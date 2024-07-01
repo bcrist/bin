@@ -1,6 +1,6 @@
 (version 1)
 (mfr AMD "Advanced Micro Devices"
-   (url https://www.amd.com/en)
+   (website https://www.amd.com/en)
    (wiki https://en.wikipedia.org/wiki/Advanced_Micro_Devices)
    (country USA)
    (created "2024-05-05 21:22:01 +00:00")

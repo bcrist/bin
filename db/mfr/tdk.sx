@@ -1,6 +1,6 @@
 (version 1)
 (mfr TDK "TDK Corporation"
-   (url https://www.tdk.com/en/index.html)
+   (website https://www.tdk.com/en/index.html)
    (wiki https://en.wikipedia.org/wiki/TDK)
    (country Japan)
    (created "2024-05-05 21:22:01 +00:00")

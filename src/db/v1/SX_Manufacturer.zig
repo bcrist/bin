@@ -1,7 +1,7 @@
 id: []const u8 = "",
 full_name: ?[]const u8 = null,
 additional_names: []const []const u8 = &.{},
-url: ?[]const u8 = null,
+website: ?[]const u8 = null,
 wiki: ?[]const u8 = null,
 country: ?[]const u8 = null,
 founded: ?u16 = null,
@@ -63,7 +63,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Manufacturer.Index) !SX
         .id = data.id,
         .full_name = full_name,
         .additional_names = data.additional_names.items,
-        .url = data.website,
+        .website = data.website,
         .wiki = data.wiki,
         .country = data.country,
         .notes = data.notes,
@@ -92,8 +92,8 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
     try Manufacturer.set_id(db, idx, id);
     if (full_name) |name| try Manufacturer.set_full_name(db, idx, name);
     if (self.country) |country| try Manufacturer.set_country(db, idx, country);
-    if (self.url) |url| try Manufacturer.set_website(db, idx, url);
-    if (self.wiki) |wiki| try Manufacturer.set_wiki(db, idx, wiki);
+    if (self.website) |url| try Manufacturer.set_website(db, idx, url);
+    if (self.wiki) |url| try Manufacturer.set_wiki(db, idx, url);
     if (self.notes) |notes| try Manufacturer.set_notes(db, idx, notes);
     if (self.founded) |year| try Manufacturer.set_founded_year(db, idx, year);
     if (self.suspended) |year| try Manufacturer.set_suspended_year(db, idx, year);
@@ -146,7 +146,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
 
 const log = std.log.scoped(.db);
 
-const Manufacturer = @import("../Manufacturer.zig");
+const Manufacturer = DB.Manufacturer;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;

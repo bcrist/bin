@@ -1,6 +1,6 @@
 (version 1)
 (dist DK DigiKey
-   (url https://www.digikey.com/)
+   (website https://www.digikey.com/)
    (country USA)
    (rel formerly Mouser)
    (created "2024-06-21 00:31:43 +00:00")

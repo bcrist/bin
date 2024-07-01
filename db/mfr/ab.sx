@@ -1,6 +1,6 @@
 (version 1)
 (mfr AB "Allen Bradley"
-   (url http://ab.rockwellautomation.com/)
+   (website http://ab.rockwellautomation.com/)
    (wiki https://en.wikipedia.org/wiki/Allen-Bradley)
    (country USA)
    (rel subsidiary-of Rockwell)

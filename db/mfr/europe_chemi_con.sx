@@ -1,6 +1,6 @@
 (version 1)
 (mfr "Europe Chemi-Con"
-   (url https://www.europechemicon.de/en/)
+   (website https://www.europechemicon.de/en/)
    (country Germany)
    (rel subsidiary-of "Nippon Chemi-Con")
    (created "2024-05-05 21:22:01 +00:00")

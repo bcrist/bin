@@ -1,6 +1,6 @@
 (version 1)
 (mfr "Nippon Chemi-Con"
-   (url https://www.chemi-con.co.jp/en/)
+   (website https://www.chemi-con.co.jp/en/)
    (wiki https://en.wikipedia.org/wiki/Nippon_Chemi-Con)
    (country Japan)
    (rel subsidiary "United Chemi-Con")

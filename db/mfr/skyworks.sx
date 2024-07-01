@@ -1,6 +1,6 @@
 (version 1)
 (mfr Skyworks "Skyworks Solutions"
-   (url https://www.skyworksinc.com/)
+   (website https://www.skyworksinc.com/)
    (wiki https://en.wikipedia.org/wiki/Skyworks_Solutions)
    (country USA)
    (rel partially-absorbed "Silicon Labs" 2021)

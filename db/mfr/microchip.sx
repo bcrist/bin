@@ -1,6 +1,6 @@
 (version 1)
 (mfr Microchip "Microchip Technology"
-   (url https://www.microchip.com/)
+   (website https://www.microchip.com/)
    (wiki https://en.wikipedia.org/wiki/Microchip_Technology)
    (country USA)
    (rel absorbed Micrel 2015)

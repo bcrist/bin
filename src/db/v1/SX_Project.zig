@@ -139,7 +139,7 @@ pub fn write_with_children(allocator: std.mem.Allocator, db: *DB, sxw: *sx.Write
 
 const log = std.log.scoped(.db);
 
-const Project = @import("../Project.zig");
+const Project = DB.Project;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;

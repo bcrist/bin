@@ -1,6 +1,6 @@
 (version 1)
 (mfr TE "TE Connectivity"
-   (url https://www.te.com/usa-en/home.html)
+   (website https://www.te.com/usa-en/home.html)
    (wiki https://en.wikipedia.org/wiki/TE_Connectivity)
    (country USA)
    (rel formerly Tyco 2011)

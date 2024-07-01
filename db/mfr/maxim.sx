@@ -1,6 +1,6 @@
 (version 1)
 (mfr Maxim "Maxim Integrated"
-   (url https://www.maximintegrated.com/en.html)
+   (website https://www.maximintegrated.com/en.html)
    (wiki https://www.maximintegrated.com/en.html)
    (country USA)
    (rel subsidiary-of "Analog Devices" 2020)

@@ -1,6 +1,6 @@
 (version 1)
 (mfr FTDI "Future Technology Devices International"
-   (url https://www.ftdichip.com/)
+   (website https://www.ftdichip.com/)
    (wiki https://en.wikipedia.org/wiki/FTDI)
    (country Scotland)
    (created "2024-05-05 21:22:01 +00:00")

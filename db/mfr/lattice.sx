@@ -1,6 +1,6 @@
 (version 1)
 (mfr Lattice "Lattice Semiconductor"
-   (url https://www.latticesemi.com/)
+   (website https://www.latticesemi.com/)
    (wiki https://en.wikipedia.org/wiki/Lattice_Semiconductor)
    (country USA)
    (created "2024-05-05 21:22:01 +00:00")

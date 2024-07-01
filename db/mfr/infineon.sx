@@ -1,6 +1,6 @@
 (version 1)
 (mfr Infineon "Infineon Technologies"
-   (url https://www.infineon.com/)
+   (website https://www.infineon.com/)
    (wiki https://en.wikipedia.org/wiki/Infineon_Technologies)
    (country Germany)
    (rel absorbed IR 2014)

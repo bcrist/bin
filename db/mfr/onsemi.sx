@@ -1,6 +1,6 @@
 (version 1)
 (mfr Onsemi "ON Semiconductor"
-   (url https://www.onsemi.com/)
+   (website https://www.onsemi.com/)
    (wiki https://en.wikipedia.org/wiki/Onsemi)
    (country USA)
    (rel spun-off-from Motorola 1999)

@@ -1,6 +1,6 @@
 (version 1)
 (mfr NEC "NEC Corporation"
-   (url http://www.nec.com/)
+   (website http://www.nec.com/)
    (wiki https://en.wikipedia.org/wiki/NEC)
    (country Japan)
    (created "2024-05-05 21:22:01 +00:00")

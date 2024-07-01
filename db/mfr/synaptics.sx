@@ -1,6 +1,6 @@
 (version 1)
 (mfr Synaptics
-   (url https://www.synaptics.com/)
+   (website https://www.synaptics.com/)
    (wiki https://en.wikipedia.org/wiki/Synaptics)
    (country USA)
    (rel absorbed Conexant 2017)

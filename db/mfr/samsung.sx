@@ -1,6 +1,6 @@
 (version 1)
 (mfr Samsung "Samsung Electro-Mechanics"
-   (url https://www.samsungsem.com/global/index.do)
+   (website https://www.samsungsem.com/global/index.do)
    (wiki https://en.wikipedia.org/wiki/Samsung_Electro-Mechanics)
    (country "South Korea")
    (created "2024-05-05 21:22:01 +00:00")

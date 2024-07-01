@@ -153,7 +153,7 @@ pub fn write_with_children(allocator: std.mem.Allocator, db: *DB, sxw: *sx.Write
 
 const log = std.log.scoped(.db);
 
-const Package = @import("../Package.zig");
+const Package = DB.Package;
 const Manufacturer = @import("../Manufacturer.zig");
 const DB = @import("../../DB.zig");
 const SX_ID_With_Manufacturer = @import("SX_ID_With_Manufacturer.zig");

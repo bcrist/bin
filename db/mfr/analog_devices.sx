@@ -1,6 +1,6 @@
 (version 1)
 (mfr "Analog Devices"
-   (url https://www.analog.com/en/index.html)
+   (website https://www.analog.com/en/index.html)
    (wiki https://en.wikipedia.org/wiki/Analog_Devices)
    (country USA)
    (rel absorbed "Linear Tech" 2016)

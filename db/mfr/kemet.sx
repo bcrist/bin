@@ -1,6 +1,6 @@
 (version 1)
 (mfr Kemet "KEMET Corporation"
-   (url https://www.kemet.com/en/us.html)
+   (website https://www.kemet.com/en/us.html)
    (wiki https://en.wikipedia.org/wiki/KEMET_Corporation)
    (country USA)
    (rel subsidiary-of Yageo 2020)

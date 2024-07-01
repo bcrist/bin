@@ -1,6 +1,6 @@
 (version 1)
 (mfr Pulse "Pulse Electronics"
-   (url https://www.pulseelectronics.com/)
+   (website https://www.pulseelectronics.com/)
    (country USA)
    (rel subsidiary-of Yageo 2018)
    (created "2024-05-05 21:22:01 +00:00")

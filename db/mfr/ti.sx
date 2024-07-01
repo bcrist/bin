@@ -1,6 +1,6 @@
 (version 1)
 (mfr TI "Texas Instruments"
-   (url https://www.ti.com/)
+   (website https://www.ti.com/)
    (wiki https://en.wikipedia.org/wiki/Texas_Instruments)
    (country USA)
    (rel absorbed National 2011)

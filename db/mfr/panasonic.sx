@@ -1,6 +1,6 @@
 (version 1)
 (mfr Panasonic "Panasonic Electronic Components" "Panasonic Electronics" "Panasonic Electric Works"
-   (url https://na.industrial.panasonic.com/)
+   (website https://na.industrial.panasonic.com/)
    (country Japan)
    (rel formerly Aromat)
    (created "2024-05-05 21:16:45 +00:00")
