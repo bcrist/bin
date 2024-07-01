@@ -28,11 +28,17 @@ parts: std.MultiArrayList(Part) = .{},
 prj_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Project.Index) = .{},
 prjs: std.MultiArrayList(Project) = .{},
 
+order_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Order.Index) = .{},
+orders: std.MultiArrayList(Order) = .{},
+//prj_order_links: std.AutoArrayHashMapUnmanaged(Order.Project_Link, void) = .{},
+//order_items: std.MultiArrayList(Order_Item) = .{},
+
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
 pub const Part = @import("db/Part.zig");
 pub const Order = @import("db/Order.zig");
+//pub const Order_Item = @import("db/Order_Item.zig");
 pub const Project = @import("db/Project.zig");
 pub const Package = @import("db/Package.zig");
 pub const Location = @import("db/Location.zig");
@@ -41,7 +47,7 @@ pub const Any_Index = union (enum) {
     mfr: Manufacturer.Index,
     dist: Distributor.Index,
     part: Part.Index,
-    //order: Order.Index,
+    order: Order.Index,
     prj: Project.Index,
     pkg: Package.Index,
     loc: Location.Index,
@@ -52,7 +58,7 @@ pub const Any_Index = union (enum) {
             Manufacturer => .{ .mfr = index },
             Distributor => .{ .dist = index },
             Part => .{ .part = index },
-            // Order => .{ .order = index },
+            Order => .{ .order = index },
             Project => .{ .prj = index },
             Package => .{ .pkg = index },
             Location => .{ .loc = index },
@@ -64,6 +70,9 @@ pub const Any_Index = union (enum) {
         return switch (self) {
             .mfr => |idx| Manufacturer.get_id(db, idx),
             .dist => |idx| Distributor.get_id(db, idx),
+            .order => |idx| Order.get_id(db, idx),
+            .prj => |idx| Project.get_id(db, idx),
+            .loc => |idx| Location.get_id(db, idx),
             .part => |idx| {
                 const id = Part.get_id(db, idx);
                 if (Part.get_mfr(db, idx)) |mfr_idx| {
@@ -72,16 +81,23 @@ pub const Any_Index = union (enum) {
                 }
                 return id;
             },
-            // .order: Order.Index,
-            .prj => |idx| Project.get_id(db, idx),
-            .pkg => |idx| Package.get_id(db, idx),
-            .loc => |idx| Location.get_id(db, idx),
+            .pkg => |idx| {
+                const id = Package.get_id(db, idx);
+                if (Package.get_mfr(db, idx)) |mfr_idx| {
+                    const mfr_id = DB.Manufacturer.get_id(db, mfr_idx);
+                    return try std.fmt.allocPrint(arena, "{s} {s}", .{ mfr_id, id });
+                }
+                return id;
+            },
         };
     }
 };
 
 pub fn deinit(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.orders.deinit(gpa);
+    self.order_lookup.deinit(gpa);
 
     self.prjs.deinit(gpa);
     self.prj_lookup.deinit(gpa);
@@ -127,6 +143,9 @@ pub fn deinit(self: *DB) void {
 
 pub fn reset(self: *DB) void {
     const gpa = self.container_alloc;
+
+    self.orders.len = 0;
+    self.order_lookup.clearRetainingCapacity();
 
     self.prjs.len = 0;
     self.prj_lookup.clearRetainingCapacity();
@@ -175,7 +194,7 @@ fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
         Manufacturer => self.mfrs,
         Distributor => self.dists,
         Part => self.parts,
-        //Order => self.orders,
+        Order => self.orders,
         Project => self.prjs,
         Package => self.pkgs,
         Location => self.locs,
@@ -283,6 +302,9 @@ pub fn recompute_last_modification_time(self: *DB) void {
         if (ts > last_mod) last_mod = ts;
     }
     for (self.prjs.items(.modified_timestamp_ms)) |ts| {
+        if (ts > last_mod) last_mod = ts;
+    }
+    for (self.orders.items(.modified_timestamp_ms)) |ts| {
         if (ts > last_mod) last_mod = ts;
     }
     log.debug("Updated last modification time to {}", .{ last_mod });

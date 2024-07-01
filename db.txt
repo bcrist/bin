@@ -1,6 +1,7 @@
 Distributor
     <=> Distributor (relations)
     <=  Part (dist part numbers)
+    <=  Order
 
 Manufacturer
     <=> Manufacturer (relations)
@@ -18,10 +19,18 @@ Part
      => Package
      => Manufacturer (indirectly via pkg namespace)
      => Distributor (dist part numbers)
+    <=> Order (Order_Item.part)
 
 Location
     <=> Location (parent chain)
+    <=> Order (Order_Item.loc)
 
 Order
+     => Distributor
+    <=> Project (DB.prj_order_links)
+    <=> Part (Order_Item.part)
+    <=> Location (Order_Item.loc)
 
 Project
+    <=> Project (parent chain)
+    <=> Order (DB.prj_order_links)

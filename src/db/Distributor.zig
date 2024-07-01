@@ -95,6 +95,12 @@ pub inline fn get_additional_names(db: *const DB, idx: Index) []const []const u8
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
+    for (0.., db.orders.items(.dist)) |order_i, dist_idx| {
+        if (dist_idx == idx) {
+            try Order.set_dist(db, Order.Index.init(order_i), null);
+        }
+    }
+
     // @Speed: this is pretty slow, but deleting distributors isn't something that needs to be done often,
     // so probably not worth adding an acceleration structure for looking up part numbers by distributor.
     for (0.., db.parts.items(.dist_pns)) |part_i, dist_pns| {
@@ -159,6 +165,12 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
     for (db.dist_relations.items(.source), db.dist_relations.items(.target)) |source_idx, target_idx| {
         if (source_idx == idx) try db.mark_dirty(target_idx);
         if (target_idx == idx) try db.mark_dirty(source_idx);
+    }
+
+    for (0.., db.orders.items(.dist)) |order_i, dist_idx| {
+        if (dist_idx == idx) {
+            try db.mark_dirty(Order.Index.init(order_i));
+        }
     }
 
     for (0.., db.parts.items(.dist_pns)) |part_i, dist_pns| {
@@ -527,6 +539,7 @@ pub const Relation = struct {
 
 const log = std.log.scoped(.db);
 
+const Order = DB.Order;
 const Part = DB.Part;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
