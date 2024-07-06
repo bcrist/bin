@@ -25,6 +25,8 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         return;
     }
 
+    const dist_id = if (order.dist) |dist_idx| Distributor.get_id(db, dist_idx) else null;
+
     const DTO = tempora.Date_Time.With_Offset;
     const preparing_dto = if (order.preparing_timestamp_ms) |ts| DTO.from_timestamp_ms(ts, tz) else null;
     const waiting_dto = if (order.waiting_timestamp_ms) |ts| DTO.from_timestamp_ms(ts, tz) else null;
@@ -48,6 +50,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .session = session,
         .title = order.id,
         .obj = order,
+        .dist_id = dist_id,
         .status = order.get_status().display(),
         .preparing_time = preparing_dto,
         .waiting_time = waiting_dto,
@@ -72,6 +75,7 @@ const log = std.log.scoped(.@"http.order");
 
 const Transaction = @import("order/Transaction.zig");
 const Order = DB.Order;
+const Distributor = DB.Distributor;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const slimselect = @import("slimselect.zig");

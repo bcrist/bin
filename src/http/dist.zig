@@ -40,6 +40,20 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     const relations = try get_sorted_relations(db, idx);
 
+    var active_orders = std.ArrayList([]const u8).init(http.temp());
+    const order_completed_times = db.orders.items(.completed_timestamp_ms);
+    const order_cancelled_times = db.orders.items(.cancelled_timestamp_ms);
+    const order_ids = db.orders.items(.id);
+    for (0.., db.orders.items(.dist)) |i, dist_idx| {
+        if (dist_idx != idx or order_completed_times[i] != null or order_cancelled_times[i] != null) continue;
+
+        const order = db.orders.get(i);
+        if (order.get_status() == .none) continue;
+        
+        try active_orders.append(order_ids[i]);
+    }
+    sort.natural(active_orders.items);
+
     const DTO = tempora.Date_Time.With_Offset;
 
     const created_dto = DTO.from_timestamp_ms(dist.created_timestamp_ms, tz);
@@ -55,6 +69,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .title = dist.full_name orelse dist.id,
         .obj = dist,
         .show_years = dist.founded_year != null or dist.suspended_year != null,
+        .active_orders = active_orders.items,
         .created = created_dto,
         .modified = modified_dto,
         .relations = relations.items,

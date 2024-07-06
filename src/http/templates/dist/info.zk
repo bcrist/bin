@@ -30,6 +30,11 @@
         \\year?//(\\year//)\\~//
     </div>
 \\~~
+\\active_orders?
+    <h2>Active Orders</h2>
+\\  active_orders:
+    <div><a href="/o:\\@url *//">\\*//</a></div>
+\\~~
 \\packages?
     <h2>Packages</h2>
 \\  packages:

@@ -12,8 +12,9 @@
 \\~
 
 \\obj:
-\\  website://<div>Website: <a href="\\*//">\\*//</a></div>\\~//
-\\  source_control://<div>Source Control: <a href="\\*//">\\*//</a></div>\\~//
+\\  dist_id://<div>Distributor: <a href="/dist:\\*//">\\*//</a></div>\\~//
+\\  po://<div>PO Number: \\*//</div>\\~//
+\\  total_cost://<div>Total Cost: \\*//</div>\\~//
 \\  notes?
     <h2>Notes</h2>
     <div>\\notes//</div>

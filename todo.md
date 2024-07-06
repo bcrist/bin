@@ -3,7 +3,6 @@
 * Files
 
 * Make order info private when logged out
-* Open orders on distributor info page
 * Order Project Links
 * Order Items
 * Projects: steps - progress bars, due dates
