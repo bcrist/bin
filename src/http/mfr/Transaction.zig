@@ -494,16 +494,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         try req.add_response_header("hx-trigger", "revalidate");
     }
 
-    const obj: std.enums.EnumFieldStruct(Field, []const u8, null) = .{
-        .id = self.fields.id.future,
-        .full_name = self.fields.full_name.future,
-        .country = self.fields.country.future,
-        .website = self.fields.website.future,
-        .wiki = self.fields.wiki.future,
-        .notes = self.fields.notes.future,
-        .founded_year = self.fields.founded_year.future,
-        .suspended_year = self.fields.suspended_year.future,
-    };
+    const obj = Field_Data.future_obj(Field, self.fields);
 
     switch (options.target) {
         .add, .edit => {

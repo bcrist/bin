@@ -337,7 +337,7 @@ pub fn maybe_set_modified(self: *DB, idx: anytype) !void {
         const now = std.time.milliTimestamp();
         const DTO = tempora.Date_Time.With_Offset;
         const now_dto = DTO.from_timestamp_ms(now, null);
-        log.debug("Setting {} last modified to {" ++ DTO.fmt_sql_ms ++ "}", .{ idx, now_dto });
+        log.debug("Setting {} last modified to " ++ DTO.sql_ms, .{ idx, now_dto });
         list.items(.modified_timestamp_ms)[i] = now;
         self.update_modification_time(now);
         try self.mark_dirty(idx);

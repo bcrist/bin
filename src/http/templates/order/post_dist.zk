@@ -1,0 +1,33 @@
+<tr id="dist"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="dist_input">Distributor</label>
+</th>
+<td>
+    <form autocomplete="off"
+        hx-post="\\post_prefix///dist"
+        hx-trigger="change from:#dist_input"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off"
+            id="dist_input"
+            name="dist"
+            list="dist_datalist"
+\\err?
+            class="submitted_field invalid"
+            hx-vals='{"invalid":true}'
+\\;
+            class="submitted_field"
+\\~
+            value="\\dist_id|obj.dist//"
+            hx-post="/dist"
+            hx-trigger="input changed delay:200ms"
+            hx-params="dist"
+            hx-target="#dist_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="dist_datalist"></datalist>
+    </form>
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

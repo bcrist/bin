@@ -8,6 +8,7 @@ valid: bool = true,
 err: []const u8 = "",
 
 pub fn init(db: *const DB, val: anytype) !Field_Data {
+    if (@TypeOf(val) == Field_Data) return val;
     const str = try value_to_str(db, val);
     return .{
         .current = str,
@@ -34,6 +35,28 @@ pub fn init_fields(comptime F: type, db: *const DB, data: anytype) !std.enums.En
     var result: std.enums.EnumFieldStruct(F, Field_Data, null) = undefined;
     inline for (@typeInfo(F).Enum.fields) |field| {
         @field(result, field.name) = try init(db, @field(data, field.name));
+    }
+    return result;
+}
+
+pub fn init_fields_ext(comptime F: type, db: *const DB, data: anytype, overrides: anytype) !std.enums.EnumFieldStruct(F, Field_Data, null) {
+    @setEvalBranchQuota(2 * @typeInfo(F).Enum.fields.len);
+    var result: std.enums.EnumFieldStruct(F, Field_Data, null) = undefined;
+    inline for (@typeInfo(F).Enum.fields) |field| {
+        if (@hasField(@TypeOf(overrides), field.name)) {
+            @field(result, field.name) = try init(db, @field(overrides, field.name));
+        } else {
+            @field(result, field.name) = try init(db, @field(data, field.name));
+        }
+    }
+    return result;
+}
+
+pub fn future_obj(comptime F: type, fields: std.enums.EnumFieldStruct(F, Field_Data, null)) std.enums.EnumFieldStruct(F, []const u8, null) {
+    @setEvalBranchQuota(2 * @typeInfo(F).Enum.fields.len);
+    var result: std.enums.EnumFieldStruct(F, []const u8, null) = undefined;
+    inline for (@typeInfo(F).Enum.fields) |field| {
+        @field(result, field.name) = @field(fields, field.name).future;
     }
     return result;
 }

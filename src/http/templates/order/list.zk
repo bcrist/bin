@@ -1,0 +1,56 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/o/add">Add</a>
+</aside>
+\\~
+\\missing_order?
+<div class="error">
+    No order with ID <b>\\missing_order//</b> was found!
+    Would you like to <a href="/o/add?id=\\@url missing_order//">add it</a>?
+</div>
+\\~
+
+<h1>New/BOM Orders</h1>
+<div class="columns">
+\\bom_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Preparing Orders</h1>
+<div class="columns">
+\\preparing_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Waiting Orders</h1>
+<div class="columns">
+\\waiting_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Arrived Orders</h1>
+<div class="columns">
+\\arrived_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Completed Orders</h1>
+<div class="columns">
+\\completed_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+<h1>Cancelled Orders</h1>
+<div class="columns">
+\\cancelled_list:
+    <a href="/o:\\@url *//">\\*//</a><br>
+\\~
+</div>
+
+\\@include "_bottom.zk"

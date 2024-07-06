@@ -388,13 +388,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         try req.add_response_header("hx-trigger", "revalidate");
     }
 
-    const obj: std.enums.EnumFieldStruct(Field, []const u8, null) = .{
-        .id = self.fields.id.future,
-        .full_name = self.fields.full_name.future,
-        .notes = self.fields.notes.future,
-        .parent = self.fields.parent.future,
-        .mfr = self.fields.mfr.future,
-    };
+    const obj = Field_Data.future_obj(Field, self.fields);
 
     var parent_search_url: []const u8 = "/pkg";
     if (self.parent_mfr.future_opt()) |parent_mfr| {

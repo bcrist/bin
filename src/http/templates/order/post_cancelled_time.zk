@@ -1,0 +1,20 @@
+<tr id="cancelled_time"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="cancelled_time_input">Cancelled</label>
+</th>
+<td>
+    <input type="datetime-local" id="cancelled_time_input" name="cancelled_time"
+\\err?
+        class="submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="submitted_field"
+\\~
+        value="\\cancelled_time|obj.cancelled_time//"
+        hx-post="\\post_prefix///cancelled_time"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

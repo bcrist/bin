@@ -136,7 +136,7 @@ aside.flex button, aside.flex a {
     transition: opacity 1s ease-out;
 }
 
-textarea, input[type=text], input[type=search], input[type=number], input[type=password] {
+textarea, input:not([type="file"], [type="image"], [type="checkbox"], [type="radio"], [type="submit"]) {
     background: #111;
     color: #eee;
     border-radius: 0.5em;
@@ -151,12 +151,13 @@ textarea, input[type=text], input[type=search], input[type=number], input[type=p
     box-sizing: border-box;
     min-width: 25em;
     width: 100%;
+    color-scheme: dark;
 }
 textarea {
     min-height: 8em;
 }
 
-textarea.invalid, input[type=text].invalid, input[type=search].invalid, input[type=number].invalid, input[type=password].invalid {
+textarea.invalid, input:not([type="file"], [type="image"], [type="checkbox"], [type="radio"], [type="submit"]).invalid {
     background: #100;
     border-color: #722;
     color: #ccc;

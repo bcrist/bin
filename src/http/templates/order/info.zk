@@ -1,0 +1,30 @@
+\\@include "_top.zk"
+\\session?
+<aside class="flex">
+    <a href="/o:\\@url obj.id//?edit">Edit</a>
+</aside>
+\\~
+<div>o:\\obj.id//</div>
+<h1>Order \\obj.id//</h1>
+
+\\status?
+<div>Status: \\status//</div>
+\\~
+
+\\obj:
+\\  website://<div>Website: <a href="\\*//">\\*//</a></div>\\~//
+\\  source_control://<div>Source Control: <a href="\\*//">\\*//</a></div>\\~//
+\\  notes?
+    <h2>Notes</h2>
+    <div>\\notes//</div>
+\\  ~
+\\~
+<hr>
+\\cancelled_time?//<div>Cancelled: \\cancelled_time//</div>\\~//
+\\completed_time?//<div>Completed: \\completed_time//</div>\\~//
+\\arrived_time?//<div>Arrived: \\arrived_time//</div>\\~//
+\\waiting_time?//<div>Began Waiting: \\waiting_time//</div>\\~//
+\\preparing_time?//<div>Began Preparing: \\preparing_time//</div>\\~//
+<div>Created: \\created//</div>
+<div>Modified: \\modified//</div>
+\\@include "_bottom.zk"

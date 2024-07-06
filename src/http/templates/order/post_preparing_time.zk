@@ -1,0 +1,20 @@
+<tr id="preparing_time"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="preparing_time_input">Preparing</label>
+</th>
+<td>
+    <input type="datetime-local" id="preparing_time_input" name="preparing_time"
+\\err?
+        class="submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="submitted_field"
+\\~
+        value="\\preparing_time|obj.preparing_time//"
+        hx-post="\\post_prefix///preparing_time"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

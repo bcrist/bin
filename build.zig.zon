@@ -17,8 +17,8 @@
             .hash = "1220ff4c54d86f939850ad7da260992a2fd31a19bd0dad6f5028ad0bde9a33182c91",
         },
         .tempora = .{
-            .url = "git+https://github.com/bcrist/tempora#b2a44c155844fd43ee99d79db805860f846a2d2c",
-            .hash = "1220cf89c3023cbd5c2dc81286975f8f25c62bc40ef3d52bf99fa7266345e4b7da73",
+            .url = "git+https://github.com/bcrist/tempora#7888819f0a6be6701ceb424da8be028a93ddce7b",
+            .hash = "12200bc6c461d37080fc75641afadd97dc709561828da66d3f0b54e5e0330308525e",
         },
         .dizzy = .{
             .url = "git+https://github.com/bcrist/dizzy#a81b4ea573ce2020cb70fdc7f0047178662fecba",
@@ -29,8 +29,8 @@
             .hash = "12207843a59a79a582f485d6c4d0cf0d2e9dacdb3c2de59ed853fdb8151951b3bd05",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#c1c481ae70d3c5b78095c716e3e6c7b9b3897ce0",
-            .hash = "12208b484c48bd7fcadea5c0035de716f35c6be6179147f172bd19932b75744450e6",
+            .url = "git+https://github.com/bcrist/shittip#e79963b8f8ea1d1ac3363dab15ee1ab0bad472be",
+            .hash = "1220b6ed2331164e60f8c9fef43ff90172391a1c5a8231eb35d147bad0a54a42772d",
         },
     },
 }

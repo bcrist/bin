@@ -1,0 +1,12 @@
+<table class="edit_properties">
+\\@include "common/post_id.zk"//
+\\@include "order/post_dist.zk"//
+\\@include "order/post_po.zk"//
+\\@include "order/post_total_cost.zk"//
+\\@include "order/post_preparing_time.zk"//
+\\@include "order/post_waiting_time.zk"//
+\\@include "order/post_arrived_time.zk"//
+\\@include "order/post_completed_time.zk"//
+\\@include "order/post_cancelled_time.zk"//
+\\@include "common/post_notes.zk"//
+</table>

@@ -35,7 +35,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(exe);
     var run = b.addRunArtifact(exe);
     run.step.dependOn(b.getInstallStep());
-    b.step("bin", "run bin").dependOn(&run.step);
+    b.step("run", "run bin").dependOn(&run.step);
     if (b.args) |args| {
         run.addArgs(args);
     }

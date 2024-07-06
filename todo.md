@@ -1,16 +1,20 @@
-
-* Orders
 * Tags
 * Parameters
 * Files
 
+* Make order info private when logged out
+* Open orders on distributor info page
+* Order Project Links
+* Order Items
 * Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
 * Deduplicate Mfr/dist relations
 * Improve search syntax
-
+* Add CSS light theme
+* Figure out automatic dark theme detection
+* Cost currencies
 * slimselect: Automatically compute the end year based on the current time
 * Keyboard shortcuts
 * recently modified items on landing page

@@ -1,0 +1,20 @@
+<tr id="completed_time"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+<th>
+    <label for="completed_time_input">Completed</label>
+</th>
+<td>
+    <input type="datetime-local" id="completed_time_input" name="completed_time"
+\\err?
+        class="submitted_field invalid"
+        hx-vals='{"invalid":true}'
+\\;
+        class="submitted_field"
+\\~
+        value="\\completed_time|obj.completed_time//"
+        hx-post="\\post_prefix///completed_time"
+        hx-include=".submitted_field"
+        hx-target="closest tr"
+        hx-swap="outerHTML">
+</td>
+<td>\\@include "_validation.zk"//</td>
+</tr>

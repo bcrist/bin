@@ -1,0 +1,8 @@
+\\@include "_top.zk"
+<aside class="flex">
+    <a href="/o:\\@url obj.id//">Done</a>
+    <button hx-delete="/o:\\@url obj.id//" hx-confirm="Are you sure you want to delete order \\obj.id//?">Delete</button>
+</aside>
+<h1>Edit Order \\obj.id//</h1>
+\\@include "order/add_or_edit_fields.zk"
+\\@include "_bottom.zk"

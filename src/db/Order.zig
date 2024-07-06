@@ -6,7 +6,7 @@ total_cost_hundreths: ?i32,
 preparing_timestamp_ms: ?i64,
 waiting_timestamp_ms: ?i64,
 arrived_timestamp_ms: ?i64,
-complete_timestamp_ms: ?i64,
+completed_timestamp_ms: ?i64,
 cancelled_timestamp_ms: ?i64,
 created_timestamp_ms: i64,
 modified_timestamp_ms: i64,
@@ -39,6 +39,25 @@ pub const Index = enum (u32) {
 //     prj: Project.Index,
 // };
 
+pub const Status = enum {
+    none,
+    preparing,
+    waiting,
+    arrived,
+    completed,
+    cancelled,
+
+    pub fn display(self: Status) []const u8 {
+        return switch (self) {
+            .none => "None/BOM",
+            .preparing => "Preparing",
+            .waiting => "Waiting",
+            .arrived => "Arrived",
+            .completed => "Completed",
+            .cancelled => "Cancelled",
+        };
+    }
+};
 
 pub fn init_empty(id: []const u8, timestamp_ms: i64) Order {
     return .{
@@ -50,7 +69,7 @@ pub fn init_empty(id: []const u8, timestamp_ms: i64) Order {
         .preparing_timestamp_ms = null,
         .waiting_timestamp_ms = null,
         .arrived_timestamp_ms = null,
-        .complete_timestamp_ms = null,
+        .completed_timestamp_ms = null,
         .cancelled_timestamp_ms = null,
         .created_timestamp_ms = timestamp_ms,
         .modified_timestamp_ms = timestamp_ms,
@@ -84,6 +103,15 @@ pub inline fn get(db: *const DB, idx: Index) Order {
 
 pub inline fn get_id(db: *const DB, idx: Index) []const u8 {
     return db.orders.items(.id)[idx.raw()];
+}
+
+pub fn get_status(self: Order) Status {
+    return if (self.cancelled_timestamp_ms != null) .cancelled
+        else if (self.completed_timestamp_ms != null) .completed
+        else if (self.arrived_timestamp_ms != null) .arrived
+        else if (self.waiting_timestamp_ms != null) .waiting
+        else if (self.preparing_timestamp_ms != null) .preparing
+        else .none;
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
@@ -144,8 +172,8 @@ pub fn set_arrived_time(db: *DB, idx: Index, ts: ?i64) !void {
     return set_optional(i64, db, idx, .arrived_timestamp_ms, ts);
 }
 
-pub fn set_complete_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .complete_timestamp_ms, ts);
+pub fn set_completed_time(db: *DB, idx: Index, ts: ?i64) !void {
+    return set_optional(i64, db, idx, .completed_timestamp_ms, ts);
 }
 
 pub fn set_cancelled_time(db: *DB, idx: Index, ts: ?i64) !void {

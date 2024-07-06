@@ -27,11 +27,7 @@ pub const context = struct {
 pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order {
     const data = Order.get(db, idx);
 
-    const total_cost_str = if (data.total_cost_hundreths) |cost| total_cost_str: {
-        const cost_int = @divTrunc(cost, 100);
-        const cost_cents = @mod(cost, 100);
-        break :total_cost_str try std.fmt.allocPrint(temp, "{d}.{d:0>2}", .{ cost_int, cost_cents });
-    } else null;
+    const total_cost_str = if (data.total_cost_hundreths) |cost| try costs.hundreths_to_decimal(temp, cost) else null;
 
     return .{
         .id = data.id,
@@ -42,7 +38,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order 
         .preparing = if (data.preparing_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
         .waiting = if (data.waiting_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
         .arrived = if (data.arrived_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
-        .completed = if (data.complete_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
+        .completed = if (data.completed_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
         .cancelled = if (data.cancelled_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
         .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
@@ -59,18 +55,11 @@ pub fn read(self: SX_Order, db: *DB) !void {
     }
     if (self.po) |po| try Order.set_po(db, idx, po);
     if (self.notes) |notes| try Order.set_notes(db, idx, notes);
-    if (self.total) |cost_str| {
-        const total_cost_hundreths: i32 = if (std.mem.indexOfScalar(u8, cost_str, '.')) |decimal_pos| total_cost: {
-            const int: i32 = try std.fmt.parseInt(i25, cost_str[0..decimal_pos], 10);
-            const cents: i32 = try std.fmt.parseInt(i8, cost_str[decimal_pos + 1 ..], 10);
-            break :total_cost int * 100 + cents;
-        } else 100 * try std.fmt.parseInt(i25, cost_str, 10);
-        try Order.set_total_cost_hundreths(db, idx, total_cost_hundreths);
-    }
+    if (self.total) |cost_str| try Order.set_total_cost_hundreths(db, idx, try costs.decimal_to_hundreths(cost_str));
     if (self.preparing) |dto| try Order.set_preparing_time(db, idx, dto.timestamp_ms());
     if (self.waiting) |dto| try Order.set_waiting_time(db, idx, dto.timestamp_ms());
     if (self.arrived) |dto| try Order.set_arrived_time(db, idx, dto.timestamp_ms());
-    if (self.completed) |dto| try Order.set_complete_time(db, idx, dto.timestamp_ms());
+    if (self.completed) |dto| try Order.set_completed_time(db, idx, dto.timestamp_ms());
     if (self.cancelled) |dto| try Order.set_cancelled_time(db, idx, dto.timestamp_ms());
     if (self.created) |dto| try Order.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Order.set_modified_time(db, idx, dto.timestamp_ms());
@@ -103,7 +92,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
         try sxw.int(1, 10);
         try sxw.close();
 
-        try sxw.expression_expanded("o");
+        try sxw.expression_expanded("order");
         try sxw.object(try init(allocator, db, idx), context);
         try sxw.close();
 
@@ -119,6 +108,7 @@ const Order = DB.Order;
 const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
+const costs = @import("../../costs.zig");
 const Date_Time = tempora.Date_Time;
 const tempora = @import("tempora");
 const sx = @import("sx");

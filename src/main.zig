@@ -46,6 +46,7 @@ pub fn main() !void {
     const pkg = @import("http/pkg.zig");
     const part = @import("http/part.zig");
     const prj = @import("http/prj.zig");
+    const order = @import("http/order.zig");
 
     const r = http.routing;
     try server.register("", Session.setup);
@@ -60,24 +61,24 @@ pub fn main() !void {
 
         .{ "/search", r.module(Injector, search) },
 
+        // .{ "/param**" },
         .{ "/pkg**" },
         .{ "/prj**" },
         .{ "/p**" },
         .{ "/loc**" },
         .{ "/mfr**" },
         .{ "/dist**" },
-        // .{ "/o:*" },
-        // .{ "/param:*" },
-        // .{ "/f:*" },
+        .{ "/o**" },
 
         .{ "/login", r.module(Injector, misc.login) },
         .{ "/logout", r.module(Injector, misc.logout) },
         .{ "/shutdown", r.module(Injector, misc.shutdown) },
 
         .{ "/favicon.ico", r.resource("favicon.png")[1] },
+        r.resource("fonts.css"),
+        // .{ "/f**" },
 
         r.resource("style.css"),
-        r.resource("fonts.css"),
         r.resource("common.js"),
         r.resource("htmx.1.9.12.min.js"),
         r.resource("htmx.1.9.12.js"),
@@ -258,6 +259,33 @@ pub fn main() !void {
         .{ ":*/website",        r.module(Injector, prj.edit) },
         .{ ":*/source_control", r.module(Injector, prj.edit) },
         .{ ":*/parent",         r.module(Injector, prj.edit) },
+    });
+
+    try server.router("/o**", .{
+        .{ "",                  r.module(Injector, order.list) },
+        .{ "/add",              r.module(Injector, order.add) },
+        .{ "/add/validate",     r.module(Injector, order.add.validate) },
+        .{ "/id",               r.module(Injector, order.add.validate) },
+        .{ "/notes",            r.module(Injector, order.add.validate) },
+        .{ "/dist",             r.module(Injector, order.add.validate) },
+        .{ "/po",               r.module(Injector, order.add.validate) },
+        .{ "/total_cost",       r.module(Injector, order.add.validate) },
+        .{ "/preparing_time",   r.module(Injector, order.add.validate) },
+        .{ "/waiting_time",     r.module(Injector, order.add.validate) },
+        .{ "/arrived_time",     r.module(Injector, order.add.validate) },
+        .{ "/completed_time",   r.module(Injector, order.add.validate) },
+        .{ "/cancelled_time",   r.module(Injector, order.add.validate) },
+        .{ ":*",                r.module(Injector, order) },
+        .{ ":*/id",             r.module(Injector, order.edit) },
+        .{ ":*/notes",          r.module(Injector, order.edit) },
+        .{ ":*/dist",           r.module(Injector, order.edit) },
+        .{ ":*/po",             r.module(Injector, order.edit) },
+        .{ ":*/total_cost",     r.module(Injector, order.edit) },
+        .{ ":*/preparing_time", r.module(Injector, order.edit) },
+        .{ ":*/waiting_time",   r.module(Injector, order.edit) },
+        .{ ":*/arrived_time",   r.module(Injector, order.edit) },
+        .{ ":*/completed_time", r.module(Injector, order.edit) },
+        .{ ":*/cancelled_time", r.module(Injector, order.edit) },
     });
     
     const listen_addr = try http.parse_hostname(global.gpa(), config.host, config.port);
