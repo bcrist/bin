@@ -1,6 +1,7 @@
 pub const list = @import("order/list.zig");
 pub const add = @import("order/add.zig");
 pub const edit = @import("order/edit.zig");
+pub const reorder_prjs = @import("order/reorder_prjs.zig");
 
 pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, db: *const DB) !void {
     const requested_order_name = try req.get_path_param("o");
@@ -23,6 +24,12 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
             .rnd = null,
         });
         return;
+    }
+
+    const project_links = try get_sorted_project_links(db, idx);
+    const projects = try http.temp().alloc([]const u8, project_links.items.len);
+    for (projects, project_links.items) |*project_id, link| {
+        project_id.* = Project.get_id(db, link.prj);
     }
 
     const dist_id = if (order.dist) |dist_idx| Distributor.get_id(db, dist_idx) else null;
@@ -57,6 +64,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .arrived_time = arrived_dto,
         .completed_time = completed_dto,
         .cancelled_time = cancelled_dto,
+        .projects = projects,
         .created = created_dto,
         .modified = modified_dto,
     }, .{ .Context = Context });
@@ -71,10 +79,22 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.redirect("/o", .see_other);
 }
 
+pub fn get_sorted_project_links(db: *const DB, idx: Order.Index) !std.ArrayList(Order.Project_Link) {
+    var links = std.ArrayList(Order.Project_Link).init(http.temp());
+    for (db.prj_order_links.keys()) |link| {
+        if (link.order == idx) {
+            try links.append(link);
+        }
+    }
+    std.sort.block(Order.Project_Link, links.items, {}, Order.Project_Link.order_less_than);
+    return links;
+}
+
 const log = std.log.scoped(.@"http.order");
 
 const Transaction = @import("order/Transaction.zig");
 const Order = DB.Order;
+const Project = DB.Project;
 const Distributor = DB.Distributor;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");

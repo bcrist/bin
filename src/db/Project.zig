@@ -260,7 +260,7 @@ fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.
     try db.set_optional(Project, idx, field, T, raw);
 }
 
-fn set_modified(db: *DB, idx: Index) !void {
+pub fn set_modified(db: *DB, idx: Index) !void {
     try db.maybe_set_modified(idx);
 }
 

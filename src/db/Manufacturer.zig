@@ -319,8 +319,8 @@ pub const Relation = struct {
     target: Manufacturer.Index,
     kind: Kind,
     year: ?u16,
-    source_order_index: u16,
-    target_order_index: u16,
+    source_ordering: u16,
+    target_ordering: u16,
 
     pub const Index = enum (u32) {
         _,
@@ -389,8 +389,8 @@ pub const Relation = struct {
             .target = target,
             .kind = kind,
             .year = year,
-            .source_order_index = 0,
-            .target_order_index = 0,
+            .source_ordering = 0,
+            .target_ordering = 0,
         };
         
         return try rel.create(db);
@@ -402,8 +402,8 @@ pub const Relation = struct {
             .target = self.source,
             .kind = self.kind.inverse(),
             .year = self.year,
-            .source_order_index = self.target_order_index,
-            .target_order_index = self.source_order_index,
+            .source_ordering = self.target_ordering,
+            .target_ordering = self.source_ordering,
         };
     }
 
@@ -506,25 +506,25 @@ pub const Relation = struct {
         }
     }
 
-    pub fn set_order_index(db: *DB, mfr_idx: Manufacturer.Index, idx: Relation.Index, order_index: u16) !void {
+    pub fn set_ordering(db: *DB, mfr_idx: Manufacturer.Index, idx: Relation.Index, ordering: u16) !void {
         const i = idx.raw();
         const s = db.mfr_relations.slice();
-        const order_indices = if (s.items(.source)[i] == mfr_idx)
-            s.items(.source_order_index)
+        const orderings = if (s.items(.source)[i] == mfr_idx)
+            s.items(.source_ordering)
         else if (s.items(.target)[i] == mfr_idx)
-            s.items(.target_order_index)
+            s.items(.target_ordering)
         else unreachable;
 
-        const old_order_index = order_indices[i];
-        if (old_order_index == order_index) return;
+        const old_ordering = orderings[i];
+        if (old_ordering == ordering) return;
 
-        order_indices[i] = order_index;
-        log.debug("Changed order_index for {} from {} to {}", .{ idx, old_order_index, order_index });
+        orderings[i] = ordering;
+        log.debug("Changed ordering for {} from {} to {}", .{ idx, old_ordering, ordering });
         try set_modified(db, mfr_idx);
     }
 
     pub fn source_less_than(_: void, a: Relation, b: Relation) bool {
-        return a.source_order_index < b.source_order_index;
+        return a.source_ordering < b.source_ordering;
     }
 
     fn set_modified_relation(db: *DB, idx: Relation.Index) !void {

@@ -4,6 +4,7 @@ status: ?Project.Status = .active,
 status_changed: ?Date_Time.With_Offset = null,
 parent: ?[]const u8 = null,
 child: []const []const u8 = &.{},
+order: []const []const u8 = &.{},
 website: ?[]const u8 = null,
 source_control: ?[]const u8 = null,
 notes: ?[]const u8 = null,
@@ -28,6 +29,20 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Project.Index) !SX_Proj
         }
     }
 
+    var prj_order_links = std.ArrayList(Order.Project_Link).init(temp);
+    for (db.prj_order_links.keys()) |link| {
+        if (link.prj == idx) {
+            try prj_order_links.append(link);
+        }
+    }
+    std.sort.block(Order.Project_Link, prj_order_links.items, {}, Order.Project_Link.prj_less_than);
+
+    const orders = try temp.alloc([]const u8, prj_order_links.items.len);
+    const order_ids = db.orders.items(.id);
+    for (orders, prj_order_links.items) |*order, link| {
+        order.* = order_ids[link.order.raw()];
+    }
+
     const data = Project.get(db, idx);
     var full_name = data.full_name;
     if (full_name == null) {
@@ -42,6 +57,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Project.Index) !SX_Proj
         .status_changed = Date_Time.With_Offset.from_timestamp_ms(data.status_change_timestamp_ms, null),
         .parent = parent_id,
         .child = children.items,
+        .order = orders,
         .website = data.website,
         .source_control = data.source_control,
         .notes = data.notes,
@@ -73,6 +89,16 @@ pub fn read(self: SX_Project, db: *DB) !void {
     if (self.notes) |notes| try Project.set_notes(db, idx, notes);
     if (self.created) |dto| try Project.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Project.set_modified_time(db, idx, dto.timestamp_ms());
+
+    var order_ordering: u16 = 0;
+    for (self.order) |order_id| {
+        const link_idx = try Order.Project_Link.lookup_or_create(db, .{
+            .order = try Order.lookup_or_create(db, order_id),
+            .prj = idx,
+        });
+        try Order.Project_Link.set_prj_ordering(db, link_idx, order_ordering);
+        order_ordering += 1;
+    }
 }
 
 pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, filenames: *paths.StringHashSet) !void {
@@ -140,6 +166,7 @@ pub fn write_with_children(allocator: std.mem.Allocator, db: *DB, sxw: *sx.Write
 const log = std.log.scoped(.db);
 
 const Project = DB.Project;
+const Order = DB.Order;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");
 const Date_Time = tempora.Date_Time;

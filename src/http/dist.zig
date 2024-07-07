@@ -98,7 +98,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Distributor.Index) !std.ArrayLis
                 .kind_str = rel.kind.display(),
                 .other = Distributor.get_id(db, rel.target),
                 .year = rel.year,
-                .order_index = rel.source_order_index,
+                .ordering = rel.source_ordering,
             });
         } else if (target == idx) {
             const rel = db.dist_relations.get(i);
@@ -109,7 +109,7 @@ pub fn get_sorted_relations(db: *const DB, idx: Distributor.Index) !std.ArrayLis
                 .kind_str = rel.kind.inverse().display(),
                 .other = Distributor.get_id(db, rel.source),
                 .year = rel.year,
-                .order_index = rel.target_order_index,
+                .ordering = rel.target_ordering,
             });
         }
     }
@@ -125,10 +125,10 @@ pub const Relation = struct {
     kind_str: []const u8,
     other: []const u8,
     year: ?u16,
-    order_index: u16,
+    ordering: u16,
 
     pub fn less_than(_: void, a: @This(), b: @This()) bool {
-        return a.order_index < b.order_index;
+        return a.ordering < b.ordering;
     }
 };
 

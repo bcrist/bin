@@ -275,6 +275,8 @@ pub fn main() !void {
         .{ "/arrived_time",     r.module(Injector, order.add.validate) },
         .{ "/completed_time",   r.module(Injector, order.add.validate) },
         .{ "/cancelled_time",   r.module(Injector, order.add.validate) },
+        .{ "/prj",              r.module(Injector, order.add.validate_prj) },
+        .{ "/prj:*",            r.module(Injector, order.add.validate_prj) },
         .{ ":*",                r.module(Injector, order) },
         .{ ":*/id",             r.module(Injector, order.edit) },
         .{ ":*/notes",          r.module(Injector, order.edit) },
@@ -286,6 +288,9 @@ pub fn main() !void {
         .{ ":*/arrived_time",   r.module(Injector, order.edit) },
         .{ ":*/completed_time", r.module(Injector, order.edit) },
         .{ ":*/cancelled_time", r.module(Injector, order.edit) },
+        .{ ":*/prj",            r.module(Injector, order.edit.prj) },
+        .{ ":*/prj:*",          r.module(Injector, order.edit.prj) },
+        .{ ":*/prjs",           r.module(Injector, order.reorder_prjs) },
     });
     
     const listen_addr = try http.parse_hostname(global.gpa(), config.host, config.port);

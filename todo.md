@@ -9,6 +9,7 @@
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
+* External links should use target="_blank"
 * Deduplicate Mfr/dist relations
 * Improve search syntax
 * Add CSS light theme

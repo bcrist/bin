@@ -1,0 +1,8 @@
+<div class="sortable_row unsortable" id="prj"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+    <span class="icon"></span>
+    <input type="hidden" name="prj_ordering" class="order_prj_ordering">
+\\@include "order/post_project_id.zk"
+    <div class="order_prj_validation">
+\\@include "_validation.zk"
+    </div>
+</div>

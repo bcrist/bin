@@ -1,7 +1,7 @@
 <div class="part_dist">
     <form autocomplete="off"
         hx-post="\\post_prefix///dist\\@index.@exists/index?//:\\@index|index ~//"
-        hx-trigger="change from:#relation_other\\@index|index//_input"
+        hx-trigger="change from:#dist\\@index|index//_input"
         hx-include=".submitted_field"
         hx-target="closest div.sortable_row"
         hx-swap="outerHTML">

@@ -34,11 +34,6 @@ pub const Index = enum (u32) {
     }
 };
 
-// pub const Project_Link = struct {
-//     order: Index,
-//     prj: Project.Index,
-// };
-
 pub const Status = enum {
     none,
     preparing,
@@ -200,14 +195,127 @@ fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.
     try db.set_optional(Order, idx, field, T, raw);
 }
 
-fn set_modified(db: *DB, idx: Index) !void {
+pub fn set_modified(db: *DB, idx: Index) !void {
     try db.maybe_set_modified(idx);
 }
+
+pub const Project_Link = struct {
+    order: Order.Index,
+    prj: Project.Index,
+    order_ordering: u16,
+    prj_ordering: u16,
+
+    pub const Index = enum (u32) {
+        _,
+
+        pub inline fn init(i: usize) Project_Link.Index {
+            const raw_i: u32 = @intCast(i);
+            return @enumFromInt(raw_i);
+        }
+
+        pub inline fn raw(self: Project_Link.Index) u32 {
+            return @intFromEnum(self);
+        }
+    };
+
+    pub const hash_context = struct {
+        pub fn hash(_: hash_context, k: Project_Link) u32 {
+            var hasher = std.hash.Wyhash.init(0);
+            std.hash.autoHash(&hasher, k.order);
+            std.hash.autoHash(&hasher, k.prj);
+            return @truncate(hasher.final());
+        }
+    
+        pub fn eql(_: hash_context, k: Project_Link, other: Project_Link, index: usize) bool {
+            _ = index;
+            return k.order == other.order and k.prj == other.prj;
+        }
+    };
+
+    pub const Lookup = struct {
+        order: Order.Index,
+        prj: Project.Index,
+
+        pub const hash_context = struct {
+            pub fn hash(_: @This(), k: Lookup) u32 {
+                var hasher = std.hash.Wyhash.init(0);
+                std.hash.autoHash(&hasher, k.order);
+                std.hash.autoHash(&hasher, k.prj);
+                return @truncate(hasher.final());
+            }
+        
+            pub fn eql(_: @This(), k: Lookup, other: Project_Link, index: usize) bool {
+                _ = index;
+                return k.order == other.order and k.prj == other.prj;
+            }
+        };
+    };
+
+    pub fn lookup_or_create(db: *DB, lookup: Lookup) !Project_Link.Index {
+        const result = try db.prj_order_links.getOrPutAdapted(db.container_alloc, lookup, Lookup.hash_context{});
+        if (!result.found_existing) {
+            var order_ordering: u16 = 0;
+            var prj_ordering: u16 = 0;
+            for (db.prj_order_links.keys()) |link| {
+                if (link.order == lookup.order) order_ordering += 1;
+                if (link.prj == lookup.prj) prj_ordering += 1;
+            }
+
+            result.key_ptr.* = .{
+                .order = lookup.order,
+                .prj = lookup.prj,
+                .order_ordering = order_ordering,
+                .prj_ordering = prj_ordering
+            };
+
+            try Order.set_modified(db, lookup.order);
+            try Project.set_modified(db, lookup.prj);
+        }
+        return Project_Link.Index.init(result.index);
+    }
+
+    pub fn maybe_remove(db: *DB, lookup: Lookup) !bool {
+        if (db.prj_order_links.swapRemoveAdapted(lookup, Lookup.hash_context{})) {
+            try Order.set_modified(db, lookup.order);
+            try Project.set_modified(db, lookup.prj);
+            return true;
+        }
+        return false;
+    }
+
+    pub inline fn get(db: *DB, idx: Project_Link.Index) Project_Link {
+        return db.prj_order_links.keys()[idx.raw()];
+    }
+
+    pub fn set_order_ordering(db: *DB, idx: Project_Link.Index, ordering: u16) !void {
+        const i = idx.raw();
+        const link = db.prj_order_links.keys()[i];
+        if (link.order_ordering == ordering) return;
+        db.prj_order_links.keys()[i].order_ordering = ordering;
+        try Order.set_modified(db, link.order);
+    }
+
+    pub fn set_prj_ordering(db: *DB, idx: Project_Link.Index, ordering: u16) !void {
+        const i = idx.raw();
+        const link = db.prj_order_links.keys()[i];
+        if (link.prj_ordering == ordering) return;
+        db.prj_order_links.keys()[i].prj_ordering = ordering;
+        try Project.set_modified(db, link.prj);
+    }
+
+    pub fn order_less_than(_: void, a: Project_Link, b: Project_Link) bool {
+        return a.order_ordering < b.order_ordering;
+    }
+
+    pub fn prj_less_than(_: void, a: Project_Link, b: Project_Link) bool {
+        return a.prj_ordering < b.prj_ordering;
+    }
+};
 
 const log = std.log.scoped(.db);
 
 const Distributor = DB.Distributor;
-// const Project = DB.Project;
+const Project = DB.Project;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");

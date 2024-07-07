@@ -43,6 +43,12 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     }
     sort.natural(children.items);
 
+    const order_links = try get_sorted_order_links(db, idx);
+    const orders = try http.temp().alloc([]const u8, order_links.items.len);
+    for (orders, order_links.items) |*order_id, link| {
+        order_id.* = Order.get_id(db, link.order);
+    }
+
     const DTO = tempora.Date_Time.With_Offset;
 
     const status_changed_dto = DTO.from_timestamp_ms(prj.status_change_timestamp_ms, tz);
@@ -63,6 +69,7 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .status_change_time = status_changed_dto,
         .parent_id = parent_id,
         .children = children.items,
+        .orders = orders,
         .created = created_dto,
         .modified = modified_dto,
     }, .{ .Context = Context });
@@ -77,10 +84,22 @@ pub fn delete(req: *http.Request, db: *DB) !void {
     try req.redirect("/prj", .see_other);
 }
 
+pub fn get_sorted_order_links(db: *const DB, idx: Project.Index) !std.ArrayList(Order.Project_Link) {
+    var links = std.ArrayList(Order.Project_Link).init(http.temp());
+    for (db.prj_order_links.keys()) |link| {
+        if (link.prj == idx) {
+            try links.append(link);
+        }
+    }
+    std.sort.block(Order.Project_Link, links.items, {}, Order.Project_Link.prj_less_than);
+    return links;
+}
+
 const log = std.log.scoped(.@"http.prj");
 
 const Transaction = @import("prj/Transaction.zig");
 const Project = DB.Project;
+const Order = DB.Order;
 const DB = @import("../DB.zig");
 const Session = @import("../Session.zig");
 const slimselect = @import("slimselect.zig");

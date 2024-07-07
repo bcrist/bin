@@ -344,7 +344,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
                 const kind = relation.kind.future_enum(Kind);
                 const year = relation.year.future_opt_int(u16);
                 const relation_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
-                try Manufacturer.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
+                try Manufacturer.Relation.set_ordering(db, idx, relation_idx, 0xFFFF);
             }
         }
 
@@ -415,7 +415,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
                 const kind = relation.kind.future_enum(Kind);
                 const year = relation.year.future_opt_int(u16);
                 const relation_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, kind, year);
-                try Manufacturer.Relation.set_order_index(db, idx, relation_idx, 0xFFFF);
+                try Manufacturer.Relation.set_ordering(db, idx, relation_idx, 0xFFFF);
                 break :relation_idx relation_idx;
             };
 
@@ -513,7 +513,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                     .kind_str = kind.display(),
                     .other = data.other.future,
                     .year = data.year.future_opt_int(u16),
-                    .order_index = 0,
+                    .ordering = 0,
                 };
             }
 

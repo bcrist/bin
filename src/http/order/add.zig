@@ -61,6 +61,20 @@ pub const validate = struct {
     }
 };
 
+pub const validate_prj = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, tz: ?*const tempora.Timezone, rnd: *std.rand.Xoshiro256) !void {
+        var txn = Transaction.init_empty(db, tz);
+        try txn.process_form_params(req);
+        try txn.validate();
+        try txn.render_results(session, req, .{
+            .target = .{
+                .project = try req.get_path_param("prj") orelse "",
+            },
+            .rnd = rnd,
+        });
+    }
+};
+
 const log = std.log.scoped(.http);
 
 const Transaction = @import("Transaction.zig");

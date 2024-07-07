@@ -20,6 +20,13 @@
     <div>\\notes//</div>
 \\  ~
 \\~
+
+\\projects?
+<h2>Linked Projects</h2>
+\\  projects:
+<div><a href="/prj:\\@url *//">\\*//</a></div>
+\\~~
+
 <hr>
 \\cancelled_time?//<div>Cancelled: \\cancelled_time//</div>\\~//
 \\completed_time?//<div>Completed: \\completed_time//</div>\\~//

@@ -26,6 +26,13 @@ Parent: <a href="/prj:\\@url parent_id//">\\parent_id//</a>
     <div>\\notes//</div>
 \\  ~
 \\~
+
+\\orders?
+<h2>Linked Orders</h2>
+\\  orders:
+<div><a href="/o:\\@url *//">\\*//</a></div>
+\\~~
+
 <hr>
 <div>Created: \\created//</div>
 <div>Modified: \\modified//</div>

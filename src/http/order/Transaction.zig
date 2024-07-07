@@ -3,6 +3,7 @@ tz: ?*const tempora.Timezone,
 idx: ?Order.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
+projects: std.StringArrayHashMapUnmanaged(Field_Data),
 
 add_another: bool = false,
 was_valid: bool = true,
@@ -43,11 +44,22 @@ pub fn init_empty(db: *const DB, tz: ?*const tempora.Timezone) Transaction {
             .completed_time = .{},
             .cancelled_time = .{},
         },
+        .projects = .{},
     };
 }
 
 pub fn init_idx(db: *const DB, idx: Order.Index, tz: ?*const tempora.Timezone) !Transaction {
     const order = Order.get(db, idx);
+
+    const project_links = try order_common.get_sorted_project_links(db, idx);
+    var projects: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
+    try projects.ensureTotalCapacity(http.temp(), project_links.items.len);
+
+    for (0.., project_links.items) |i, link| {
+        const key = try http.tprint("{d}", .{ i });
+        projects.putAssumeCapacityNoClobber(key, try Field_Data.init(db, link.prj));
+    }
+
     return .{
         .db = db,
         .tz = tz,
@@ -60,6 +72,7 @@ pub fn init_idx(db: *const DB, idx: Order.Index, tz: ?*const tempora.Timezone) !
             .completed_time = try timestamps.format_opt_datetime_local(order.completed_timestamp_ms, tz),
             .cancelled_time = try timestamps.format_opt_datetime_local(order.cancelled_timestamp_ms, tz),
         }),
+        .projects = projects,
     };
 }
 
@@ -95,6 +108,23 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         return true;
     }
 
+    if (std.mem.startsWith(u8, param.name, "prj_ordering")) {
+        return true;
+    }
+
+    if (std.mem.startsWith(u8, param.name, "prj")) {
+        const index_str = param.name["prj".len..];
+        const value = try trim(param.value);
+
+        const gop = try self.projects.getOrPut(http.temp(), index_str);
+        if (!gop.found_existing) {
+            gop.key_ptr.* = try http.temp().dupe(u8, index_str);
+            gop.value_ptr.* = .{};
+        }
+        gop.value_ptr.set_processed(value, self.idx == null);
+        return true;
+    }
+
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
             const value = try trim(param.value);
@@ -117,6 +147,11 @@ pub fn validate(self: *Transaction) !void {
     try self.validate_time(&self.fields.arrived_time);
     try self.validate_time(&self.fields.completed_time);
     try self.validate_time(&self.fields.cancelled_time);
+
+    const project_ids = self.projects.values();
+    for (0.., project_ids) |i, *project_id| {
+        try self.validate_project(project_id, project_ids[0..i]);
+    }
 }
 
 fn validate_id(self: *Transaction) !void {
@@ -172,6 +207,26 @@ fn validate_time(self: *Transaction, data: *Field_Data) !void {
     if (!try timestamps.validate_opt_datetime_local(data, self.tz)) self.valid = false;
 }
 
+fn validate_project(self: *Transaction, data: *Field_Data, prev_project_data: []const Field_Data) !void {
+    if (data.future.len == 0) return;
+
+    if (Project.maybe_lookup(self.db, data.future)) |project_idx| {
+        data.future = Project.get_id(self.db, project_idx);
+    } else {
+        log.debug("Project not found: {s}", .{ data.future });
+        data.err = "Project not found";
+        data.valid = false;
+        self.valid = false;
+        return;
+    }
+
+    for (prev_project_data) |prev_link| {
+        if (!prev_link.valid) continue;
+        if (!std.mem.eql(u8, data.future, prev_link.future)) continue;
+        data.future.len = 0;
+    }
+}
+
 pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (!self.valid) return;
 
@@ -200,6 +255,13 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Order.set_arrived_time(db, idx, try timestamps.parse_opt_datetime_local(self.fields.arrived_time.future, self.tz));
         try Order.set_completed_time(db, idx, try timestamps.parse_opt_datetime_local(self.fields.completed_time.future, self.tz));
         try Order.set_cancelled_time(db, idx, try timestamps.parse_opt_datetime_local(self.fields.cancelled_time.future, self.tz));
+
+        for (self.projects.values()) |project_id| {
+            _ = try Order.Project_Link.lookup_or_create(db, .{
+                .order = idx,
+                .prj = Project.maybe_lookup(db, project_id.future).?,
+            });
+        }
 
         self.changes_applied = true;
         self.created_idx = idx;
@@ -262,6 +324,28 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Order.set_cancelled_time(db, idx, try timestamps.parse_opt_datetime_local(time.future, self.tz));
         self.changes_applied = true;
     }
+
+    var project_ordering: u16 = 0;
+    for (self.projects.values()) |project_id| {
+        if (project_id.is_changed()) {
+            self.changes_applied = true;
+            if (project_id.current_opt()) |id| {
+                _ = try Order.Project_Link.maybe_remove(db, .{
+                    .order = idx,
+                    .prj = Project.maybe_lookup(db, id).?,
+                });
+            }
+            if (project_id.future_opt()) |id| {
+                const link_idx = try Order.Project_Link.lookup_or_create(db, .{
+                    .order = idx,
+                    .prj = Project.maybe_lookup(db, id).?,
+                });
+                try Order.Project_Link.set_order_ordering(db, link_idx, project_ordering);
+            }
+        }
+
+        if (project_id.future_opt()) |_| project_ordering += 1;
+    }
 }
 
 pub fn get_post_prefix(db: *const DB, maybe_idx: ?Order.Index) ![]const u8 {
@@ -277,6 +361,7 @@ const Render_Options = struct {
         add,
         edit,
         field: Field,
+        project: []const u8,
     },
     rnd: ?*std.rand.Xoshiro256,
 };
@@ -311,6 +396,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .validating = true,
                 .valid = self.valid,
                 .obj = obj,
+                .projects = self.projects.values(),
                 .title = self.fields.id.future,
                 .post_prefix = post_prefix,
                 .cancel_url = "/o",
@@ -348,6 +434,79 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 }
             }
         },
+        .project => {},
+    }
+
+    var project_index: usize = 0;
+    for (self.projects.keys(), self.projects.values()) |index_str, data| {
+        const is_target = switch (options.target) {
+            .project => |target_index| std.mem.eql(u8, index_str, target_index),
+            else => false,
+        };
+        const is_changed = data.is_changed();
+
+        const is_index_changed = if (self.idx != null and index_str.len > 0) is_index_changed: {
+            const old_project_index = try std.fmt.parseInt(u16, index_str, 10);
+            break :is_index_changed project_index != old_project_index;
+        } else false;
+        
+        if (!is_target and !is_changed and !is_index_changed) {
+            project_index += 1;
+            continue;
+        }
+        
+        var new_index_buf: [32]u8 = undefined;
+        var new_index: []const u8 = if (is_index_changed) try http.tprint("{d}", .{ project_index }) else index_str;
+        var is_placeholder = true;
+
+        if (index_str.len > 0) {
+            if (data.future.len == 0) {
+                if (is_target) {
+                    _ = try req.response();
+                } else {
+                    try req.render("order/post_project.zk", .{
+                        .index = index_str,
+                        .swap_oob = "delete",
+                    }, .{});
+                }
+                continue;
+            }
+            project_index += 1;
+            is_placeholder = false;
+        } else if (data.future.len > 0 and data.valid) {
+            if (options.rnd) |rnd| {
+                var buf: [16]u8 = undefined;
+                rnd.fill(&buf);
+                const Base64 = std.base64.url_safe_no_pad.Encoder;
+                new_index = Base64.encode(&new_index_buf, &buf);
+            } else {
+                new_index = try std.fmt.bufPrint(&new_index_buf, "{d}", .{ self.projects.count() - 1 });
+            }
+            is_placeholder = false;
+        }
+
+        const render_data = .{
+            .saved = self.changes_applied and is_changed,
+            .valid = data.valid,
+            .err = data.err,
+            .post_prefix = post_prefix,
+            .index = if (is_placeholder) null else new_index,
+            .swap_oob = if (is_target) null else try http.tprint("outerHTML:#prj{s}", .{ index_str }),
+
+            .prj_id = data.future,
+            .err_prj = !data.valid,
+        };
+
+        if (is_placeholder) {
+            try req.render("order/post_project_placeholder.zk", render_data, .{});
+        } else {
+            try req.render("order/post_project.zk", render_data, .{});
+            if (index_str.len == 0) {
+                try req.render("order/post_project_placeholder.zk", .{
+                    .post_prefix = post_prefix,
+                }, .{});
+            }
+        }
     }
 }
 
@@ -355,7 +514,9 @@ const log = std.log.scoped(.@"http.order");
 
 const Order = DB.Order;
 const Distributor = DB.Distributor;
+const Project = DB.Project;
 const DB = @import("../../DB.zig");
+const order_common = @import("../order.zig");
 const Field_Data = @import("../Field_Data.zig");
 const Session = @import("../../Session.zig");
 const costs = @import("../../costs.zig");

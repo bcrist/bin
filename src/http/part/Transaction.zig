@@ -502,11 +502,6 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
         parent_search_url = try http.tprint("/mfr:{}/p", .{ http.fmtForUrl(parent_mfr) });
     }
 
-    // var pkg_search_url: []const u8 = "/pkg";
-    // if (self.pkg_mfr.future_opt()) |pkg_mfr| {
-    //     pkg_search_url = try http.tprint("/mfr:{}/pkg", .{ http.fmtForUrl(pkg_mfr) });
-    // }
-
     switch (options.target) {
         .add, .edit => {
             const dist_pns = try http.temp().alloc(common.Distributor_Part_Number, self.dist_pns.count());

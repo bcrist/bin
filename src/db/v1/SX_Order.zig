@@ -1,6 +1,7 @@
 id: []const u8 = "",
 dist: ?[]const u8 = null,
 po: ?[]const u8 = null,
+prj: []const []const u8 = &.{},
 notes: ?[]const u8 = null,
 total: ?[]const u8 = null,
 preparing: ?Date_Time.With_Offset = null,
@@ -25,14 +26,28 @@ pub const context = struct {
 };
 
 pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order {
-    const data = Order.get(db, idx);
+    var prj_order_links = std.ArrayList(Order.Project_Link).init(temp);
+    for (db.prj_order_links.keys()) |link| {
+        if (link.order == idx) {
+            try prj_order_links.append(link);
+        }
+    }
+    std.sort.block(Order.Project_Link, prj_order_links.items, {}, Order.Project_Link.order_less_than);
 
+    const projects = try temp.alloc([]const u8, prj_order_links.items.len);
+    const project_ids = db.prjs.items(.id);
+    for (projects, prj_order_links.items) |*project_id, link| {
+        project_id.* = project_ids[link.prj.raw()];
+    }
+
+    const data = Order.get(db, idx);
     const total_cost_str = if (data.total_cost_hundreths) |cost| try costs.hundreths_to_decimal(temp, cost) else null;
 
     return .{
         .id = data.id,
         .dist = if (data.dist) |dist_idx| Distributor.get_id(db, dist_idx) else null,
         .po = data.po,
+        .prj = projects,
         .notes = data.notes,
         .total = total_cost_str,
         .preparing = if (data.preparing_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
@@ -63,6 +78,16 @@ pub fn read(self: SX_Order, db: *DB) !void {
     if (self.cancelled) |dto| try Order.set_cancelled_time(db, idx, dto.timestamp_ms());
     if (self.created) |dto| try Order.set_created_time(db, idx, dto.timestamp_ms());
     if (self.modified) |dto| try Order.set_modified_time(db, idx, dto.timestamp_ms());
+
+    var project_ordering: u16 = 0;
+    for (self.prj) |project_id| {
+        const link_idx = try Order.Project_Link.lookup_or_create(db, .{
+            .order = idx,
+            .prj = try Project.lookup_or_create(db, project_id),
+        });
+        try Order.Project_Link.set_order_ordering(db, link_idx, project_ordering);
+        project_ordering += 1;
+    }
 }
 
 pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, filenames: *paths.StringHashSet) !void {
@@ -105,6 +130,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
 const log = std.log.scoped(.db);
 
 const Order = DB.Order;
+const Project = DB.Project;
 const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");
 const paths = @import("../paths.zig");

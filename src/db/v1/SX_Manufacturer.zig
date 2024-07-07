@@ -99,10 +99,10 @@ pub fn read(self: SX_Manufacturer, db: *DB) !void {
     if (self.suspended) |year| try Manufacturer.set_suspended_year(db, idx, year);
     try Manufacturer.add_additional_names(db, idx, self.additional_names);
 
-    for (0.., self.rel) |order_index, rel_info| {
+    for (0.., self.rel) |ordering, rel_info| {
         const other_idx = try Manufacturer.lookup_or_create(db, rel_info.other);
         const rel_idx = try Manufacturer.Relation.lookup_or_create(db, idx, other_idx, rel_info.kind, rel_info.year);
-        try Manufacturer.Relation.set_order_index(db, idx, rel_idx, @intCast(order_index));
+        try Manufacturer.Relation.set_ordering(db, idx, rel_idx, @intCast(ordering));
     }
 
     if (self.created) |dto| try Manufacturer.set_created_time(db, idx, dto.timestamp_ms());

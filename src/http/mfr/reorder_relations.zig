@@ -33,7 +33,7 @@ pub fn post(req: *http.Request, db: *DB) !void {
     if (apply_changes) {
         for (0.., new_list.items) |i, relation| {
             log.debug("Setting {} {} order index to {}", .{ idx, relation.db_index.?, i });
-            try Manufacturer.Relation.set_order_index(db, idx, relation.db_index.?, @intCast(i));
+            try Manufacturer.Relation.set_ordering(db, idx, relation.db_index.?, @intCast(i));
         }
     }
 

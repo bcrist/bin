@@ -30,7 +30,7 @@ prjs: std.MultiArrayList(Project) = .{},
 
 order_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Order.Index) = .{},
 orders: std.MultiArrayList(Order) = .{},
-//prj_order_links: std.AutoArrayHashMapUnmanaged(Order.Project_Link, void) = .{},
+prj_order_links: std.ArrayHashMapUnmanaged(Order.Project_Link, void, Order.Project_Link.hash_context, false) = .{},
 //order_items: std.MultiArrayList(Order_Item) = .{},
 
 const DB = @This();
@@ -98,6 +98,7 @@ pub fn deinit(self: *DB) void {
 
     self.orders.deinit(gpa);
     self.order_lookup.deinit(gpa);
+    self.prj_order_links.deinit(gpa);
 
     self.prjs.deinit(gpa);
     self.prj_lookup.deinit(gpa);
@@ -146,6 +147,7 @@ pub fn reset(self: *DB) void {
 
     self.orders.len = 0;
     self.order_lookup.clearRetainingCapacity();
+    self.prj_order_links.clearRetainingCapacity();
 
     self.prjs.len = 0;
     self.prj_lookup.clearRetainingCapacity();

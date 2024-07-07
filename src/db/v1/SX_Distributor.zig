@@ -99,10 +99,10 @@ pub fn read(self: SX_Distributor, db: *DB) !void {
     if (self.suspended) |year| try Distributor.set_suspended_year(db, idx, year);
     try Distributor.add_additional_names(db, idx, self.additional_names);
 
-    for (0.., self.rel) |order_index, rel_info| {
+    for (0.., self.rel) |ordering, rel_info| {
         const other_idx = try Distributor.lookup_or_create(db, rel_info.other);
         const rel_idx = try Distributor.Relation.lookup_or_create(db, idx, other_idx, rel_info.kind, rel_info.year);
-        try Distributor.Relation.set_order_index(db, idx, rel_idx, @intCast(order_index));
+        try Distributor.Relation.set_ordering(db, idx, rel_idx, @intCast(ordering));
     }
 
     if (self.created) |dto| try Distributor.set_created_time(db, idx, dto.timestamp_ms());
