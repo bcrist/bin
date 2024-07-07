@@ -110,8 +110,17 @@ pub fn get_status(self: Order) Status {
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
-    // TODO remove project links referencing this
     // TODO remove order items
+
+    const prj_links = db.prj_order_links.keys();
+    var prj_link_i = prj_links.len;
+    while (prj_link_i > 0) {
+        prj_link_i -= 1;
+        const link = prj_links[prj_link_i];
+        if (link.order == idx) {
+            db.prj_order_links.swapRemoveAt(prj_link_i);
+        }
+    }
 
     const i = idx.raw();
     std.debug.assert(db.order_lookup.remove(db.orders.items(.id)[i]));
@@ -136,7 +145,11 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
 
     if (db.loading) return;
 
-    // TODO mark dirty any projects referencing this order
+    for (db.prj_order_links.keys()) |link| {
+        if (link.order == idx) {
+            db.mark_dirty(link.prj);
+        }
+    }
 }
 
 pub fn set_dist(db: *DB, idx: Index, dist: ?Distributor.Index) !void {

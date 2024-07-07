@@ -133,7 +133,15 @@ pub inline fn get_status(db: *const DB, idx: Index) Status {
 }
 
 pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
-    // TODO remove project link from any orders referencing this
+    const prj_links = db.prj_order_links.keys();
+    var prj_link_i = prj_links.len;
+    while (prj_link_i > 0) {
+        prj_link_i -= 1;
+        const link = prj_links[prj_link_i];
+        if (link.prj == idx) {
+            db.prj_order_links.swapRemoveAt(prj_link_i);
+        }
+    }
 
     const i = idx.raw();
 
@@ -189,7 +197,11 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
         }
     }
 
-    // TODO mark dirty any orders referencing this project
+    for (db.prj_order_links.keys()) |link| {
+        if (link.prj == idx) {
+            db.mark_dirty(link.order);
+        }
+    }
 }
 
 pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
