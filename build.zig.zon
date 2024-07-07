@@ -13,8 +13,8 @@
             .hash = "122002e8c38548e84577e11c487408d0962e0f8c05a6fbed3f8e1b1771426eddd865",
         },
         .sx = .{
-            .url = "git+https://github.com/bcrist/zig-sx#671d0c6355b4f7eb395d1f4f853d844fd19bcf70",
-            .hash = "1220ff4c54d86f939850ad7da260992a2fd31a19bd0dad6f5028ad0bde9a33182c91",
+            .url = "git+https://github.com/bcrist/zig-sx#f475223f58f7903f74186f59976e5693edf1c525",
+            .hash = "122032b52e90411e45828393e5832b91d17d2929a86e55c18874d3cf1ad4f86bf49d",
         },
         .tempora = .{
             .url = "git+https://github.com/bcrist/tempora#7888819f0a6be6701ceb424da8be028a93ddce7b",

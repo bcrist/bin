@@ -2,8 +2,9 @@
 * Parameters
 * Files
 
-* Make order info private when logged out
+* Handle Order Item foreign references correctly
 * Order Items
+* Make order info private when logged out
 * Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding

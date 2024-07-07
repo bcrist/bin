@@ -11,6 +11,7 @@ completed: ?Date_Time.With_Offset = null,
 cancelled: ?Date_Time.With_Offset = null,
 created: ?Date_Time.With_Offset = null,
 modified: ?Date_Time.With_Offset = null,
+item: []const SX_Order_Item = &.{},
 
 const SX_Order = @This();
 
@@ -23,6 +24,7 @@ pub const context = struct {
     pub const cancelled = Date_Time.With_Offset.fmt_sql;
     pub const created = Date_Time.With_Offset.fmt_sql;
     pub const modified = Date_Time.With_Offset.fmt_sql;
+    pub const item = SX_Order_Item.context;
 };
 
 pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order {
@@ -39,6 +41,14 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order 
     for (projects, prj_order_links.items) |*project_id, link| {
         project_id.* = project_ids[link.prj.raw()];
     }
+
+    var order_items = std.ArrayList(SX_Order_Item).init(temp);
+    for (0.., db.order_items.items(.order)) |i, item_order_idx| {
+        if (item_order_idx == idx) {
+            try order_items.append(try SX_Order_Item.init(temp, db, Order_Item.Index.init(i)));
+        }
+    }
+    std.sort.block(SX_Order_Item, order_items.items, {}, SX_Order_Item.less_than);
 
     const data = Order.get(db, idx);
     const total_cost_str = if (data.total_cost_hundreths) |cost| try costs.hundreths_to_decimal(temp, cost) else null;
@@ -57,11 +67,17 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order.Index) !SX_Order 
         .cancelled = if (data.cancelled_timestamp_ms) |ts| Date_Time.With_Offset.from_timestamp_ms(ts, null) else null,
         .created = Date_Time.With_Offset.from_timestamp_ms(data.created_timestamp_ms, null),
         .modified = Date_Time.With_Offset.from_timestamp_ms(data.modified_timestamp_ms, null),
+        .item = order_items.items,
     };
 }
 
 pub fn read(self: SX_Order, db: *DB) !void {
     const id = std.mem.trim(u8, self.id, &std.ascii.whitespace);
+
+    if (db.order_lookup.get(id)) |idx| {
+        try Order_Item.delete_all_for_order(db, idx);
+    }
+
     const idx = try Order.lookup_or_create(db, id);
 
     try Order.set_id(db, idx, id);
@@ -88,6 +104,8 @@ pub fn read(self: SX_Order, db: *DB) !void {
         try Order.Project_Link.set_order_ordering(db, link_idx, project_ordering);
         project_ordering += 1;
     }
+
+    for (0.., self.item) |i, sx_item| try sx_item.read(db, idx, i);
 }
 
 pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, filenames: *paths.StringHashSet) !void {
@@ -96,8 +114,6 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
 
     var dir = try root.makeOpenPath("o", .{ .iterate = true });
     defer dir.close();
-
-    // TODO group by preparing or created date
 
     for (0.., db.orders.items(.id)) |i, id| {
         const dest_path = try paths.unique_path(allocator, id, filenames);
@@ -129,7 +145,9 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
 
 const log = std.log.scoped(.db);
 
+const SX_Order_Item = @import("SX_Order_Item.zig");
 const Order = DB.Order;
+const Order_Item = DB.Order_Item;
 const Project = DB.Project;
 const Distributor = DB.Distributor;
 const DB = @import("../../DB.zig");

@@ -139,6 +139,7 @@ pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
         prj_link_i -= 1;
         const link = prj_links[prj_link_i];
         if (link.prj == idx) {
+            try Order.set_modified(db, link.order);
             db.prj_order_links.swapRemoveAt(prj_link_i);
         }
     }
@@ -199,7 +200,7 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
 
     for (db.prj_order_links.keys()) |link| {
         if (link.prj == idx) {
-            db.mark_dirty(link.order);
+            try db.mark_dirty(link.order);
         }
     }
 }
@@ -221,7 +222,7 @@ pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
 }
 
 pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
-    return set_optional(Index, db, idx, .parent, parent_idx);
+    try set_optional(Index, db, idx, .parent, parent_idx);
 }
 
 pub fn set_status(db: *DB, idx: Index, status: Status) !void {
@@ -241,15 +242,15 @@ pub fn set_status_change_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .notes, notes);
+    try set_optional([]const u8, db, idx, .notes, notes);
 }
 
 pub fn set_website(db: *DB, idx: Index, url: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .website, url);
+    try set_optional([]const u8, db, idx, .website, url);
 }
 
 pub fn set_source_control(db: *DB, idx: Index, url: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .source_control, url);
+    try set_optional([]const u8, db, idx, .source_control, url);
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
@@ -269,7 +270,7 @@ pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Project, idx, field, T, raw);
+    _ = try db.set_optional(Project, idx, field, T, raw);
 }
 
 pub fn set_modified(db: *DB, idx: Index) !void {
@@ -278,6 +279,7 @@ pub fn set_modified(db: *DB, idx: Index) !void {
 
 const log = std.log.scoped(.db);
 
+const Order = DB.Order;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");

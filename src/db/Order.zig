@@ -110,7 +110,7 @@ pub fn get_status(self: Order) Status {
 }
 
 pub fn delete(db: *DB, idx: Index) !void {
-    // TODO remove order items
+    try Order_Item.delete_all_for_order(db, idx);
 
     const prj_links = db.prj_order_links.keys();
     var prj_link_i = prj_links.len;
@@ -118,6 +118,7 @@ pub fn delete(db: *DB, idx: Index) !void {
         prj_link_i -= 1;
         const link = prj_links[prj_link_i];
         if (link.order == idx) {
+            try Project.set_modified(db, link.prj);
             db.prj_order_links.swapRemoveAt(prj_link_i);
         }
     }
@@ -147,45 +148,50 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
 
     for (db.prj_order_links.keys()) |link| {
         if (link.order == idx) {
-            db.mark_dirty(link.prj);
+            try db.mark_dirty(link.prj);
         }
     }
 }
 
-pub fn set_dist(db: *DB, idx: Index, dist: ?Distributor.Index) !void {
-    return set_optional(Distributor.Index, db, idx, .dist, dist);
+pub fn set_dist(db: *DB, idx: Index, maybe_dist_idx: ?Distributor.Index) !void {
+    // If we wanted to list orders in the distributor .sx files, we'd need to uncomment this:
+    //const old_dist_idx = db.orders.items(.dist)[idx.raw()];
+    if (try db.set_optional(Order, idx, .dist, Distributor.Index, maybe_dist_idx)) {
+        //if (old_dist_idx) |dist_idx| try db.mark_dirty(dist_idx);
+        //if (maybe_dist_idx) |dist_idx| try db.mark_dirty(dist_idx);
+    }
 }
 
 pub fn set_po(db: *DB, idx: Index, po: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .po, po);
+    try set_optional([]const u8, db, idx, .po, po);
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .notes, notes);
+    try set_optional([]const u8, db, idx, .notes, notes);
 }
 
 pub fn set_total_cost_hundreths(db: *DB, idx: Index, cost: ?i32) !void {
-    return set_optional(i32, db, idx, .total_cost_hundreths, cost);
+    try set_optional(i32, db, idx, .total_cost_hundreths, cost);
 }
 
 pub fn set_preparing_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .preparing_timestamp_ms, ts);
+    try set_optional(i64, db, idx, .preparing_timestamp_ms, ts);
 }
 
 pub fn set_waiting_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .waiting_timestamp_ms, ts);
+    try set_optional(i64, db, idx, .waiting_timestamp_ms, ts);
 }
 
 pub fn set_arrived_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .arrived_timestamp_ms, ts);
+    try set_optional(i64, db, idx, .arrived_timestamp_ms, ts);
 }
 
 pub fn set_completed_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .completed_timestamp_ms, ts);
+    try set_optional(i64, db, idx, .completed_timestamp_ms, ts);
 }
 
 pub fn set_cancelled_time(db: *DB, idx: Index, ts: ?i64) !void {
-    return set_optional(i64, db, idx, .cancelled_timestamp_ms, ts);
+    try set_optional(i64, db, idx, .cancelled_timestamp_ms, ts);
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
@@ -205,7 +211,7 @@ pub fn set_modified_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Order, idx, field, T, raw);
+    _ = try db.set_optional(Order, idx, field, T, raw);
 }
 
 pub fn set_modified(db: *DB, idx: Index) !void {
@@ -327,6 +333,7 @@ pub const Project_Link = struct {
 
 const log = std.log.scoped(.db);
 
+const Order_Item = DB.Order_Item;
 const Distributor = DB.Distributor;
 const Project = DB.Project;
 const DB = @import("../DB.zig");

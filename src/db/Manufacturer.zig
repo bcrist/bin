@@ -307,7 +307,7 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Manufacturer, idx, field, T, raw);
+    _ = try db.set_optional(Manufacturer, idx, field, T, raw);
 }
 
 fn set_modified(db: *DB, idx: Index) !void {

@@ -229,11 +229,11 @@ pub fn set_full_name(db: *DB, idx: Index, full_name: ?[]const u8) !void {
 }
 
 pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
-    return set_optional(Index, db, idx, .parent, parent_idx);
+    try set_optional(Index, db, idx, .parent, parent_idx);
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .notes, notes);
+    try set_optional([]const u8, db, idx, .notes, notes);
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
@@ -327,7 +327,7 @@ pub fn rename_additional_name(db: *DB, idx: Index, old_name: []const u8, new_nam
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Package, idx, field, T, raw);
+    _ = try db.set_optional(Package, idx, field, T, raw);
 }
 
 inline fn set_modified(db: *DB, idx: Index) !void {

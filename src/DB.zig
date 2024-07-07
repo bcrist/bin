@@ -31,14 +31,14 @@ prjs: std.MultiArrayList(Project) = .{},
 order_lookup: maps.String_Hash_Map_Ignore_Case_Unmanaged(Order.Index) = .{},
 orders: std.MultiArrayList(Order) = .{},
 prj_order_links: std.ArrayHashMapUnmanaged(Order.Project_Link, void, Order.Project_Link.hash_context, false) = .{},
-//order_items: std.MultiArrayList(Order_Item) = .{},
+order_items: std.MultiArrayList(Order_Item) = .{},
 
 const DB = @This();
 pub const Manufacturer = @import("db/Manufacturer.zig");
 pub const Distributor = @import("db/Distributor.zig");
 pub const Part = @import("db/Part.zig");
 pub const Order = @import("db/Order.zig");
-//pub const Order_Item = @import("db/Order_Item.zig");
+pub const Order_Item = @import("db/Order_Item.zig");
 pub const Project = @import("db/Project.zig");
 pub const Package = @import("db/Package.zig");
 pub const Location = @import("db/Location.zig");
@@ -99,6 +99,7 @@ pub fn deinit(self: *DB) void {
     self.orders.deinit(gpa);
     self.order_lookup.deinit(gpa);
     self.prj_order_links.deinit(gpa);
+    self.order_items.deinit(gpa);
 
     self.prjs.deinit(gpa);
     self.prj_lookup.deinit(gpa);
@@ -148,6 +149,7 @@ pub fn reset(self: *DB) void {
     self.orders.len = 0;
     self.order_lookup.clearRetainingCapacity();
     self.prj_order_links.clearRetainingCapacity();
+    self.order_items.len = 0;
 
     self.prjs.len = 0;
     self.prj_lookup.clearRetainingCapacity();
@@ -197,6 +199,7 @@ fn get_list(self: *const DB, comptime T: type) std.MultiArrayList(T) {
         Distributor => self.dists,
         Part => self.parts,
         Order => self.orders,
+        Order_Item => self.order_items,
         Project => self.prjs,
         Package => self.pkgs,
         Location => self.locs,
@@ -330,11 +333,18 @@ pub fn mark_dirty(self: *DB, idx: anytype) !void {
     try self.dirty_set.put(self.container_alloc, ai, {});
 }
 
+inline fn is_index(comptime T: type) bool {
+    return comptime @typeInfo(T) == .Enum and @hasDecl(T, "Type") and std.mem.endsWith(u8, @typeName(T), ".Index");
+}
+
+inline fn is_modified_tracking_index(comptime T: type) bool {
+    return comptime is_index(T) and @hasField(std.meta.FieldEnum(T.Type), "modified_timestamp_ms");
+}
+
 pub fn maybe_set_modified(self: *DB, idx: anytype) !void {
-    const Index = @TypeOf(idx);
-    if (comptime @typeInfo(Index) == .Enum and @hasDecl(Index, "Type") and std.mem.endsWith(u8, @typeName(Index), ".Index")) {
+    if (comptime is_modified_tracking_index(@TypeOf(idx))) {
         if (self.loading) return;
-        const list = self.get_list(Index.Type);
+        const list = self.get_list(@TypeOf(idx).Type);
         const i = idx.raw();
         const now = std.time.milliTimestamp();
         const DTO = tempora.Date_Time.With_Offset;
@@ -346,7 +356,7 @@ pub fn maybe_set_modified(self: *DB, idx: anytype) !void {
     }
 }
 
-pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @TypeOf(.enum_field), comptime F: type, raw: ?F) !void {
+pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @TypeOf(.enum_field), comptime F: type, raw: ?F) !bool {
     const i = idx.raw();
     const list = self.get_list(T);
     const array = list.items(field);
@@ -356,6 +366,7 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
                 if (!std.mem.eql(u8, current, new)) {
                     array[i] = try self.intern(new);
                     try self.maybe_set_modified(idx);
+                    return true;
                 }
             } else {
                 if (!std.meta.eql(current, new)) {
@@ -367,33 +378,38 @@ pub fn set_optional(self: *DB, comptime T: type, idx: T.Index, comptime field: @
                     }
                     array[i] = new;
                     try self.maybe_set_modified(idx);
+                    return true;
                 }
             }
-            
-        } else {
-            // removing
-            if (F == T.Index) {
-                if (array[i]) |old| {
-                    try self.maybe_set_modified(old);
-                }
-            }
-            array[i] = null;
-            try self.maybe_set_modified(idx);
+            return false;
         }
-    } else {
-        if (raw) |new| {
-            // adding
-            if (F == []const u8) {
-                array[i] = try self.intern(new);
-            } else {
-                if (F == T.Index) {
-                    try self.maybe_set_modified(new);
-                }
-                array[i] = new;
+        
+        // removing
+        if (F == T.Index) {
+            if (array[i]) |old| {
+                try self.maybe_set_modified(old);
             }
-            try self.maybe_set_modified(idx);
         }
+        array[i] = null;
+        try self.maybe_set_modified(idx);
+        return true;
     }
+    
+    if (raw) |new| {
+        // adding
+        if (F == []const u8) {
+            array[i] = try self.intern(new);
+        } else {
+            if (F == T.Index) {
+                try self.maybe_set_modified(new);
+            }
+            array[i] = new;
+        }
+        try self.maybe_set_modified(idx);
+        return true;
+    }
+    
+    return false;
 }
 
 pub fn get_id(self: *const DB, idx: anytype) []const u8 {

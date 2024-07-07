@@ -185,15 +185,20 @@ pub fn set_id(db: *DB, idx: Index, mfr_idx: ?Manufacturer.Index, id: []const u8)
 }
 
 pub fn set_parent(db: *DB, idx: Index, parent_idx: ?Index) !void {
-    return set_optional(Index, db, idx, .parent, parent_idx);
+    try set_optional(Index, db, idx, .parent, parent_idx);
 }
 
-pub fn set_pkg(db: *DB, idx: Index, pkg_idx: ?Package.Index) !void {
-    return set_optional(Package.Index, db, idx, .pkg, pkg_idx);
+pub fn set_pkg(db: *DB, idx: Index, maybe_pkg_idx: ?Package.Index) !void {
+    // If we wanted to list parts in the package .sx files, we'd need to uncomment this:
+    //const old_pkg_idx = db.parts.items(.pkg)[idx.raw()];
+    if (try db.set_optional(Part, idx, .pkg, Package.Index, maybe_pkg_idx)) {
+        //if (old_pkg_idx) |pkg_idx| try db.mark_dirty(pkg_idx);
+        //if (maybe_pkg_idx) |pkg_idx| try db.mark_dirty(pkg_idx);
+    }
 }
 
 pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
-    return set_optional([]const u8, db, idx, .notes, notes);
+    try set_optional([]const u8, db, idx, .notes, notes);
 }
 
 pub fn set_created_time(db: *DB, idx: Index, timestamp_ms: i64) !void {
@@ -268,10 +273,10 @@ pub fn edit_dist_pn(db: *DB, idx: Index, old: Distributor_Part_Number, new: Dist
 }
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
-    try db.set_optional(Part, idx, field, T, raw);
+    _ = try db.set_optional(Part, idx, field, T, raw);
 }
 
-fn set_modified(db: *DB, idx: Index) !void {
+pub fn set_modified(db: *DB, idx: Index) !void {
     try db.maybe_set_modified(idx);
 }
 

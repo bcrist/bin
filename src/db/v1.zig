@@ -1,12 +1,12 @@
 pub fn parse_data(db: *DB, reader: *sx.Reader) !void {
     const parsed = try reader.require_object(reader.token.allocator, SX_Data, SX_Data.context);
+    for (parsed.order) |item| try item.read(db); // read orders first to avoid unneccessary calls to Order_Item.delete_all_for_order
     for (parsed.part) |item| try item.read(db);
     for (parsed.loc) |item| try item.read(db);
     for (parsed.mfr) |item| try item.read(db);
     for (parsed.pkg) |item| try item.read(db);
     for (parsed.prj) |item| try item.read(db);
     for (parsed.dist) |item| try item.read(db);
-    for (parsed.order) |item| try item.read(db);
 }
 
 pub fn write_data(db: *DB, root: *std.fs.Dir) !void {
