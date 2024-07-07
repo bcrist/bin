@@ -17,6 +17,23 @@ pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
     });
 }
 
+pub const order = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *DB) !void {
+        const requested_prj_name = try req.get_path_param("prj");
+        const idx = Project.maybe_lookup(db, requested_prj_name) orelse return;
+        var txn = try Transaction.init_idx(db, idx);
+        try txn.process_form_params(req);
+        try txn.validate();
+        try txn.apply_changes(db);
+        try txn.render_results(session, req, .{
+            .target = .{
+                .order = try req.get_path_param("order") orelse "",
+            },
+            .rnd = null,
+        });
+    }
+};
+
 const Transaction = @import("Transaction.zig");
 const Project = DB.Project;
 const DB = @import("../../DB.zig");

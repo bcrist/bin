@@ -8,4 +8,13 @@
 </form>
 <h1>Add Project</h1>
 \\@include "prj/add_or_edit_fields.zk"
+
+<h2>Linked Orders</h2>
+<div class="sortable">
+\\orders:
+\\  @include "prj/post_order.zk"
+\\~
+\\@include "prj/post_order_placeholder.zk"
+</div>
+
 \\@include "_bottom.zk"

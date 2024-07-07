@@ -5,4 +5,14 @@
 </aside>
 <h1>Edit \\obj.full_name/obj.id//</h1>
 \\@include "prj/add_or_edit_fields.zk"
+
+<h2>Linked Orders</h2>
+<div class="sortable" hx-post="\\post_prefix///orders" hx-trigger="end" hx-include=".prj_order_ordering">
+\\orders:
+\\  @include "prj/post_order.zk"
+\\~
+\\@include "prj/post_order_placeholder.zk"
+</div>
+
+
 \\@include "_bottom.zk"

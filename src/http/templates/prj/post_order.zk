@@ -1,0 +1,8 @@
+<div class="sortable_row" id="order\\@index|index//"\\swap_oob?// hx-swap-oob="\\swap_oob//"\\~//>
+    <span class="sort_handle icon">&#xE945;</span>
+    <input type="hidden" name="order_ordering\\@index|index//" class="prj_order_ordering">
+\\@include "prj/post_order_id.zk"
+    <div class="prj_order_validation">
+\\@include "_validation.zk"
+    </div>
+</div>

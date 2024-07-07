@@ -1,6 +1,7 @@
 pub const list = @import("prj/list.zig");
 pub const add = @import("prj/add.zig");
 pub const edit = @import("prj/edit.zig");
+pub const reorder_orders = @import("prj/reorder_orders.zig");
 
 pub const statuses = struct {
     pub fn get(req: *http.Request) !void {

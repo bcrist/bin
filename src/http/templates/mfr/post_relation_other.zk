@@ -3,18 +3,16 @@
         hx-post="\\post_prefix///relation\\@index.@exists/index?//:\\@index|index ~//"
         hx-trigger="change from:#relation_other\\@index|index//_input"
         hx-include=".submitted_field"
+\\err_other?
+        hx-vals='{"invalid":true}'
+\\~
         hx-target="closest div.sortable_row"
         hx-swap="outerHTML">
         <input type="search" autocomplete="off"
             id="relation_other\\@index|index//_input"
             name="relation_other\\@index|index//"
             list="relation_other\\@index|index//_datalist"
-\\err_other?
-            class="submitted_field invalid"
-            hx-vals='{"invalid":true}'
-\\;
-            class="submitted_field"
-\\~
+            class="submitted_field\\err_other?// invalid\\~//"
             value="\\other//"
             placeholder="Manufacturer"
             hx-post="/mfr"

@@ -7,18 +7,16 @@
         hx-post="\\post_prefix///\\parent_qualifier_field//"
         hx-trigger="change from:#\\parent_qualifier_field//_input"
         hx-include=".submitted_field"
+\\err_parent_qualifier?
+        hx-vals='{"invalid":true}'
+\\~
         hx-target="closest tr"
         hx-swap="outerHTML">
         <input type="search" autocomplete="off" style="min-width: 15em"
             id="\\parent_qualifier_field//_input"
             name="\\parent_qualifier_field//"
             list="\\parent_qualifier_field//_datalist"
-\\err_parent_qualifier?
-            class="submitted_field invalid"
-            hx-vals='{"invalid":true}'
-\\;
-            class="submitted_field"
-\\~
+            class="submitted_field\\err_parent_qualifier?// invalid\\~//"
             value="\\parent_qualifier//"
             placeholder="\\parent_qualifier_placeholder//"
             hx-post="\\parent_qualifier_search_url//"
@@ -33,18 +31,16 @@
         hx-post="\\post_prefix///parent"
         hx-trigger="change from:#parent_input"
         hx-include=".submitted_field"
+\\err_parent?
+        hx-vals='{"invalid":true}'
+\\~
         hx-target="closest tr"
         hx-swap="outerHTML">
         <input type="search" autocomplete="off" style="min-width: 15em"
             id="parent_input"
             name="parent"
             list="parent_datalist"
-\\err_parent?
-            class="submitted_field invalid"
-            hx-vals='{"invalid":true}'
-\\;
-            class="submitted_field"
-\\~
+            class="submitted_field\\err_parent?// invalid\\~//"
             value="\\parent|obj.parent//"
             placeholder="ID"
             hx-post="\\parent_search_url//"

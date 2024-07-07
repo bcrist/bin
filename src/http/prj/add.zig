@@ -47,6 +47,20 @@ pub const validate = struct {
     }
 };
 
+pub const validate_order = struct {
+    pub fn post(session: ?Session, req: *http.Request, db: *const DB, rnd: *std.rand.Xoshiro256) !void {
+        var txn = Transaction.init_empty(db);
+        try txn.process_form_params(req);
+        try txn.validate();
+        try txn.render_results(session, req, .{
+            .target = .{
+                .order = try req.get_path_param("order") orelse "",
+            },
+            .rnd = rnd,
+        });
+    }
+};
+
 const log = std.log.scoped(.http);
 
 const Transaction = @import("Transaction.zig");

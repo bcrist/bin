@@ -2,6 +2,7 @@ db: *const DB,
 idx: ?Project.Index,
 
 fields: std.enums.EnumFieldStruct(Field, Field_Data, null),
+orders: std.StringArrayHashMapUnmanaged(Field_Data),
 
 add_another: bool = false,
 was_valid: bool = true,
@@ -38,15 +39,27 @@ pub fn init_empty(db: *const DB) Transaction {
                 .future = "active",
             },
         },
+        .orders = .{},
     };
 }
 
 pub fn init_idx(db: *const DB, idx: Project.Index) !Transaction {
-    const prj = Project.get(db, idx);
+    const obj = Project.get(db, idx);
+
+    const order_links = try prj.get_sorted_order_links(db, idx);
+    var orders: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
+    try orders.ensureTotalCapacity(http.temp(), order_links.items.len);
+
+    for (0.., order_links.items) |i, link| {
+        const key = try http.tprint("{d}", .{ i });
+        orders.putAssumeCapacityNoClobber(key, try Field_Data.init(db, link.order));
+    }
+
     return .{
         .db = db,
         .idx = idx,
-        .fields = try Field_Data.init_fields(Field, db, prj),
+        .fields = try Field_Data.init_fields(Field, db, obj),
+        .orders = orders,
     };
 }
 
@@ -82,6 +95,23 @@ pub fn maybe_process_param(self: *Transaction, param: Query_Param) !bool {
         return true;
     }
 
+    if (std.mem.startsWith(u8, param.name, "order_ordering")) {
+        return true;
+    }
+
+    if (std.mem.startsWith(u8, param.name, "order")) {
+        const index_str = param.name["order".len..];
+        const value = try trim(param.value);
+
+        const gop = try self.orders.getOrPut(http.temp(), index_str);
+        if (!gop.found_existing) {
+            gop.key_ptr.* = try http.temp().dupe(u8, index_str);
+            gop.value_ptr.* = .{};
+        }
+        gop.value_ptr.set_processed(value, self.idx == null);
+        return true;
+    }
+
     switch (std.meta.stringToEnum(Field, param.name) orelse return false) {
         inline else => |field| {
             const value = try trim(param.value);
@@ -100,6 +130,11 @@ pub fn validate(self: *Transaction) !void {
     try self.validate_name(&self.fields.full_name, .full_name);
     try self.validate_parent();
     try self.validate_status();
+
+    const order_ids = self.orders.values();
+    for (0.., order_ids) |i, *order_id| {
+        try self.validate_order(order_id, order_ids[0..i]);
+    }
 }
 
 fn validate_name(self: *Transaction, data: *Field_Data, field: Field) !void {
@@ -168,6 +203,26 @@ fn validate_parent(self: *Transaction) !void {
     }
 }
 
+fn validate_order(self: *Transaction, data: *Field_Data, prev_order_data: []const Field_Data) !void {
+    if (data.future.len == 0) return;
+
+    if (Order.maybe_lookup(self.db, data.future)) |order_idx| {
+        data.future = Order.get_id(self.db, order_idx);
+    } else {
+        log.debug("Order not found: {s}", .{ data.future });
+        data.err = "Order not found";
+        data.valid = false;
+        self.valid = false;
+        return;
+    }
+
+    for (prev_order_data) |prev_link| {
+        if (!prev_link.valid) continue;
+        if (!std.mem.eql(u8, data.future, prev_link.future)) continue;
+        data.future.len = 0;
+    }
+}
+
 pub fn apply_changes(self: *Transaction, db: *DB) !void {
     if (!self.valid) return;
 
@@ -185,6 +240,14 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         if (self.fields.parent.future_opt()) |parent| {
             const parent_idx = Project.maybe_lookup(db, parent).?;
             try Project.set_parent(db, idx, parent_idx);
+        }
+
+        for (self.orders.values()) |order_id| {
+            if (order_id.future.len == 0) continue;
+            _ = try Order.Project_Link.lookup_or_create(db, .{
+                .order = Order.maybe_lookup(db, order_id.future).?,
+                .prj = idx,
+            });
         }
 
         self.changes_applied = true;
@@ -227,6 +290,28 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Project.set_parent(db, idx, parent_idx);
         self.changes_applied = true;
     }
+
+    var order_ordering: u16 = 0;
+    for (self.orders.values()) |order_id| {
+        if (order_id.is_changed()) {
+            if (order_id.current_opt()) |id| {
+                _ = try Order.Project_Link.maybe_remove(db, .{
+                    .order = Order.maybe_lookup(db, id).?,
+                    .prj = idx,
+                });
+            }
+            if (order_id.future_opt()) |id| {
+                const link_idx = try Order.Project_Link.lookup_or_create(db, .{
+                    .order = Order.maybe_lookup(db, id).?,
+                    .prj = idx,
+                });
+                try Order.Project_Link.set_prj_ordering(db, link_idx, order_ordering);
+            }
+            self.changes_applied = true;
+        }
+
+        if (order_id.future_opt()) |_| order_ordering += 1;
+    }
 }
 
 pub fn get_post_prefix(db: *const DB, maybe_idx: ?Project.Index) ![]const u8 {
@@ -242,6 +327,7 @@ const Render_Options = struct {
         add,
         edit,
         field: Field,
+        order: []const u8,
     },
     rnd: ?*std.rand.Xoshiro256,
 };
@@ -276,6 +362,7 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 .validating = true,
                 .valid = self.valid,
                 .obj = obj,
+                .orders = self.orders.values(),
                 .title = self.fields.full_name.future_opt() orelse self.fields.id.future,
                 .post_prefix = post_prefix,
                 .parent_search_url = "/prj",
@@ -319,13 +406,88 @@ pub fn render_results(self: Transaction, session: ?Session, req: *http.Request, 
                 }
             }
         },
+        .order => {},
+    }
+
+    var order_index: usize = 0;
+    for (self.orders.keys(), self.orders.values()) |index_str, data| {
+        const is_target = switch (options.target) {
+            .order => |target_index| std.mem.eql(u8, index_str, target_index),
+            else => false,
+        };
+        const is_changed = data.is_changed();
+
+        const is_index_changed = if (self.idx != null and index_str.len > 0) is_index_changed: {
+            const old_order_index = try std.fmt.parseInt(u16, index_str, 10);
+            break :is_index_changed order_index != old_order_index;
+        } else false;
+        
+        if (!is_target and !is_changed and !is_index_changed) {
+            order_index += 1;
+            continue;
+        }
+        
+        var new_index_buf: [32]u8 = undefined;
+        var new_index: []const u8 = if (is_index_changed) try http.tprint("{d}", .{ order_index }) else index_str;
+        var is_placeholder = true;
+
+        if (index_str.len > 0) {
+            if (data.future.len == 0) {
+                if (is_target) {
+                    _ = try req.response();
+                } else {
+                    try req.render("prj/post_order.zk", .{
+                        .index = index_str,
+                        .swap_oob = "delete",
+                    }, .{});
+                }
+                continue;
+            }
+            order_index += 1;
+            is_placeholder = false;
+        } else if (data.future.len > 0 and data.valid) {
+            if (options.rnd) |rnd| {
+                var buf: [16]u8 = undefined;
+                rnd.fill(&buf);
+                const Base64 = std.base64.url_safe_no_pad.Encoder;
+                new_index = Base64.encode(&new_index_buf, &buf);
+            } else {
+                new_index = try std.fmt.bufPrint(&new_index_buf, "{d}", .{ self.orders.count() - 1 });
+            }
+            is_placeholder = false;
+        }
+
+        const render_data = .{
+            .saved = self.changes_applied and is_changed,
+            .valid = data.valid,
+            .err = data.err,
+            .post_prefix = post_prefix,
+            .index = if (is_placeholder) null else new_index,
+            .swap_oob = if (is_target) null else try http.tprint("outerHTML:#order{s}", .{ index_str }),
+
+            .order_id = data.future,
+            .err_order = !data.valid,
+        };
+
+        if (is_placeholder) {
+            try req.render("prj/post_order_placeholder.zk", render_data, .{});
+        } else {
+            try req.render("prj/post_order.zk", render_data, .{});
+            if (index_str.len == 0) {
+                try req.render("prj/post_order_placeholder.zk", .{
+                    .post_prefix = post_prefix,
+                }, .{});
+            }
+        }
     }
 }
 
 const log = std.log.scoped(.@"http.prj");
 
 const Project = DB.Project;
+const Order = DB.Order;
 const DB = @import("../../DB.zig");
+const prj = @import("../prj.zig");
 const Field_Data = @import("../Field_Data.zig");
 const Session = @import("../../Session.zig");
 const Query_Param = http.Query_Iterator.Query_Param;

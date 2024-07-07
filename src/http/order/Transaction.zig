@@ -49,9 +49,9 @@ pub fn init_empty(db: *const DB, tz: ?*const tempora.Timezone) Transaction {
 }
 
 pub fn init_idx(db: *const DB, idx: Order.Index, tz: ?*const tempora.Timezone) !Transaction {
-    const order = Order.get(db, idx);
+    const obj = Order.get(db, idx);
 
-    const project_links = try order_common.get_sorted_project_links(db, idx);
+    const project_links = try order.get_sorted_project_links(db, idx);
     var projects: std.StringArrayHashMapUnmanaged(Field_Data) = .{};
     try projects.ensureTotalCapacity(http.temp(), project_links.items.len);
 
@@ -64,13 +64,13 @@ pub fn init_idx(db: *const DB, idx: Order.Index, tz: ?*const tempora.Timezone) !
         .db = db,
         .tz = tz,
         .idx = idx,
-        .fields = try Field_Data.init_fields_ext(Field, db, order, .{
-            .total_cost = if (order.total_cost_hundreths) |hundreths| try costs.hundreths_to_decimal(http.temp(), hundreths) else "",
-            .preparing_time = try timestamps.format_opt_datetime_local(order.preparing_timestamp_ms, tz),
-            .waiting_time = try timestamps.format_opt_datetime_local(order.waiting_timestamp_ms, tz),
-            .arrived_time = try timestamps.format_opt_datetime_local(order.arrived_timestamp_ms, tz),
-            .completed_time = try timestamps.format_opt_datetime_local(order.completed_timestamp_ms, tz),
-            .cancelled_time = try timestamps.format_opt_datetime_local(order.cancelled_timestamp_ms, tz),
+        .fields = try Field_Data.init_fields_ext(Field, db, obj, .{
+            .total_cost = if (obj.total_cost_hundreths) |hundreths| try costs.hundreths_to_decimal(http.temp(), hundreths) else "",
+            .preparing_time = try timestamps.format_opt_datetime_local(obj.preparing_timestamp_ms, tz),
+            .waiting_time = try timestamps.format_opt_datetime_local(obj.waiting_timestamp_ms, tz),
+            .arrived_time = try timestamps.format_opt_datetime_local(obj.arrived_timestamp_ms, tz),
+            .completed_time = try timestamps.format_opt_datetime_local(obj.completed_timestamp_ms, tz),
+            .cancelled_time = try timestamps.format_opt_datetime_local(obj.cancelled_timestamp_ms, tz),
         }),
         .projects = projects,
     };
@@ -257,6 +257,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
         try Order.set_cancelled_time(db, idx, try timestamps.parse_opt_datetime_local(self.fields.cancelled_time.future, self.tz));
 
         for (self.projects.values()) |project_id| {
+            if (project_id.future.len == 0) continue;
             _ = try Order.Project_Link.lookup_or_create(db, .{
                 .order = idx,
                 .prj = Project.maybe_lookup(db, project_id.future).?,
@@ -328,7 +329,6 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
     var project_ordering: u16 = 0;
     for (self.projects.values()) |project_id| {
         if (project_id.is_changed()) {
-            self.changes_applied = true;
             if (project_id.current_opt()) |id| {
                 _ = try Order.Project_Link.maybe_remove(db, .{
                     .order = idx,
@@ -342,6 +342,7 @@ pub fn apply_changes(self: *Transaction, db: *DB) !void {
                 });
                 try Order.Project_Link.set_order_ordering(db, link_idx, project_ordering);
             }
+            self.changes_applied = true;
         }
 
         if (project_id.future_opt()) |_| project_ordering += 1;
@@ -516,7 +517,7 @@ const Order = DB.Order;
 const Distributor = DB.Distributor;
 const Project = DB.Project;
 const DB = @import("../../DB.zig");
-const order_common = @import("../order.zig");
+const order = @import("../order.zig");
 const Field_Data = @import("../Field_Data.zig");
 const Session = @import("../../Session.zig");
 const costs = @import("../../costs.zig");

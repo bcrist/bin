@@ -1,0 +1,25 @@
+<div class="prj_order">
+    <form autocomplete="off"
+        hx-post="\\post_prefix///order\\@index.@exists/index?//:\\@index|index ~//"
+        hx-trigger="change from:#order\\@index|index//_input"
+        hx-include=".submitted_field"
+\\err_order|*.err?
+        hx-vals='{"invalid":true}'
+\\~
+        hx-target="closest div.sortable_row"
+        hx-swap="outerHTML">
+        <input type="search" autocomplete="off"
+            id="order\\@index|index//_input"
+            name="order\\@index|index//"
+            list="order\\@index|index//_datalist"
+            class="submitted_field\\err_order|*.err?// invalid\\~//"
+            value="\\*.order_id|*.future//"
+            hx-post="/o"
+            hx-trigger="input changed delay:200ms"
+            hx-params="order\\@index|index//"
+            hx-target="#order\\@index|index//_datalist"
+            hx-swap="innerHTML"
+            hx-sync="closest form:abort">
+        <datalist id="order\\@index|index//_datalist"></datalist>
+    </form>
+</div>

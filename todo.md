@@ -3,7 +3,6 @@
 * Files
 
 * Make order info private when logged out
-* Order Project Links
 * Order Items
 * Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search

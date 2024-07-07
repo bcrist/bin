@@ -251,6 +251,8 @@ pub fn main() !void {
         .{ "/source_control",   r.module(Injector, prj.add.validate) },
         .{ "/parent",           r.module(Injector, prj.add.validate) },
         .{ "/statuses",         r.module(Injector, prj.statuses) },
+        .{ "/order",            r.module(Injector, prj.add.validate_order) },
+        .{ "/order:*",          r.module(Injector, prj.add.validate_order) },
         .{ ":*",                r.module(Injector, prj) },
         .{ ":*/id",             r.module(Injector, prj.edit) },
         .{ ":*/full_name",      r.module(Injector, prj.edit) },
@@ -259,6 +261,9 @@ pub fn main() !void {
         .{ ":*/website",        r.module(Injector, prj.edit) },
         .{ ":*/source_control", r.module(Injector, prj.edit) },
         .{ ":*/parent",         r.module(Injector, prj.edit) },
+        .{ ":*/order",          r.module(Injector, prj.edit.order) },
+        .{ ":*/order:*",        r.module(Injector, prj.edit.order) },
+        .{ ":*/orders",         r.module(Injector, prj.reorder_orders) },
     });
 
     try server.router("/o**", .{

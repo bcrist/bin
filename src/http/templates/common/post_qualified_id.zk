@@ -7,18 +7,16 @@
         hx-post="\\post_prefix///\\id_qualifier_field//"
         hx-trigger="change from:#\\id_qualifier_field//_input"
         hx-include=".submitted_field"
+\\err_id_qualifier?
+        hx-vals='{"invalid":true}'
+\\~
         hx-target="closest tr"
         hx-swap="outerHTML">
         <input type="search" autocomplete="off" style="min-width: 15em"
             id="\\id_qualifier_field//_input"
             name="\\id_qualifier_field//"
             list="\\id_qualifier_field//_datalist"
-\\err_id_qualifier?
-            class="submitted_field invalid"
-            hx-vals='{"invalid":true}'
-\\;
-            class="submitted_field"
-\\~
+            class="submitted_field\\err_id_qualifier?// invalid\\~//"
             value="\\id_qualifier//"
             placeholder="\\id_qualifier_placeholder//"
             hx-post="\\id_qualifier_search_url//"
