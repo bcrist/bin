@@ -169,7 +169,9 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
     const orders = db.order_items.items(.order);
     for (0.., db.order_items.items(.loc)) |order_item_i, maybe_loc_idx| {
         if (maybe_loc_idx == idx) {
-            try db.mark_dirty(orders[order_item_i]);
+            if (orders[order_item_i]) |order_idx| {
+                try db.mark_dirty(order_idx);
+            }
         }
     }
 }

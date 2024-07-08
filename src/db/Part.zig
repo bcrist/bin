@@ -192,7 +192,9 @@ pub fn set_id(db: *DB, idx: Index, mfr_idx: ?Manufacturer.Index, id: []const u8)
     const orders = db.order_items.items(.order);
     for (0.., db.order_items.items(.part)) |order_item_i, maybe_part_idx| {
         if (maybe_part_idx == idx) {
-            try db.mark_dirty(orders[order_item_i]);
+            if (orders[order_item_i]) |order_idx| {
+                try db.mark_dirty(order_idx);
+            }
         }
     }
 }

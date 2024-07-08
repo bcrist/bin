@@ -266,13 +266,14 @@ pub fn import_data(self: *DB, options: Import_Options) !void {
 }
 
 fn parse_data(self: *DB, reader: *sx.Reader) !void {
-    try reader.require_expression("version");
-    const version = try reader.require_any_int(u64, 10);
-    try reader.require_close();
+    const version = if (try reader.expression("version")) version: {
+        const v = try reader.require_any_int(u64, 10);
+        try reader.require_close();
+        break :version v;
+    } else 0;
     switch (version) {
-        1 => {
-            try v1.parse_data(self, reader);
-        },
+        0 => try v0.parse_data(self, reader),
+        1 => try v1.parse_data(self, reader),
         else => {
             try std.io.getStdErr().writer().print("Unsupported data version: {}\n", .{ version });
             return error.SExpressionSyntaxError;
@@ -437,7 +438,8 @@ pub fn maybe_intern(self: *DB, maybe_str: ?[]const u8) !?[]const u8 {
 
 const log = std.log.scoped(.db);
 const intern_log = std.log.scoped(.@"db.intern");
-    
+
+const v0 = @import("db/v0.zig");    
 const v1 = @import("db/v1.zig");
 
 const maps = @import("maps.zig");

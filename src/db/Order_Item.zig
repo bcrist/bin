@@ -126,7 +126,7 @@ pub fn set_ordering(db: *DB, idx: Index, ordering: u32) !void {
 pub fn set_part(db: *DB, idx: Index, maybe_part_idx: ?Part.Index) !void {
     const order_idx = try get_order(db, idx);
     const old_part_idx = db.order_items.items(.part)[idx.raw()];
-    if (try db.set_optional(Order, idx, .part, Part.Index, maybe_part_idx)) {
+    if (try db.set_optional(Order_Item, idx, .part, Part.Index, maybe_part_idx)) {
         if (old_part_idx) |part_idx| try db.mark_dirty(part_idx);
         if (maybe_part_idx) |part_idx| try db.mark_dirty(part_idx);
         try Order.set_modified(db, order_idx);
@@ -135,7 +135,7 @@ pub fn set_part(db: *DB, idx: Index, maybe_part_idx: ?Part.Index) !void {
 
 pub fn set_qty(db: *DB, idx: Index, qty: ?i32) !void {
     const order_idx = try get_order(db, idx);
-    if (try db.set_optional(Order, idx, .qty, i32, qty)) {
+    if (try db.set_optional(Order_Item, idx, .qty, i32, qty)) {
         if (get_part(db, idx)) |part_idx| try db.mark_dirty(part_idx);
         if (get_loc(db, idx)) |loc_idx| try db.mark_dirty(loc_idx);
         try Order.set_modified(db, order_idx);
@@ -145,7 +145,7 @@ pub fn set_qty(db: *DB, idx: Index, qty: ?i32) !void {
 pub fn set_loc(db: *DB, idx: Index, maybe_loc_idx: ?Location.Index) !void {
     const order_idx = try get_order(db, idx);
     const old_loc_idx = db.order_items.items(.loc)[idx.raw()];
-    if (try db.set_optional(Order, idx, .loc, Location.Index, maybe_loc_idx)) {
+    if (try db.set_optional(Order_Item, idx, .loc, Location.Index, maybe_loc_idx)) {
         if (old_loc_idx) |loc_idx| try db.mark_dirty(loc_idx);
         if (maybe_loc_idx) |loc_idx| try db.mark_dirty(loc_idx);
         try Order.set_modified(db, order_idx);
@@ -166,7 +166,7 @@ pub fn set_notes(db: *DB, idx: Index, notes: ?[]const u8) !void {
 
 fn set_optional(comptime T: type, db: *DB, idx: Index, comptime field: @TypeOf(.enum_field), raw: ?T) !void {
     const order_idx = try get_order(db, idx);
-    if (try db.set_optional(Order, idx, field, T, raw)) {
+    if (try db.set_optional(Order_Item, idx, field, T, raw)) {
         try Order.set_modified(db, order_idx);
     }
 }
