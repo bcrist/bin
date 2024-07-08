@@ -1,8 +1,0 @@
-(version 1)
-(mfr "Linear Tech" "Linear Technology" Linear
-   (wiki https://en.wikipedia.org/wiki/Linear_Technology)
-   (country USA)
-   (rel absorbed-by "Analog Devices" 2016)
-   (created "2024-05-05 21:16:45 +00:00")
-   (modified "2024-05-05 21:25:24 +00:00")
-)

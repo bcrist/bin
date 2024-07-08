@@ -1,9 +1,0 @@
-(version 1)
-(mfr "Silicon Labs"
-   (website https://www.silabs.com/)
-   (wiki https://en.wikipedia.org/wiki/Silicon_Labs)
-   (country USA)
-   (rel partially-absorbed-by Skyworks 2021)
-   (created "2024-05-05 21:22:01 +00:00")
-   (modified "2024-05-05 21:22:01 +00:00")
-)

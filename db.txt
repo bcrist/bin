@@ -1,3 +1,19 @@
+This file describes interactions between different DB data structures that may require extra work to maintain:
+
+     => Indicates that the object type on the left references the object type on the right.
+        When the object on the left is serialized, it will contain the ID or other data of the right object.
+
+    <=  Indicates that the object type of the right references the object type on the left.
+        When the object on the left is deleted, the object on the right should be updated to no longer reference it.
+        When the object on the left is renamed, the object on the right should or marked dirty so it can be re-written.
+
+    <=> Indicates that two objects mutually reference each other.
+        Both => and <= conditions apply.
+
+Additional actions may be needed for some relationships (e.g. when Order_Item.qty changes, Parts and Locations for that item must be marked dirty)
+
+
+
 Distributor
     <=> Distributor (relations)
     <=  Part (dist part numbers)

@@ -2,4 +2,6 @@
 zig-cache/
 zig-out/
 .vscode/
-/import/
+
+import/
+db/

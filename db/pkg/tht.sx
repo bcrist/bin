@@ -1,6 +1,0 @@
-(version 1)
-(pkg _ THT "Through Hole Packages"
-   (notes "e.g. resistors, capacitors,")
-   (created "2024-06-09 01:10:13 +00:00")
-   (modified "2024-06-09 01:10:13 +00:00")
-)
