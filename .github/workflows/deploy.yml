@@ -1,0 +1,21 @@
+name: deploy
+on:
+  push:
+    branches:
+      - deploy
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: mlugg/setup-zig@v1
+      - run: zig build
+      - uses: marcodallasanta/ssh-scp-deploy@v1.2.0
+        with:
+          local: ./zig-out/bin/bin
+          remote: ~/bin/bin
+          host: ${{ secrets.deployHost }}
+          port: ${{ secrets.deployPort }}
+          user: ${{ secrets.deployUser }}
+          key: ${{ secrets.deployKey }}
+          post_upload: "touch ~/bin/.upgrade_ready"
