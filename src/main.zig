@@ -300,6 +300,9 @@ pub fn main() !void {
     const listen_addr = try http.parse_hostname(global.gpa(), config.host, config.port);
     try server.start(.{
         .address = listen_addr,
+        .listen_options = .{
+            .reuse_address = config.reuse_address,
+        },
         .connection_threads = config.http_threads,
     });
 
