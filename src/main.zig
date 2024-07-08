@@ -81,7 +81,6 @@ pub fn main() !void {
         r.resource("style.css"),
         r.resource("common.js"),
         r.resource("htmx.1.9.12.min.js"),
-        r.resource("htmx.1.9.12.js"),
         r.resource("Sortable.1.15.2.min.js"),
         r.resource("slimselect.2.7.0.min.js"),
         r.resource("slimselect.2.7.0.mod.css"),

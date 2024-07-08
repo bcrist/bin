@@ -108,6 +108,12 @@ pub fn is_ancestor(db: *const DB, descendant_idx: Index, ancestor_idx: Index) bo
 pub fn delete(db: *DB, idx: Index, recursive: bool) !void {
     const i = idx.raw();
 
+    for (0.., db.order_items.items(.loc)) |order_item_i, maybe_loc_idx| {
+        if (maybe_loc_idx == idx) {
+            try Order_Item.set_loc(db, Order_Item.Index.init(order_item_i), null);
+        }
+    }
+
     const parents = db.locs.items(.parent);
     const maybe_parent_idx = parents[i];
     for (0.., parents) |child_i, maybe_child_parent_idx| {
@@ -157,6 +163,13 @@ pub fn set_id(db: *DB, idx: Index, id: []const u8) !void {
             if (parent_idx == idx) {
                 try db.mark_dirty(Index.init(child_i));
             }
+        }
+    }
+
+    const orders = db.order_items.items(.order);
+    for (0.., db.order_items.items(.loc)) |order_item_i, maybe_loc_idx| {
+        if (maybe_loc_idx == idx) {
+            try db.mark_dirty(orders[order_item_i]);
         }
     }
 }
@@ -211,6 +224,7 @@ pub fn set_modified(db: *DB, idx: Index) !void {
 
 const log = std.log.scoped(.db);
 
+const Order_Item = DB.Order_Item;
 const DB = @import("../DB.zig");
 const deep = @import("deep_hash_map");
 const std = @import("std");

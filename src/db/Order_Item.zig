@@ -59,7 +59,7 @@ pub fn create(db: *DB, item: Order_Item) !Index {
     try db.mark_dirty(idx);
     if (item.part) |part_idx| try db.mark_dirty(part_idx);
     if (item.loc) |loc_idx| try db.mark_dirty(loc_idx);
-    // TODO invalidate any caches of Order Items that might need to include this
+    // TODO invalidate any caches of Order Items or stock amonuts that might need to include this
     return idx;
 }
 
@@ -85,7 +85,7 @@ pub fn delete(db: *DB, idx: Index) !void {
     if (item.part) |part_idx| try db.mark_dirty(part_idx);
     if (item.loc) |loc_idx| try db.mark_dirty(loc_idx);
     db.order_items.set(idx.raw(), init_empty());
-    // TODO invalidate any caches of Order Items that might need to include this
+    // TODO invalidate any caches of Order Items or stock amonuts that might need to include this
 }
 
 pub fn delete_all_for_order(db: *DB, order: Order.Index) !void {
@@ -98,7 +98,7 @@ pub fn delete_all_for_order(db: *DB, order: Order.Index) !void {
             if (locs[i]) |loc_idx| try db.mark_dirty(loc_idx);
             db.order_items.set(i, init_empty());
             deleted_at_least_one = true;
-            // TODO invalidate any caches of Order Items that might need to include this
+            // TODO invalidate any caches of Order Items or stock amonuts that might need to include this
         }
     }
     if (deleted_at_least_one) {

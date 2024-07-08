@@ -19,17 +19,25 @@ Part
      => Package
      => Manufacturer (indirectly via pkg namespace)
      => Distributor (dist part numbers)
-    <=> Order (Order_Item.part)
+    <=  Order_Item
+     => Order_Item (stock qty)
 
 Location
     <=> Location (parent chain)
-    <=> Order (Order_Item.loc)
+    <=  Order_Item
+     => Order_Item (stock qty)
 
 Order
      => Distributor
     <=> Project (DB.prj_order_links)
-    <=> Part (Order_Item.part)
-    <=> Location (Order_Item.loc)
+    <=> Order_Item
+
+Order_Item
+    <=> Order
+     => Part
+     => Location
+    <=  Part (stock qty)
+    <=  Location (stock qty)
 
 Project
     <=> Project (parent chain)
