@@ -475,9 +475,9 @@ pub const std_options: std.Options = .{
         .{ .scope = .db, .level = .info },
         .{ .scope = .@"db.intern", .level = .info },
         .{ .scope = .zkittle, .level = .info },
-        //.{ .scope = .http, .level = .info },
+        .{ .scope = .http, .level = .info },
         .{ .scope = .@"http.temp", .level = .info },
-        //.{ .scope = .mutex, .level = .info },
+        .{ .scope = .mutex, .level = .info },
         .{ .scope = .session, .level = .info },
     },
 };

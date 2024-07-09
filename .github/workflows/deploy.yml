@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: mlugg/setup-zig@v1
+      - uses: mlugg/setup-zig@v1.2.0
       - run: zig build -Doptimize=ReleaseSafe
-      - uses: marcodallasanta/ssh-scp-deploy@v1
+      - uses: marcodallasanta/ssh-scp-deploy@v1.2.0
         with:
           local: ./zig-out/bin/bin
           remote: ~/bin/bin

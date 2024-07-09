@@ -46,9 +46,8 @@ fn parse_orders(db: *DB, reader: *sx.Reader) !void {
                     };
 
                     order.completed_timestamp_ms = date.with_time(.noon).with_offset(0).timestamp_ms();
-                    if (order.created_timestamp_ms == 0) {
+                    if (order.created_timestamp_ms > order.completed_timestamp_ms.?) {
                         order.created_timestamp_ms = order.completed_timestamp_ms.?;
-                        order.modified_timestamp_ms = order.created_timestamp_ms;
                     }
                 },
                 .dist => {
