@@ -316,9 +316,10 @@ pub fn main() !void {
     persist_thread.join();
 
     try persist();
-    log.info("Shutdown complete!", .{});
 
     global.check_for_leaks_before_deinit = true;
+
+    if (upgrading) return error.Upgrading else log.info("Shutdown complete!", .{});
 }
 
 fn persist_thread_task(server: *http.Server(Injector), host: []const u8, port: u16) void {
@@ -377,6 +378,7 @@ fn check_for_upgrade_pending(server: *http.Server(Injector), host: []const u8, p
     // Try to gracefully shut down; presumably the server is being run as a service and will automatically
     // be restarted using the new executable.
 
+    upgrading = true;
     server.stop();
 
     // Try to connect to the server to make the server shutdown faster:
@@ -409,6 +411,8 @@ var db_lock: std.Thread.RwLock = .{};
 
 var shut_down: bool = false; // protected by db_lock
 var persist_thread: std.Thread = undefined;
+
+var upgrading: bool = false; // when set, will exit with non-zero status so that the process gets auto-restarted.
 
 threadlocal var thread_rnd: ?std.rand.Xoshiro256 = null;
 
