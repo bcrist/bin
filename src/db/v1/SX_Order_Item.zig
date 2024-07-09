@@ -2,6 +2,7 @@ ordering: u32 = 0,
 mfr: ?[]const u8 = null,
 part: ?[]const u8 = null,
 qty: ?i32 = null,
+qty_uncertainty: ?Order_Item.Quantity_Uncertainty = null,
 loc: ?[]const u8 = null,
 each: ?[]const u8 = null,
 total: ?[]const u8 = null,
@@ -10,13 +11,14 @@ notes: ?[]const u8 = null,
 const SX_Order_Item = @This();
 
 pub const context = struct {
-    pub const inline_fields = &.{ "mfr", "part", "qty" };
+    pub const inline_fields = &.{ "mfr", "part", "qty", "qty_uncertainty" };
     pub const qty = "d:0>1"; // ensure '+' prefix is used for positive quantities
     pub const ordering = void;
     pub const compact = struct {
         pub const loc = true;
         pub const each = true;
         pub const total = true;
+        pub const notes = true;
     };
 };
 
@@ -45,6 +47,7 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order_Item.Index) !SX_O
         .mfr = mfr_str,
         .part = part_str,
         .qty = data.qty,
+        .qty_uncertainty = data.qty_uncertainty,
         .loc = loc_str,
         .each = cost_each_str,
         .total = cost_total_str,
@@ -55,14 +58,14 @@ pub fn init(temp: std.mem.Allocator, db: *const DB, idx: Order_Item.Index) !SX_O
 pub fn read(self: SX_Order_Item, db: *DB, order: Order.Index, ordering: usize) !void {
     var mfr_idx: ?Manufacturer.Index = null;
     if (self.mfr) |mfr_id| {
-        if (!std.mem.eql(u8, mfr_id, "_")) {
+        if (mfr_id.len > 0 and !std.mem.eql(u8, mfr_id, "_")) {
             mfr_idx = try Manufacturer.lookup_or_create(db, mfr_id);
         }
     }
 
     var part_idx: ?Part.Index = null;
     if (self.part) |part_id| {
-        if (!std.mem.eql(u8, part_id, "_")) {
+        if (part_id.len > 0 and !std.mem.eql(u8, part_id, "_")) {
             part_idx = try Part.lookup_or_create(db, mfr_idx, part_id);
         }
     }
@@ -76,6 +79,7 @@ pub fn read(self: SX_Order_Item, db: *DB, order: Order.Index, ordering: usize) !
         .ordering = @intCast(ordering),
         .part = part_idx,
         .qty = self.qty,
+        .qty_uncertainty = self.qty_uncertainty,
         .loc = loc_idx,
         .cost_each_hundreths = cost_each,
         .cost_total_hundreths = cost_total,

@@ -29,8 +29,8 @@
             .hash = "12207843a59a79a582f485d6c4d0cf0d2e9dacdb3c2de59ed853fdb8151951b3bd05",
         },
         .shittip = .{
-            .url = "git+https://github.com/bcrist/shittip#e79963b8f8ea1d1ac3363dab15ee1ab0bad472be",
-            .hash = "1220b6ed2331164e60f8c9fef43ff90172391a1c5a8231eb35d147bad0a54a42772d",
+            .url = "git+https://github.com/bcrist/shittip#a4cb60322745d504a72cc9f0830305b35b119f7e",
+            .hash = "122086fdd554386983de4324c4caec0f7be43b9d3f94ab94517e5f15013d3801094e",
         },
     },
 }

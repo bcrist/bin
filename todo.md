@@ -2,9 +2,8 @@
 * Parameters
 * Files
 
-* import v0 orders
-* perf logger - when enabled, log every time a linear scan is done over a large array (>100 elements) where we don't expect to process most of them
 * Order Items
+* perf logger - when enabled, log every time a linear scan is done over a large array (>100 elements) where we don't expect to process most of them
 * Make order info private when logged out
 * Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search

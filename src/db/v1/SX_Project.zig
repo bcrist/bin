@@ -124,6 +124,7 @@ pub fn write_dirty(allocator: std.mem.Allocator, db: *DB, root: *std.fs.Dir, fil
     }
 
     for (0.., db.prjs.items(.id), db.prjs.items(.parent)) |i, id, maybe_parent_idx| {
+        if (id.len == 0) continue;
         if (maybe_parent_idx != null) continue; // only write files for root projects
 
         const dest_path = try paths.unique_path(allocator, id, filenames);

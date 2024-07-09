@@ -28,12 +28,6 @@ pub fn main() !void {
 
     try persist();
     db.recompute_last_modification_time();
-    persist_thread = try std.Thread.spawn(.{}, persist_thread_task, .{});
-
-    const Injector = http.Default_Injector
-        .extend(Session.inject)
-        .extend(inject)
-        ;
 
     var server = http.Server(Injector).init(global.gpa());
     defer server.deinit();
@@ -303,8 +297,13 @@ pub fn main() !void {
         .listen_options = .{
             .reuse_address = config.reuse_address,
         },
-        .connection_threads = config.http_threads,
+        .connection_threads = config.connection_threads,
+        .worker_threads = config.worker_threads,
+        .max_request_header_bytes = 16384,
+        .max_temp_bytes_per_request = config.max_request_temp_bytes orelse 50 * 1024 * 1024,
     });
+
+    persist_thread = try std.Thread.spawn(.{}, persist_thread_task, .{ &server, config.host, config.port });
 
     try server.run();
 
@@ -313,13 +312,20 @@ pub fn main() !void {
     shut_down = true;
     db_lock.unlock();
 
+    log.debug("Waiting for persist_thread to stop", .{});
     persist_thread.join();
 
     try persist();
+    log.info("Shutdown complete!", .{});
+
+    global.check_for_leaks_before_deinit = true;
 }
 
-fn persist_thread_task() void {
+fn persist_thread_task(server: *http.Server(Injector), host: []const u8, port: u16) void {
     while (true) {
+        check_for_upgrade_pending(server, host, port) catch |err| if (err != error.FileNotFound) {
+            log.debug("Error from check_for_upgrade_pending: {}", .{ err });
+        };
         var sleep_time_ms = config.persist_thread_interval_ms;
         {
             mutex_log.debug("locking DB for persist", .{});
@@ -333,7 +339,7 @@ fn persist_thread_task() void {
                     const ms_since_last_mod = std.time.milliTimestamp() - last_mod;
                     if (ms_since_last_mod >= config.autosave_delay_ms) {
                         persist() catch |err| {
-                            std.log.scoped(.db).err("Failed to persist changes: {s}", .{ @errorName(err) });
+                            db_log.err("Failed to persist changes: {s}", .{ @errorName(err) });
                         };
                     } else {
                         sleep_time_ms = @min(sleep_time_ms, config.autosave_delay_ms - ms_since_last_mod);
@@ -346,7 +352,7 @@ fn persist_thread_task() void {
 }
 
 fn persist() !void {
-    std.log.scoped(.db).debug("Beginning DB persist", .{});
+    db_log.debug("Beginning DB persist", .{});
     const start = std.time.microTimestamp();
 
     var db_dir = try std.fs.cwd().makeOpenPath(config.db, .{});
@@ -354,7 +360,45 @@ fn persist() !void {
     try db.export_data(&db_dir);
 
     const end = std.time.microTimestamp();
-    std.log.scoped(.db).info("Finished DB persist (took {d:.1} ms)", .{ @as(f32, @floatFromInt(end - start)) / 1000 });
+    db_log.info("Finished DB persist (took {d:.1} ms)", .{ @as(f32, @floatFromInt(end - start)) / 1000 });
+}
+
+fn check_for_upgrade_pending(server: *http.Server(Injector), host: []const u8, port: u16) !void {
+    {
+        var path_buf: [std.fs.max_path_bytes]u8 = undefined;
+        const path = try std.fs.selfExeDirPath(&path_buf);
+        var dir = try std.fs.cwd().openDir(path, .{});
+        defer dir.close();
+
+        try dir.deleteFile(".upgrade_ready");
+    }
+    
+    // We succeeded in deleting the .upgrade_ready file, which means a new executable has been deployed.
+    // Try to gracefully shut down; presumably the server is being run as a service and will automatically
+    // be restarted using the new executable.
+
+    server.stop();
+
+    // Try to connect to the server to make the server shutdown faster:
+    var client: std.http.Client = .{ .allocator = global.gpa() };
+    defer client.deinit();
+
+    const sanitized_host = if (std.mem.eql(u8, host, "0.0.0.0")) "localhost" else host;
+    const location = try std.fmt.allocPrint(global.gpa(), "http://{s}:{d}", .{ sanitized_host, port });
+    defer global.gpa().free(location);
+    const uri = try std.Uri.parse(location);
+
+    while (true) {
+        var server_header_buffer: [1024]u8 = undefined;
+        log.debug("Attempting GET {}", .{ uri });
+        var req = try client.open(.GET, uri, .{
+            .server_header_buffer = &server_header_buffer,
+        });
+        defer req.deinit();
+
+        try req.send();
+        try req.wait();
+    }
 }
 
 var config: Config = .{};
@@ -367,6 +411,11 @@ var shut_down: bool = false; // protected by db_lock
 var persist_thread: std.Thread = undefined;
 
 threadlocal var thread_rnd: ?std.rand.Xoshiro256 = null;
+
+const Injector = http.Default_Injector
+    .extend(Session.inject)
+    .extend(inject)
+    ;
 
 const inject = struct {
     pub fn inject_config() Config {
@@ -422,16 +471,18 @@ pub const std_options: std.Options = .{
         .{ .scope = .db, .level = .info },
         .{ .scope = .@"db.intern", .level = .info },
         .{ .scope = .zkittle, .level = .info },
-        .{ .scope = .http, .level = .info },
+        //.{ .scope = .http, .level = .info },
         .{ .scope = .@"http.temp", .level = .info },
-        .{ .scope = .mutex, .level = .info },
+        //.{ .scope = .mutex, .level = .info },
         .{ .scope = .session, .level = .info },
     },
 };
 
 pub const resources = @import("http_resources");
 
+const log = std.log.scoped(.main);
 const mutex_log = std.log.scoped(.mutex);
+const db_log = std.log.scoped(.db);
 
 const DB = @import("DB.zig");
 const Session = @import("Session.zig");

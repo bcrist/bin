@@ -100,11 +100,11 @@ pub const logout = struct {
 };
 
 pub const shutdown = struct {
-    pub fn get(session: ?Session, req: *http.Request, pool: *http.Thread_Pool) !void {
+    pub fn get(session: ?Session, req: *http.Request, pools: http.Pools) !void {
         if (session == null) {
             return error.Unauthorized;
         }
-        try http.routing.shutdown(req, pool);
+        try http.routing.shutdown(req, pools);
         try req.render("shutdown.htm", {}, .{});
     }
 };

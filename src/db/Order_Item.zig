@@ -2,10 +2,16 @@ order: ?Order.Index, // set to null when deleting
 ordering: u32,
 part: ?Part.Index,
 qty: ?i32,
+qty_uncertainty: ?Quantity_Uncertainty,
 loc: ?Location.Index,
 cost_each_hundreths: ?i32,
 cost_total_hundreths: ?i32,
 notes: ?[]const u8,
+
+pub const Quantity_Uncertainty = enum {
+    exact,
+    approx,
+};
 
 const Order_Item = @This();
 pub const Index = enum (u32) {
@@ -34,6 +40,7 @@ pub fn init_empty() Order_Item {
         .ordering = 0xFFFFFFFF,
         .part = null,
         .qty = null,
+        .qty_uncertainty = null,
         .loc = null,
         .cost_each_hundreths = null,
         .cost_total_hundreths = null,
@@ -47,6 +54,7 @@ pub fn create(db: *DB, item: Order_Item) !Index {
         .ordering = item.ordering,
         .part = item.part,
         .qty = item.qty,
+        .qty_uncertainty = item.qty_uncertainty,
         .loc = item.loc,
         .cost_each_hundreths = item.cost_each_hundreths,
         .cost_total_hundreths = item.cost_total_hundreths,
@@ -56,7 +64,6 @@ pub fn create(db: *DB, item: Order_Item) !Index {
     const idx = Index.init(db.order_items.len);
     try db.order_items.append(db.container_alloc, final_item);
     try db.maybe_set_modified(final_item.order.?);
-    try db.mark_dirty(idx);
     if (item.part) |part_idx| try db.mark_dirty(part_idx);
     if (item.loc) |loc_idx| try db.mark_dirty(loc_idx);
     // TODO invalidate any caches of Order Items or stock amonuts that might need to include this
@@ -133,9 +140,11 @@ pub fn set_part(db: *DB, idx: Index, maybe_part_idx: ?Part.Index) !void {
     }
 }
 
-pub fn set_qty(db: *DB, idx: Index, qty: ?i32) !void {
+pub fn set_qty(db: *DB, idx: Index, qty: ?i32, uncertainty: ?Quantity_Uncertainty) !void {
     const order_idx = try get_order(db, idx);
-    if (try db.set_optional(Order_Item, idx, .qty, i32, qty)) {
+    const qty_modified = try db.set_optional(Order_Item, idx, .qty, i32, qty);
+    const uncertainty_modified = try db.set_optional(Order_Item, idx, .qty_uncertainty, Quantity_Uncertainty, uncertainty);
+    if (qty_modified or uncertainty_modified) {
         if (get_part(db, idx)) |part_idx| try db.mark_dirty(part_idx);
         if (get_loc(db, idx)) |loc_idx| try db.mark_dirty(loc_idx);
         try Order.set_modified(db, order_idx);
