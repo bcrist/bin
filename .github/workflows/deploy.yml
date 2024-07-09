@@ -9,8 +9,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - uses: mlugg/setup-zig@v1
-      - run: zig build
+      - uses: mlugg/setup-zig@v1.2.0
+      - run: zig build -Doptimize=ReleaseSafe
       - uses: marcodallasanta/ssh-scp-deploy@v1.2.0
         with:
           local: ./zig-out/bin/bin
@@ -19,4 +19,5 @@ jobs:
           port: ${{ secrets.deployPort }}
           user: ${{ secrets.deployUser }}
           key: ${{ secrets.deployKey }}
+          pre_upload: "rm ~/bin/bin"
           post_upload: "touch ~/bin/.upgrade_ready"
