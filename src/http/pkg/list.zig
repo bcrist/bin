@@ -12,7 +12,7 @@
         if (parent == null and id.len > 0) {
             list.appendAssumeCapacity(.{
                 .mfr_id = if (mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
-                .id = id,
+                .pkg_id = id,
             });
         }
     }

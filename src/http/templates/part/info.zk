@@ -12,18 +12,18 @@
 <div>p:\\obj.id//</div>
 <h1>\\obj.full_name/obj.id//</h1>
 
-\\parent_id?
-Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///p:\\@url parent_id//">\\parent_id//</a>
+\\parent:
+Parent: \\@include "common/part_link.zk"
 \\~
 
 \\children?
 <h2>Children</h2>
 \\children:
-<a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a><span class="separator"></span>
+<div>\\@include "common/part_link.zk"//</div>
 \\~~
 
-\\pkg_id?
-Package: <a href="\\pkg_mfr?///mfr:\\@url pkg_mfr ~///pkg:\\@url pkg_id//">\\pkg_id//</a>
+\\pkg:
+Package: \\@include "common/pkg_link.zk"
 \\~
 
 \\obj.notes?

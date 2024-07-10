@@ -1,0 +1,4 @@
+\\$ Context: Part_Info
+\\mfr_id?
+<a href="/mfr:\\@url mfr_id//">\\mfr_id//</a> \\~
+<a href="\\mfr_id?///mfr:\\@url mfr_id ~///p:\\@url part_id//">\\part_id//</a>

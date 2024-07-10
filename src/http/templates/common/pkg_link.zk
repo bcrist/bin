@@ -1,0 +1,4 @@
+\\$ Context: Package_Info
+\\mfr_id?
+<a href="/mfr:\\@url mfr_id//">\\mfr_id//</a> \\~
+<a href="\\mfr_id?///mfr:\\@url mfr_id ~///pkg:\\@url pkg_id//">\\pkg_id//</a>

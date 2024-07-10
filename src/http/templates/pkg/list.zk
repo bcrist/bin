@@ -15,7 +15,7 @@
 <h1>Top-Level Packages</h1>
 <div class="columns">
 \\pkg_list:
-    <a href="\\*.mfr_id?///mfr:\\@url mfr_id~///pkg:\\@url id//">\\id//</a><br>
+<div>\\@include "common/pkg_link.zk"//</div>
 \\~
 </div>
 \\@include "_bottom.zk"

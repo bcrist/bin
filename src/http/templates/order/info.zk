@@ -27,6 +27,28 @@
 <div><a href="/prj:\\@url *//">\\*//</a></div>
 \\~~
 
+<h2>Items</h2>
+<table>
+    <tr>
+        <th>Part</th>
+        <th>Location</th>
+        <th>Count</th>
+        <th>Each</th>
+        <th>Subtotal</th>
+    </tr>
+\\items:
+    <tr>
+        <td>\\part: @include "common/part_link.zk" ; notes ~//</td>
+        <td>\\loc_id? @include "common/loc_link.zk" ~//</td>
+        <td>\\qty qty_uncertainty.approx?//?\\~//</td>
+        <td>\\cost_each//</td>
+        <td>\\cost_subtotal//</td>
+    </tr>
+\\notes? part?
+    <tr><td colspan="5">\\notes//</td></tr>
+\\~~~
+</table>
+
 <hr>
 \\cancelled_time?//<div>Cancelled: \\cancelled_time//</div>\\~//
 \\completed_time?//<div>Completed: \\completed_time//</div>\\~//

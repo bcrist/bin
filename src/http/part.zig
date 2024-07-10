@@ -31,34 +31,22 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
     const part = Part.get(db, idx);
     const mfr_id = if (part.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
 
-    var parent_id: ?[]const u8 = null;
-    var parent_mfr_id: ?[]const u8 = null;
+    const parent: ?Part_Info = if (part.parent) |parent_idx| .{
+        .mfr_id = if (Part.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .part_id = Part.get_id(db, parent_idx),
+    } else null;
 
-    if (part.parent) |parent_idx| {
-        const parent_mfr = Part.get_mfr(db, parent_idx);
-        if (parent_mfr) |mfr_idx| {
-            parent_mfr_id = Manufacturer.get_id(db, mfr_idx);
-        }
-        parent_id = Part.get_id(db, parent_idx);
-    }
-
-    var pkg_id: ?[]const u8 = null;
-    var pkg_mfr_id: ?[]const u8 = null;
-
-    if (part.pkg) |pkg_idx| {
-        const pkg_mfr = Package.get_mfr(db, pkg_idx);
-        if (pkg_mfr) |mfr_idx| {
-            pkg_mfr_id = Manufacturer.get_id(db, mfr_idx);
-        }
-        pkg_id = Package.get_id(db, pkg_idx);
-    }
+    const pkg: ?Package_Info = if (part.pkg) |pkg_idx| .{
+        .mfr_id = if (Package.get_mfr(db, pkg_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .pkg_id = Package.get_id(db, pkg_idx),
+    } else null;
 
     var children = std.ArrayList(Part_Info).init(http.temp());
     for (db.parts.items(.parent), db.parts.items(.id), db.parts.items(.mfr)) |parent_idx, id, maybe_child_mfr_idx| {
         if (parent_idx == idx) {
             try children.append(.{
                 .mfr_id = if (maybe_child_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
-                .id = id,
+                .part_id = id,
             });
         }
     }
@@ -86,11 +74,9 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .session = session,
         .title = part.id,
         .obj = part,
-        .parent_id = parent_id,
-        .parent_mfr = parent_mfr_id,
+        .parent = parent,
         .mfr_id = mfr_id,
-        .pkg_id = pkg_id,
-        .pkg_mfr = pkg_mfr_id,
+        .pkg = pkg,
         .dist_pns = dist_pns.items,
         .children = children.items,
         .created = created_dto,
@@ -111,10 +97,10 @@ pub fn delete(req: *http.Request, db: *DB) !void {
 
 pub const Part_Info = struct {
     mfr_id: ?[]const u8,
-    id: []const u8,
+    part_id: []const u8,
 
     pub fn less_than(_: void, a: @This(), b: @This()) bool {
-        return sort.natural_less_than({}, a.id, b.id);
+        return sort.natural_less_than({}, a.part_id, b.part_id);
     }
 };
 
@@ -125,6 +111,7 @@ pub const Distributor_Part_Number = struct {
 
 const log = std.log.scoped(.@"http.part");
 
+const Package_Info = @import("pkg.zig").Package_Info;
 const Transaction = @import("part/Transaction.zig");
 const Part = DB.Part;
 const Package = DB.Package;

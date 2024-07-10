@@ -16,14 +16,14 @@
 <div>a.k.a. \\*//</div>
 \\~
 
-\\parent_id?
-Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///pkg:\\@url parent_id//">\\parent_id//</a>
+\\parent_id:
+Parent: \\@include "common/pkg_link.zk"
 \\~
 
 \\children?
 <h2>Children</h2>
 \\children:
-<a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///pkg:\\@url id//">\\id//</a><span class="separator"></span>
+<div>\\@include "common/pkg_link.zk"//</div>
 \\~~
 
 \\obj.notes?
@@ -34,7 +34,7 @@ Parent: <a href="\\parent_mfr?///mfr:\\@url parent_mfr ~///pkg:\\@url parent_id/
 \\parts?
 <h2>Parts</h2>
 \\parts:
-<div><a href="\\*.mfr_id?///mfr:\\@url mfr_id ~///p:\\@url id//">\\id//</a></div>
+<div>\\@include "common/part_link.zk"//</div>
 \\~~
 
 <hr>

@@ -3,12 +3,14 @@
 * Files
 
 * Order Items
-* perf logger - when enabled, log every time a linear scan is done over a large array (>100 elements) where we don't expect to process most of them
+* perf: when enabled, log every time a linear scan is done over a large array (>100 elements) where we don't expect to process most of them
+* perf: temp alloc wrapper that logs when holes are created
 * Make order info private when logged out
 * Projects: steps - progress bars, due dates
 * slimselect: typing while focused should open, search
 * List pages for items with children should have arrows for expanding
 * Improve layout of info pages
+* natural sort - handle decimals
 * External links should use target="_blank"
 * Deduplicate Mfr/dist relations
 * Improve search syntax

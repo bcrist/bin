@@ -30,23 +30,18 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
 
     const pkg = Package.get(db, idx);
     const mfr_id = if (pkg.mfr) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null;
-    var parent_id: ?[]const u8 = null;
-    var parent_mfr_id: ?[]const u8 = null;
 
-    if (pkg.parent) |parent_idx| {
-        const parent_mfr = Package.get_mfr(db, parent_idx);
-        if (parent_mfr) |mfr_idx| {
-            parent_mfr_id = Manufacturer.get_id(db, mfr_idx);
-        }
-        parent_id = Package.get_id(db, parent_idx);
-    }
+    const parent: ?Package_Info = if (pkg.parent) |parent_idx| .{
+        .mfr_id = if (Package.get_mfr(db, parent_idx)) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
+        .pkg_id = Package.get_id(db, parent_idx),
+    } else null;
 
     var children = std.ArrayList(Package_Info).init(http.temp());
     for (db.pkgs.items(.parent), db.pkgs.items(.id), db.pkgs.items(.mfr)) |parent_idx, id, maybe_child_mfr_idx| {
         if (parent_idx == idx) {
             try children.append(.{
                 .mfr_id = if (maybe_child_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
-                .id = id,
+                .pkg_id = id,
             });
         }
     }
@@ -57,13 +52,13 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         if (pkg_idx == idx) {
             try parts.append(.{
                 .mfr_id = if (maybe_part_mfr_idx) |mfr_idx| Manufacturer.get_id(db, mfr_idx) else null,
-                .id = id,
+                .part_id = id,
             });
         }
     }
     std.sort.block(part.Part_Info, parts.items, {}, part.Part_Info.less_than);
 
-     const DTO = tempora.Date_Time.With_Offset;
+    const DTO = tempora.Date_Time.With_Offset;
 
     const created_dto = DTO.from_timestamp_ms(pkg.created_timestamp_ms, tz);
     const modified_dto = DTO.from_timestamp_ms(pkg.modified_timestamp_ms, tz);
@@ -77,9 +72,8 @@ pub fn get(session: ?Session, req: *http.Request, tz: ?*const tempora.Timezone, 
         .session = session,
         .title = pkg.full_name orelse pkg.id,
         .obj = pkg,
-        .parent_id = parent_id,
-        .parent_mfr = parent_mfr_id,
         .mfr_id = mfr_id,
+        .parent = parent,
         .children = children.items,
         .parts = parts.items,
         .created = created_dto,
@@ -100,10 +94,10 @@ pub fn delete(req: *http.Request, db: *DB) !void {
 
 pub const Package_Info = struct {
     mfr_id: ?[]const u8,
-    id: []const u8,
+    pkg_id: []const u8,
 
     pub fn less_than(_: void, a: @This(), b: @This()) bool {
-        return sort.natural_less_than({}, a.id, b.id);
+        return sort.natural_less_than({}, a.pkg_id, b.pkg_id);
     }
 };
 
